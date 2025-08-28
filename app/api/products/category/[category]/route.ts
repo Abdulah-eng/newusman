@@ -82,7 +82,6 @@ export async function GET(
         })(),
         variants: product.product_variants?.map((variant: any) => ({
           sku: variant.sku,
-          sdiNumber: variant.sdi_number,
           originalPrice: variant.original_price,
           currentPrice: variant.current_price,
           color: variant.color,
@@ -204,7 +203,6 @@ export async function GET(
         })(),
         variants: product.product_variants?.map((variant: any) => ({
           sku: variant.sku,
-          sdiNumber: variant.sdi_number,
           originalPrice: variant.original_price,
           currentPrice: variant.current_price,
           color: variant.color,
@@ -337,7 +335,6 @@ export async function GET(
       })(),
       variants: product.product_variants?.map((variant: any) => ({
         sku: variant.sku,
-        sdiNumber: variant.sdi_number,
         originalPrice: variant.original_price,
         currentPrice: variant.current_price,
         color: variant.color,

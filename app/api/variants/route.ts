@@ -30,14 +30,13 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/variants -> create a variant
-// Body: { productId: string, sku?: string, sdiNumber?: string, originalPrice: number, currentPrice: number, color?: string, depth?: string, firmness?: string, size?: string }
+// Body: { productId: string, sku?: string, originalPrice: number, currentPrice: number, color?: string, depth?: string, firmness?: string, size?: string }
 export async function POST(req: NextRequest) {
 	try {
 		const body = await req.json()
 		const {
 			productId,
 			sku,
-			sdiNumber,
 			originalPrice,
 			currentPrice,
 			color,
@@ -55,7 +54,6 @@ export async function POST(req: NextRequest) {
 			.insert({
 				product_id: productId,
 				sku: sku || null,
-				sdi_number: sdiNumber || null,
 				original_price: originalPrice != null ? Number(originalPrice) : 0,
 				current_price: currentPrice != null ? Number(currentPrice) : 0,
 				color: color || null,
@@ -79,14 +77,13 @@ export async function POST(req: NextRequest) {
 }
 
 // PUT /api/variants -> update a variant
-// Body: { variantId: string, sku?, sdiNumber?, originalPrice?, currentPrice?, color?, depth?, firmness?, size? }
+// Body: { variantId: string, sku?, originalPrice?, currentPrice?, color?, depth?, firmness?, size? }
 export async function PUT(req: NextRequest) {
 	try {
 		const body = await req.json()
 		const {
 			variantId,
 			sku,
-			sdiNumber,
 			originalPrice,
 			currentPrice,
 			color,
@@ -101,7 +98,6 @@ export async function PUT(req: NextRequest) {
 
 		const update: Record<string, any> = {}
 		if (sku !== undefined) update.sku = sku
-		if (sdiNumber !== undefined) update.sdi_number = sdiNumber
 		if (originalPrice !== undefined) update.original_price = Number(originalPrice)
 		if (currentPrice !== undefined) update.current_price = Number(currentPrice)
 		if (color !== undefined) update.color = color

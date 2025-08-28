@@ -113,11 +113,10 @@ export async function GET(
       images: (product.product_images || [])
         .map((img: any) => buildUrl(img))
         .filter((u: string | null) => !!u),
-      variants: (variantList || []).map((variant: any) => ({
-        sku: variant.sku,
-        sdiNumber: variant.sdi_number,
-        originalPrice: variant.original_price,
-        currentPrice: variant.current_price,
+              variants: (variantList || []).map((variant: any) => ({
+          sku: variant.sku,
+          originalPrice: variant.original_price,
+          currentPrice: variant.current_price,
         color: variant.color,
         depth: variant.depth,
         firmness: variant.firmness,

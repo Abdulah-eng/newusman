@@ -41,7 +41,6 @@ export default async function ProductDetailPage({ params }: PageProps) {
         const directVariants = Array.isArray(vData.variants) ? vData.variants : []
         const normalized = directVariants.map((v: any) => ({
           sku: v.sku,
-          sdiNumber: v.sdi_number,
           originalPrice: v.original_price,
           currentPrice: v.current_price,
           color: v.color,

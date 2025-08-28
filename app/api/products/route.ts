@@ -257,7 +257,6 @@ export async function POST(request: NextRequest) {
           const row = {
             product_id: productId,
             sku: variant?.sku ?? null,
-            sdi_number: variant?.sdi ?? null,
             original_price: Number.isFinite(parseFloat(variant?.originalPrice)) ? parseFloat(variant.originalPrice) : 0,
             current_price: Number.isFinite(parseFloat(variant?.currentPrice)) ? parseFloat(variant.currentPrice) : 0,
             color: attr.useColor ? (variant?.color ?? null) : null,

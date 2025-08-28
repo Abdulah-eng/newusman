@@ -63,7 +63,6 @@ type VariantRow = {
   depth?: string
   firmness?: string
   size?: string
-  sdi?: string
   originalPrice?: number
   currentPrice?: number
 }
@@ -1902,7 +1901,6 @@ function ProductForm() {
         depth: '',
         firmness: '',
         size: '',
-        sdi: '',
         originalPrice: undefined,
         currentPrice: undefined,
       },
@@ -2582,7 +2580,6 @@ function ProductForm() {
                   {useDepth && <th className="p-2">Depth</th>}
                   {useFirmness && <th className="p-2">Firmness</th>}
                   {useSize && <th className="p-2">Size</th>}
-                  <th className="p-2">SDI</th>
                   <th className="p-2">Original Price</th>
                   <th className="p-2">Now Price</th>
                   <th className="p-2"></th>
@@ -2596,7 +2593,6 @@ function ProductForm() {
                     {useDepth && <td className="p-2 min-w-[120px]"><Input value={v.depth || ''} onChange={e => updateVariant(v.id, { depth: e.target.value })} placeholder="Depth" /></td>}
                     {useFirmness && <td className="p-2 min-w-[160px]"><Input value={v.firmness || ''} onChange={e => updateVariant(v.id, { firmness: e.target.value })} placeholder="Firmness" /></td>}
                     {useSize && <td className="p-2 min-w-[140px]"><Input value={v.size || ''} onChange={e => updateVariant(v.id, { size: e.target.value })} placeholder="Size" /></td>}
-                    <td className="p-2 min-w-[120px]"><Input value={v.sdi || ''} onChange={e => updateVariant(v.id, { sdi: e.target.value })} placeholder="SDI" /></td>
                     <td className="p-2 min-w-[140px]"><Input type="number" value={v.originalPrice ?? ''} onChange={e => updateVariant(v.id, { originalPrice: e.target.value ? Number(e.target.value) : undefined })} placeholder="Original" /></td>
                     <td className="p-2 min-w-[140px]"><Input type="number" value={v.currentPrice ?? ''} onChange={e => updateVariant(v.id, { currentPrice: e.target.value ? Number(e.target.value) : undefined })} placeholder="Now" /></td>
                     <td className="p-2"><Button variant="ghost" onClick={() => removeVariant(v.id)}>Remove</Button></td>
@@ -2604,7 +2600,7 @@ function ProductForm() {
                 ))}
                 {variants.length === 0 && (
                   <tr>
-                    <td colSpan={2 + (useColor ? 1 : 0) + (useDepth ? 1 : 0) + (useFirmness ? 1 : 0) + (useSize ? 1 : 0)} className="p-4 text-gray-500">
+                    <td colSpan={1 + (useColor ? 1 : 0) + (useDepth ? 1 : 0) + (useFirmness ? 1 : 0) + (useSize ? 1 : 0)} className="p-4 text-gray-500">
                       No variants yet. Click "Add blank row" to start.
                     </td>
                   </tr>

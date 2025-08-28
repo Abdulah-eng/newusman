@@ -39,7 +39,6 @@ interface Product {
   variants?: Array<{
     id: string
     sku: string
-    sdiNumber: string
     color: string
     depth?: string
     firmness?: string
