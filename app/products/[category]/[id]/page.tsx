@@ -370,32 +370,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
       <div className="container mx-auto px-4">
         <ProductDetailHappy product={productDetail} />
 
-        {/* Optional Hero Media from Admin (small + big images) */}
-        {((product.images || []).length > 0) && (
-          <section className="mt-10">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Two small images */}
-              <div className="grid grid-cols-2 gap-4 order-2 lg:order-none">
-                {(product.images || []).map((src: string, idx: number) => (
-                  <div key={`small-${idx}`} className="relative h-40 rounded-lg overflow-hidden bg-gray-100">
-                    <Image src={src} alt={`Small ${idx+1}`} fill className="object-cover" />
-                  </div>
-                ))}
-              </div>
 
-              {/* Big images carousel (simple horizontal scroll) */}
-              <div className="lg:col-span-2">
-                <div className="flex gap-4 overflow-x-auto pb-2">
-                  {(product.images || []).map((src: string, idx: number) => (
-                    <div key={`big-${idx}`} className="relative h-64 w-96 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                      <Image src={src} alt={`Big ${idx+1}`} fill className="object-cover" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
 
         {/* Reasons to buy */}
         {(product.reasons_to_buy)?.length > 0 && (

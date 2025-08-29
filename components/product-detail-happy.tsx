@@ -2,7 +2,7 @@
 
 
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 
 import { useRouter } from "next/navigation"
 
@@ -187,84 +187,14 @@ export interface ProductDetailHappyProps {
 
 export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
-  // Debug logging for features data
 
-  useEffect(() => {
-
-    console.log('[ProductDetailHappy] Features data:', {
-
-      reasonsToLove: product.reasonsToLove,
-
-      reasonsToLoveDescriptions: (product as any).reasonsToLoveDescriptions,
-
-      reasonsToLoveIcons: (product as any).reasonsToLoveIcons
-
-    })
-
-  }, [product.reasonsToLove, (product as any).reasonsToLoveDescriptions, (product as any).reasonsToLoveIcons])
-
-
-
-  // Debug logging for dimension images
-
-  useEffect(() => {
-
-    console.log('[ProductDetailHappy] Dimension images data:', {
-
-      dimensionImages: product.dimensionImages,
-
-      hasDimensionImages: Boolean(product.dimensionImages && product.dimensionImages.length > 0),
-
-      dimensionImagesCount: product.dimensionImages?.length || 0
-
-    })
-
-  }, [product.dimensionImages])
-
-
-  // Comprehensive debug logging for product data
-  useEffect(() => {
-    console.log('[ProductDetailHappy] Full product object:', product)
-    console.log('[ProductDetailHappy] Product dimensions:', product.dimensions)
-    console.log('[ProductDetailHappy] Product dimensionImages:', product.dimensionImages)
-    console.log('[ProductDetailHappy] Product images:', product.images)
-    console.log('[ProductDetailHappy] Product image:', product.image)
-    
-    // Check if dimensionImages is an array and has content
-    if (product.dimensionImages) {
-      console.log('[ProductDetailHappy] dimensionImages type:', typeof product.dimensionImages)
-      console.log('[ProductDetailHappy] dimensionImages isArray:', Array.isArray(product.dimensionImages))
-      console.log('[ProductDetailHappy] dimensionImages length:', product.dimensionImages.length)
-      console.log('[ProductDetailHappy] dimensionImages content:', product.dimensionImages)
-      
-      // Log each dimension image individually
-      product.dimensionImages.forEach((img, index) => {
-        console.log(`[ProductDetailHappy] Dimension image ${index}:`, {
-          id: img.id,
-          imageUrl: img.imageUrl,
-          fileName: img.fileName,
-          fileSize: img.fileSize,
-          fileType: img.fileType,
-          sortOrder: img.sortOrder
-        })
-      })
-    } else {
-      console.log('[ProductDetailHappy] dimensionImages is null/undefined')
-    }
-  }, [product])
 
 
   // Helper function to convert string characteristics to numeric values for sliders
 
   const getCharacteristicValue = (value: string | number | undefined, type: 'support' | 'pressure' | 'air' | 'durability' | 'firmness'): number => {
 
-    console.log(`[getCharacteristicValue] Input: value="${value}", type="${type}"`)
-
-    
-
     if (typeof value === 'number') {
-
-      console.log(`[getCharacteristicValue] Returning numeric value: ${value}`)
 
       return value
 
@@ -275,8 +205,6 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
     if (typeof value === 'string') {
 
       const lowerValue = value.toLowerCase()
-
-      console.log(`[getCharacteristicValue] Processing string value: "${lowerValue}"`)
 
       
 
@@ -360,8 +288,6 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
     
 
-    console.log(`[getCharacteristicValue] Using default value: ${defaultValue}`)
-
     return defaultValue
 
   }
@@ -392,21 +318,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
 
 
-  // Debug: Log product characteristics
 
-  console.log('[Product Detail] Product characteristics:', {
-
-    firmnessScale: product.firmnessScale,
-
-    supportLevel: product.supportLevel,
-
-    pressureReliefLevel: product.pressureReliefLevel,
-
-    airCirculationLevel: product.airCirculationLevel,
-
-    durabilityLevel: product.durabilityLevel
-
-  })
 
 
 
@@ -435,61 +347,12 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
   // Smart variant selection state
   const [isAutoSelectionMode, setIsAutoSelectionMode] = useState(false)
-  const [pendingAddToCart, setPendingAddToCart] = useState(false)
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({ description: true })
 
-  // Smart variant selection logic
-  const getAvailableVariantOptions = () => {
-    const variants = (product as any).variants || []
-    const hasSizes = variants.some((v: any) => v.size)
-    const hasColors = variants.some((v: any) => v.color)
-    const hasDepths = variants.some((v: any) => v.depth)
-    const hasFirmness = variants.some((v: any) => v.firmness)
-    
-    return { hasSizes, hasColors, hasDepths, hasFirmness }
-  }
 
-  const getNextRequiredSelection = () => {
-    const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
-    
-    // Check each selection in order, but be more explicit about what's already selected
-    if (hasSizes && !selectedSize) return 'size'
-    if (hasColors && !selectedColor) return 'color'
-    if (hasDepths && !(product as any).selectedDepth) return 'depth'
-    if (hasFirmness && !(product as any).selectedFirmness) return 'firmness'
-    
-    return null
-  }
-
-  const openNextRequiredModal = () => {
-    const nextSelection = getNextRequiredSelection()
-    
-    console.log('[Modal Debug] openNextRequiredModal called:', {
-      nextSelection,
-      sizeModalOpen,
-      colorModalOpen,
-      lastSelection,
-      selectedSize,
-      selectedColor
-    })
-    
-    // Prevent opening the same modal that was just closed
-    if (nextSelection === 'size' && !sizeModalOpen) {
-      console.log('[Modal Debug] Opening size modal')
-      setSizeModalOpen(true)
-    } else if (nextSelection === 'color' && !colorModalOpen) {
-      console.log('[Modal Debug] Opening color modal')
-      setColorModalOpen(true)
-    } else {
-      console.log('[Modal Debug] No modal opened:', { reason: 'Already open or no next selection' })
-    }
-    // Add more modals as needed for depth, firmness, etc.
-  }
 
   const handleVariantSelection = (type: string, value: string) => {
-    console.log('[Modal Debug] handleVariantSelection called:', { type, value, lastSelection })
-    
     // Track the last selection to prevent immediate reopening
     setLastSelection(type)
     
@@ -497,47 +360,127 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
       setSelectedSize(value)
       setSizeModalOpen(false)
       
-      // Check if we need to open color modal or if we can add to cart directly
+      // Check if all required selections are complete
       setTimeout(() => {
-        const { hasColors } = getAvailableVariantOptions()
-        if (hasColors) {
-          console.log('[Modal Debug] Opening color modal after size selection')
+        const { hasSizes, hasColors } = getAvailableVariantOptions()
+        
+        // If we have both size and color options, check if both are selected
+        if (hasSizes && hasColors) {
+          if (value && selectedColor) {
+            // Both size and color are selected, add to cart directly
+            setTimeout(() => {
+              // Directly add to cart without validation to avoid reopening modals
+              dispatch({
+                type: 'ADD_ITEM',
+                payload: {
+                  id: String(product.id),
+                  name: product.name,
+                  brand: product.brand,
+                  image: selectedImage || product.image,
+                  currentPrice: product.currentPrice,
+                  originalPrice: product.originalPrice,
+                  size: value,
+                  color: selectedColor
+                }
+              })
+              setBasketSidebarOpen(true)
+              setIsAutoSelectionMode(false)
+            }, 100)
+          } else if (!selectedColor) {
+            // Color is missing, open color modal
+            setColorModalOpen(true)
+          }
+        } else if (hasColors && !selectedColor) {
+          // Only color is required and not selected
           setColorModalOpen(true)
         } else {
-          // No color options needed, add to cart directly
-          console.log('[Modal Debug] No color options, adding to cart directly')
-          setPendingAddToCart(true)
-          addToCart()
-          setPendingAddToCart(false)
-          setIsAutoSelectionMode(false)
+          // No more selections needed, add to cart directly
+          setTimeout(() => {
+            // Directly add to cart without validation to avoid reopening modals
+            dispatch({
+              type: 'ADD_ITEM',
+              payload: {
+                id: String(product.id),
+                name: product.name,
+                brand: product.brand,
+                image: selectedImage || product.image,
+                currentPrice: product.currentPrice,
+                originalPrice: product.originalPrice,
+                size: value,
+                color: selectedColor
+              }
+            })
+            setBasketSidebarOpen(true)
+            setIsAutoSelectionMode(false)
+          }, 100)
         }
-      }, 100) // Short delay to ensure size modal is fully closed
+      }, 150) // Increased delay to ensure size modal is fully closed and lastSelection is set
       
     } else if (type === 'color') {
       setSelectedColor(value)
       setColorModalOpen(false)
       
-      // All selections complete - automatically add to cart and open sidebar
+      // Check if all required selections are complete
       setTimeout(() => {
-        console.log('[Modal Debug] All selections complete, adding to cart automatically')
-        setPendingAddToCart(true)
-        addToCart() // This will open the sidebar
-        setPendingAddToCart(false)
-        setIsAutoSelectionMode(false)
-      }, 200)
+        const { hasSizes, hasColors } = getAvailableVariantOptions()
+        
+        // If we have both size and color options, check if both are selected
+        if (hasSizes && hasColors) {
+          if (selectedSize && value) {
+            // Both size and color are selected, add to cart directly
+            setTimeout(() => {
+              // Directly add to cart without validation to avoid reopening modals
+              dispatch({
+                type: 'ADD_ITEM',
+                payload: {
+                  id: String(product.id),
+                  name: product.name,
+                  brand: product.brand,
+                  image: selectedImage || product.image,
+                  currentPrice: product.currentPrice,
+                  originalPrice: product.originalPrice,
+                  size: selectedSize || 'Standard',
+                  color: value
+                }
+              })
+              setBasketSidebarOpen(true)
+              setIsAutoSelectionMode(false)
+            }, 100)
+          } else if (!selectedSize) {
+            // Size is missing, open size modal
+            setSizeModalOpen(true)
+          }
+        } else if (hasSizes && !selectedSize) {
+          // Only size is required and not selected
+          setSizeModalOpen(true)
+        } else {
+          // No more selections needed, add to cart directly
+          setTimeout(() => {
+            // Directly add to cart without validation to avoid reopening modals
+            dispatch({
+              type: 'ADD_ITEM',
+              payload: {
+                id: String(product.id),
+                name: product.name,
+                brand: product.brand,
+                image: selectedImage || product.image,
+                currentPrice: product.currentPrice,
+                originalPrice: product.originalPrice,
+                size: selectedSize || 'Standard',
+                color: value
+              }
+            })
+            setBasketSidebarOpen(true)
+            setIsAutoSelectionMode(false)
+          }, 100)
+        }
+      }, 200) // Increased delay to ensure color modal is fully closed and selectedColor state is updated
     }
   }
 
-  const startSmartSelection = () => {
-    setIsAutoSelectionMode(true)
-    const nextSelection = getNextRequiredSelection()
-    if (nextSelection) {
-      openNextRequiredModal()
-    } else {
-      // No selections needed, add to cart directly
-      addToCart()
-    }
-  }
+
+
+
 
   // Build a list of "Features you'll love" for reuse in the Product Features section
 
@@ -803,25 +746,11 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
 
 
-  const productFeatures = buildProductFeatures()
+  const productFeatures = useMemo(() => buildProductFeatures(), [product.features, product.category])
 
 
 
-  // Client-side log to quickly confirm presence of features array
 
-  useEffect(() => {
-
-    try {
-
-      // These may be large; log sizes and sample values
-
-      console.log('[ProductFeatures] features count:', product.features?.length || 0, 'sample:', product.features?.[0])
-
-      console.log('[ProductFeatures] customReasons count:', (product as any).customReasons?.length || 0, 'sample:', (product as any).customReasons?.[0])
-
-    } catch {}
-
-  }, [product])
 
 
 
@@ -871,14 +800,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
     const hasColors = Array.isArray((product as any).variants) && (product as any).variants.some((v: any) => Boolean(v.color))
 
-    console.log('[Add to Cart Debug] Validation check:', {
-      hasSizes,
-      hasColors,
-      selectedSize: selectedSizeData?.name,
-      selectedColor,
-      requireSize: hasSizes,
-      requireColor: hasColors
-    })
+
 
     const validation = validateItem(
 
@@ -912,27 +834,32 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
 
 
-    console.log('[Add to Cart Debug] Validation result:', validation)
+
 
     if (!validation.isValid) {
 
-      console.log('[Add to Cart Debug] Validation failed, starting smart selection')
+
 
       // Start smart selection flow instead of showing individual modals
-
-      startSmartSelection()
+      // Try to determine which selection to start with based on what's missing
+      // Also check if we just closed a modal to prevent reopening
+      if (hasSizes && !selectedSize && lastSelection !== 'size') {
+        startSmartSelectionWithPriority('size')
+      } else if (hasColors && !selectedColor && lastSelection !== 'color') {
+        startSmartSelectionWithPriority('color')
+      } else {
+        startSmartSelection()
+      }
 
       return
 
     }
 
-    console.log('[Add to Cart Debug] Validation passed, proceeding to add to cart')
+
 
 
 
     // Add to cart logic here
-
-    console.log(`Adding ${quantity} ${product.name} to cart`)
 
     
 
@@ -988,7 +915,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
   // Dynamic size data from variants (data-driven)
 
-  const sizeData = (() => {
+  const sizeData = useMemo(() => {
 
     if (Array.isArray((product as any).variants) && (product as any).variants.length > 0) {
 
@@ -1072,7 +999,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
     return []
 
-  })()
+  }, [(product as any).variants, (product as any).inStock])
 
   
 
@@ -1092,7 +1019,75 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
   const [selectedSize, setSelectedSize] = useState<string>("")
 
-  
+  // Smart variant selection logic
+  const getAvailableVariantOptions = useCallback(() => {
+    const variants = (product as any).variants || []
+    const hasSizes = variants.some((v: any) => v.size)
+    const hasColors = variants.some((v: any) => v.color)
+    const hasDepths = variants.some((v: any) => v.depth)
+    const hasFirmness = variants.some((v: any) => v.firmness)
+    
+    return { hasSizes, hasColors, hasDepths, hasFirmness }
+  }, [(product as any).variants])
+
+  const getNextRequiredSelection = useCallback(() => {
+    const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
+    
+    // Check each selection in order, but be more explicit about what's already selected
+    if (hasSizes && !selectedSize) return 'size'
+    if (hasColors && !selectedColor) return 'color'
+    if (hasDepths && !(product as any).selectedDepth) return 'depth'
+    if (hasFirmness && !(product as any).selectedFirmness) return 'firmness'
+    
+    return null
+  }, [getAvailableVariantOptions, selectedSize, selectedColor, (product as any).selectedDepth, (product as any).selectedFirmness])
+
+  const openNextRequiredModal = useCallback(() => {
+    const nextSelection = getNextRequiredSelection()
+    
+    // Prevent opening the same modal that was just closed
+    if (nextSelection === 'size' && !sizeModalOpen && lastSelection !== 'size') {
+      setSizeModalOpen(true)
+    } else if (nextSelection === 'color' && !colorModalOpen && lastSelection !== 'color') {
+      setColorModalOpen(true)
+    }
+    // Add more modals as needed for depth, firmness, etc.
+  }, [getNextRequiredSelection, sizeModalOpen, colorModalOpen, lastSelection])
+
+  const startSmartSelection = useCallback(() => {
+    setIsAutoSelectionMode(true)
+    const nextSelection = getNextRequiredSelection()
+    if (nextSelection) {
+      openNextRequiredModal()
+    } else {
+      // No selections needed, add to cart directly
+      addToCart()
+    }
+  }, [getNextRequiredSelection, openNextRequiredModal])
+
+  // Enhanced smart selection that can start with either size or color
+  const startSmartSelectionWithPriority = useCallback((priorityType?: 'size' | 'color') => {
+    setIsAutoSelectionMode(true)
+    
+    if (priorityType === 'size' && !selectedSize && lastSelection !== 'size') {
+      // Start with size selection
+      const { hasSizes } = getAvailableVariantOptions()
+      if (hasSizes) {
+        setSizeModalOpen(true)
+        return
+      }
+    } else if (priorityType === 'color' && !selectedColor && lastSelection !== 'color') {
+      // Start with color selection
+      const { hasColors } = getAvailableVariantOptions()
+      if (hasColors) {
+        setColorModalOpen(true)
+        return
+      }
+    }
+    
+    // Fall back to normal smart selection
+    startSmartSelection()
+  }, [selectedSize, selectedColor, lastSelection, getAvailableVariantOptions, startSmartSelection])
 
   // Get the selected size data with fallback
 
@@ -1599,36 +1594,22 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
             {Array.isArray(sizeData) && sizeData.length > 0 && (
 
-            <div className="border-0 rounded-lg p-4 bg-white mb-2">
+            <div className="border-0 rounded-lg p-4 bg-white mb-2 cursor-pointer" onClick={() => startSmartSelectionWithPriority('size')}>
 
-              <div className="flex items-center justify-between cursor-pointer" onClick={() => { setIsAutoSelectionMode(true); setSizeModalOpen(true) }}>
-
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-
                   <div className="w-6 h-6 text-gray-600">
-
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z"/>
-
                     </svg>
-
                   </div>
-
                   <span className="text-gray-700 font-semibold text-lg">Choose Size</span>
-
                 </div>
-
                 <div className="w-6 h-6 text-gray-600">
-
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-
                   </svg>
-
                 </div>
-
               </div>
 
             </div>
@@ -2238,7 +2219,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                         const iconTypeLower = (product as any).reasonsToLoveIcons[idx].toLowerCase()
 
-                        console.log(`[getIconComponent] Icon type for feature ${idx}:`, iconTypeLower)
+                    
 
                         switch (iconTypeLower) {
 
@@ -2264,7 +2245,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                           default: 
 
-                            console.log(`[getIconComponent] No icon mapping for:`, iconTypeLower)
+                    
 
                             break
 
@@ -3057,12 +3038,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                         {/* Dimension Images Section - Full width, large images */}
                         {(() => {
-                          console.log('[ProductDetailHappy] Rendering dimension images section:', {
-                            hasDimensionImages: Boolean(product.dimensionImages),
-                            dimensionImages: product.dimensionImages,
-                            dimensionImagesLength: product.dimensionImages?.length || 0,
-                            condition: product.dimensionImages && product.dimensionImages.length > 0
-                          })
+                          
                           return product.dimensionImages && product.dimensionImages.length > 0 ? (
                           <div className="mb-8">
 
@@ -4183,36 +4159,22 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
             {Array.isArray(sizeData) && sizeData.length > 0 && (
 
-            <div className="border-0 rounded-lg p-4 bg-white mb-2">
+            <div className="border-0 rounded-lg p-4 bg-white mb-2 cursor-pointer" onClick={() => startSmartSelectionWithPriority('size')}>
 
-              <div className="flex items-center justify-between cursor-pointer" onClick={() => { setIsAutoSelectionMode(true); setSizeModalOpen(true) }}>
-
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-
                   <div className="w-6 h-6 text-gray-600">
-
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z"/>
-
                     </svg>
-
                   </div>
-
                   <span className="text-gray-700 font-semibold text-lg">Choose Size</span>
-
                 </div>
-
                 <div className="w-6 h-6 text-gray-600">
-
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-
                   </svg>
-
                 </div>
-
               </div>
 
             </div>
@@ -4223,43 +4185,28 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
             {/* Color & Other Options Selection - Clickable Option - White Button */}
 
-            <div className="border-0 rounded-lg p-4 bg-white mb-2">
+            <div className="border-0 rounded-lg p-4 bg-white mb-2 cursor-pointer" onClick={() => startSmartSelectionWithPriority('color')}>
 
-              <div className="flex items-center justify-between cursor-pointer" onClick={() => { setIsAutoSelectionMode(true); setColorModalOpen(true) }}>
-
-              <div className="flex items-center gap-3">
-
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
                   <div className="w-6 h-6 text-gray-600">
-
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"/>
-
                     </svg>
-
                   </div>
-
                   <span className="text-gray-700 font-semibold text-lg">
-
                     Choose Colour & Other Options
-
                   </span>
-
                 </div>
-
                 <div className="w-6 h-6 text-gray-600">
-
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-
-                    </svg>
-
+                  </svg>
                 </div>
-
-                </div>
-
               </div>
+            </div>
+
+
 
 
 
@@ -4310,9 +4257,9 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
                   
 
                   <div className="flex items-center">
-
-                    <span className="font-bold text-xl tracking-wide">Add to Basket</span>
-
+                    <span className="font-bold text-xl tracking-wide">
+                      Add to Basket
+                    </span>
                   </div>
 
                 </div>
@@ -4805,19 +4752,19 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
           if (depth) {
 
-            console.log('Selected depth:', depth)
+            // Handle depth selection if needed
 
           }
 
           if (firmness) {
 
-            console.log('Selected firmness:', firmness)
+            // Handle firmness selection if needed
 
           }
 
           if (mattress) {
 
-            console.log('Selected mattress:', mattress)
+            // Handle mattress selection if needed
 
           }
 
