@@ -1,4 +1,3 @@
-
 "use client"
 
 
@@ -432,6 +431,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
   const [sizeModalOpen, setSizeModalOpen] = useState(false)
 
   const [colorModalOpen, setColorModalOpen] = useState(false)
+  const [lastSelection, setLastSelection] = useState<string | null>(null)
 
   // Smart variant selection state
   const [isAutoSelectionMode, setIsAutoSelectionMode] = useState(false)
@@ -453,6 +453,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
   const getNextRequiredSelection = () => {
     const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
     
+    // Check each selection in order, but be more explicit about what's already selected
     if (hasSizes && !selectedSize) return 'size'
     if (hasColors && !selectedColor) return 'color'
     if (hasDepths && !(product as any).selectedDepth) return 'depth'
@@ -464,40 +465,67 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
   const openNextRequiredModal = () => {
     const nextSelection = getNextRequiredSelection()
     
-    if (nextSelection === 'size') {
+    console.log('[Modal Debug] openNextRequiredModal called:', {
+      nextSelection,
+      sizeModalOpen,
+      colorModalOpen,
+      lastSelection,
+      selectedSize,
+      selectedColor
+    })
+    
+    // Prevent opening the same modal that was just closed
+    if (nextSelection === 'size' && !sizeModalOpen) {
+      console.log('[Modal Debug] Opening size modal')
       setSizeModalOpen(true)
-    } else if (nextSelection === 'color') {
+    } else if (nextSelection === 'color' && !colorModalOpen) {
+      console.log('[Modal Debug] Opening color modal')
       setColorModalOpen(true)
+    } else {
+      console.log('[Modal Debug] No modal opened:', { reason: 'Already open or no next selection' })
     }
     // Add more modals as needed for depth, firmness, etc.
   }
 
   const handleVariantSelection = (type: string, value: string) => {
+    console.log('[Modal Debug] handleVariantSelection called:', { type, value, lastSelection })
+    
+    // Track the last selection to prevent immediate reopening
+    setLastSelection(type)
+    
     if (type === 'size') {
       setSelectedSize(value)
       setSizeModalOpen(false)
+      
+      // Check if we need to open color modal or if we can add to cart directly
+      setTimeout(() => {
+        const { hasColors } = getAvailableVariantOptions()
+        if (hasColors) {
+          console.log('[Modal Debug] Opening color modal after size selection')
+          setColorModalOpen(true)
+        } else {
+          // No color options needed, add to cart directly
+          console.log('[Modal Debug] No color options, adding to cart directly')
+          setPendingAddToCart(true)
+          addToCart()
+          setPendingAddToCart(false)
+          setIsAutoSelectionMode(false)
+        }
+      }, 100) // Short delay to ensure size modal is fully closed
+      
     } else if (type === 'color') {
       setSelectedColor(value)
       setColorModalOpen(false)
+      
+      // All selections complete - automatically add to cart and open sidebar
+      setTimeout(() => {
+        console.log('[Modal Debug] All selections complete, adding to cart automatically')
+        setPendingAddToCart(true)
+        addToCart() // This will open the sidebar
+        setPendingAddToCart(false)
+        setIsAutoSelectionMode(false)
+      }, 200)
     }
-    
-    // Check if we need to open the next modal
-    setTimeout(() => {
-      const nextSelection = getNextRequiredSelection()
-      if (nextSelection) {
-        openNextRequiredModal()
-      } else {
-        // All selections are complete, add to cart automatically
-        if (isAutoSelectionMode) {
-          setPendingAddToCart(true)
-          setTimeout(() => {
-            addToCart()
-            setPendingAddToCart(false)
-            setIsAutoSelectionMode(false)
-          }, 100)
-        }
-      }
-    }, 300)
   }
 
   const startSmartSelection = () => {
@@ -843,6 +871,15 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
     const hasColors = Array.isArray((product as any).variants) && (product as any).variants.some((v: any) => Boolean(v.color))
 
+    console.log('[Add to Cart Debug] Validation check:', {
+      hasSizes,
+      hasColors,
+      selectedSize: selectedSizeData?.name,
+      selectedColor,
+      requireSize: hasSizes,
+      requireColor: hasColors
+    })
+
     const validation = validateItem(
 
       {
@@ -875,7 +912,11 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
 
 
+    console.log('[Add to Cart Debug] Validation result:', validation)
+
     if (!validation.isValid) {
+
+      console.log('[Add to Cart Debug] Validation failed, starting smart selection')
 
       // Start smart selection flow instead of showing individual modals
 
@@ -884,6 +925,8 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
       return
 
     }
+
+    console.log('[Add to Cart Debug] Validation passed, proceeding to add to cart')
 
 
 
@@ -4726,7 +4769,10 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
         isOpen={sizeModalOpen}
 
-        onClose={() => setSizeModalOpen(false)}
+        onClose={() => {
+          setSizeModalOpen(false)
+          setLastSelection(null) // Reset last selection when manually closed
+        }}
 
         onSizeSelect={(size) => {
 
@@ -4748,7 +4794,10 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
         isOpen={colorModalOpen}
 
-        onClose={() => setColorModalOpen(false)}
+        onClose={() => {
+          setColorModalOpen(false)
+          setLastSelection(null) // Reset last selection when manually closed
+        }}
 
         onColorSelect={(color, depth, firmness, mattress) => {
 

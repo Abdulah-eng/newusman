@@ -201,6 +201,8 @@ export function ColorSelectionModal({
 
     const depthOption = depthOptions.find(d => d.name === localSelectedDepth)
     const firmnessOption = firmnessOptions.find(f => f.name === localSelectedFirmness)
+    
+    // Call onColorSelect which will trigger the automatic add to cart flow
     onColorSelect(selectedColorOption!, depthOption, firmnessOption)
     onClose()
   }
