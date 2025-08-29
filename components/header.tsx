@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { AuthButton } from '@/components/auth-button'
 import { Search, ShoppingCart, Heart, Mail, X, Truck, HeadphonesIcon, ArrowRight, Instagram, Facebook, Youtube, Package, Car, RotateCcw, CreditCard, ChevronDown, Menu, User, Snowflake, Waves, Bed, Crown, Cpu, Layers, Baby, ArrowUp, Leaf } from 'lucide-react'
 import { Input } from "@/components/ui/input"
 import { Sora } from 'next/font/google'
@@ -171,12 +172,8 @@ export default function Header() {
 
               {/* User Icons */}
               <div className="flex items-center space-x-2 lg:space-x-4">
-                <Link href="/login" className="hidden sm:flex items-center space-x-2 hover:text-orange-400 transition-colors">
-                  <div className="w-6 h-6 lg:w-8 lg:h-8 bg-gray-700 rounded-lg flex items-center justify-center">
-                    <ArrowRight className="w-3 h-3 lg:w-4 lg:h-4" />
-                  </div>
-                  <span className="text-xs lg:text-sm">Login</span>
-                </Link>
+                {/* Login/Logout */}
+                <AuthButton />
                 
                 <Link href="/wishlist" className="hover:text-orange-400 transition-colors">
                   <Heart className="w-5 h-5 lg:w-6 lg:h-6" />
