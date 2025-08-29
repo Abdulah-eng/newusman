@@ -262,7 +262,11 @@ export async function POST(request: NextRequest) {
             color: attr.useColor ? (variant?.color ?? null) : null,
             depth: attr.useDepth ? (variant?.depth ?? null) : null,
             firmness: attr.useFirmness ? (variant?.firmness ?? null) : null,
-            size: attr.useSize ? (variant?.size ?? null) : null
+            size: attr.useSize ? (variant?.size ?? null) : null,
+            length: variant?.length ?? null,
+            width: variant?.width ?? null,
+            height: variant?.height ?? null,
+            availability: variant?.availability ?? true
           }
           // Per-row debug
           console.log(`[Save Product] variant[${index}] mapped row:`, row)
@@ -557,11 +561,38 @@ export async function POST(request: NextRequest) {
           weight_capacity: dimensions.weightCapacity || null,
           pocket_springs: dimensions.pocketSprings || null,
           comfort_layer: dimensions.comfortLayer || null,
-          support_layer: dimensions.supportLayer || null
+          support_layer: dimensions.supportLayer || null,
+          // Editable headings
+          mattress_size_heading: dimensions.mattressSizeHeading || 'Mattress Size',
+          maximum_height_heading: dimensions.maximumHeightHeading || 'Maximum Height',
+          weight_capacity_heading: dimensions.weightCapacityHeading || 'Weight Capacity',
+          pocket_springs_heading: dimensions.pocketSpringsHeading || 'Pocket Springs',
+          comfort_layer_heading: dimensions.comfortLayerHeading || 'Comfort Layer',
+          support_layer_heading: dimensions.supportLayerHeading || 'Support Layer'
         })
 
       if (dimensionError) {
         console.error('Dimension insertion error:', dimensionError)
+      }
+    }
+
+    // Insert dimension images
+    if (body.dimensionImages && body.dimensionImages.length > 0) {
+      const dimensionImageData = body.dimensionImages.map((img: any, index: number) => ({
+        product_id: productId,
+        image_url: img.imageUrl || '',
+        file_name: img.fileName || '',
+        file_size: img.fileSize || 0,
+        file_type: img.fileType || '',
+        sort_order: index
+      }))
+
+      const { error: dimensionImageError } = await supabase
+        .from('product_dimension_images')
+        .insert(dimensionImageData)
+
+      if (dimensionImageError) {
+        console.error('Dimension image insertion error:', dimensionImageError)
       }
     }
 

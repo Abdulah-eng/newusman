@@ -32,7 +32,8 @@ export async function GET(
         product_faqs(*),
         product_warranty_sections(*),
         product_dimensions(*),
-        product_popular_categories(*)
+        product_popular_categories(*),
+        product_dimension_images(*)
       `)
       .eq('id', id)
       .single()
@@ -45,6 +46,26 @@ export async function GET(
       )
     }
 
+    // Debug logging for dimension images
+    console.log('[API /products/:id] Raw product data:', {
+      id: product.id,
+      name: product.name,
+      hasProductDimensions: !!product.product_dimensions,
+      hasProductDimensionImages: !!product.product_dimension_images,
+      productDimensionsCount: product.product_dimensions ? 1 : 0,
+      productDimensionImagesCount: Array.isArray(product.product_dimension_images) ? product.product_dimension_images.length : 0
+    })
+
+    if (product.product_dimension_images) {
+      console.log('[API /products/:id] Raw product_dimension_images:', product.product_dimension_images)
+      console.log('[API /products/:id] product_dimension_images type:', typeof product.product_dimension_images)
+      console.log('[API /products/:id] product_dimension_images isArray:', Array.isArray(product.product_dimension_images))
+    }
+
+    if (product.product_dimensions) {
+      console.log('[API /products/:id] Raw product_dimensions:', product.product_dimensions)
+    }
+
     try {
       console.log('[API /products/:id] id:', id,
         'raw variants count:', Array.isArray((product as any).product_variants) ? (product as any).product_variants.length : 0,
@@ -55,10 +76,26 @@ export async function GET(
     const fileBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || ''
     const buildUrl = (img: any) => {
       const src = img?.image_url || img?.file_name
-      if (!src) return null
-      if (typeof src !== 'string') return null
-      if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('/')) return src
-      if (fileBase) return `${fileBase.replace(/\/$/, '')}/${encodeURIComponent(src)}`
+      console.log('[API /products/:id] buildUrl input:', { img, src, fileBase })
+      
+      if (!src) {
+        console.log('[API /products/:id] buildUrl: no src found')
+        return null
+      }
+      if (typeof src !== 'string') {
+        console.log('[API /products/:id] buildUrl: src is not a string:', typeof src)
+        return null
+      }
+      if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('/')) {
+        console.log('[API /products/:id] buildUrl: returning absolute URL:', src)
+        return src
+      }
+      if (fileBase) {
+        const fullUrl = `${fileBase.replace(/\/$/, '')}/${encodeURIComponent(src)}`
+        console.log('[API /products/:id] buildUrl: returning constructed URL:', fullUrl)
+        return fullUrl
+      }
+      console.log('[API /products/:id] buildUrl: no fileBase, returning null')
       return null
     }
 
@@ -120,7 +157,12 @@ export async function GET(
         color: variant.color,
         depth: variant.depth,
         firmness: variant.firmness,
-        size: variant.size
+        size: variant.size,
+        // Add dimension fields
+        length: variant.length,
+        width: variant.width,
+        height: variant.height,
+        availability: variant.availability
       })) || [],
       features: product.product_features?.map((feature: any) => feature.feature_name) || [],
       reasonsToLove: product.product_reasons_to_love?.map((reason: any) => reason.reason_text) || [],
@@ -148,8 +190,24 @@ export async function GET(
         weight_capacity: product.product_dimensions.weight_capacity,
         pocket_springs: product.product_dimensions.pocket_springs,
         comfort_layer: product.product_dimensions.comfort_layer,
-        support_layer: product.product_dimensions.support_layer
+        support_layer: product.product_dimensions.support_layer,
+        // New editable heading fields
+        mattress_size_heading: product.product_dimensions.mattress_size_heading,
+        maximum_height_heading: product.product_dimensions.maximum_height_heading,
+        weight_capacity_heading: product.product_dimensions.weight_capacity_heading,
+        pocket_springs_heading: product.product_dimensions.pocket_springs_heading,
+        comfort_layer_heading: product.product_dimensions.comfort_layer_heading,
+        support_layer_heading: product.product_dimensions.support_layer_heading
       } : null,
+      // Dimension images for the dimensions section
+      dimensionImages: product.product_dimension_images?.map((img: any) => ({
+        id: img.id,
+        imageUrl: buildUrl(img),
+        fileName: img.file_name,
+        fileSize: img.file_size,
+        fileType: img.file_type,
+        sortOrder: img.sort_order
+      })).filter((img: any) => img.imageUrl) || [],
       popularCategories: product.product_popular_categories?.map((cat: any) => cat.popular_category_name) || [],
       // Add basic product info
       brand: 'Premium Brand', // Default brand
@@ -164,6 +222,19 @@ export async function GET(
       console.log('[API /products/:id] transformed variants count:', Array.isArray((transformedProduct as any).variants) ? (transformedProduct as any).variants.length : 0)
       console.log('[API /products/:id] product_reasons_to_love:', (transformedProduct as any).product_reasons_to_love)
       console.log('[API /products/:id] reasonsToLove:', (transformedProduct as any).reasonsToLove)
+      console.log('[API /products/:id] dimension images:', (transformedProduct as any).dimensionImages)
+      console.log('[API /products/:id] raw product_dimension_images:', product.product_dimension_images)
+      
+      // Additional logging for dimension images
+      console.log('[API /products/:id] Final transformedProduct.dimensionImages:', (transformedProduct as any).dimensionImages)
+      console.log('[API /products/:id] Final transformedProduct.dimensions:', (transformedProduct as any).dimensions)
+      
+      if ((transformedProduct as any).dimensionImages) {
+        console.log('[API /products/:id] dimensionImages type:', typeof (transformedProduct as any).dimensionImages)
+        console.log('[API /products/:id] dimensionImages isArray:', Array.isArray((transformedProduct as any).dimensionImages))
+        console.log('[API /products/:id] dimensionImages length:', (transformedProduct as any).dimensionImages.length)
+        console.log('[API /products/:id] dimensionImages content:', (transformedProduct as any).dimensionImages)
+      }
     } catch {}
 
     return NextResponse.json({

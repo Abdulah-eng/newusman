@@ -33,6 +33,10 @@ interface Product {
     color: string
     depth: string
     firmness: string
+    length: string
+    width: string
+    height: string
+    availability: boolean
   }>
   images: Array<{
     image_url: string
@@ -88,7 +92,7 @@ export default function AdminProductsPage() {
           headline,
           created_at,
           updated_at,
-          variants:product_variants(id, current_price, original_price, size, color, depth, firmness),
+          variants:product_variants(id, current_price, original_price, size, color, depth, firmness, length, width, height, availability),
           images:product_images(image_url)
         `)
         .order(sortBy, { ascending: sortOrder === 'asc' })

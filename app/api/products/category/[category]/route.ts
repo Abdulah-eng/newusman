@@ -26,7 +26,8 @@ export async function GET(
           product_faqs(*),
           product_warranty_sections(*),
           product_dimensions(*),
-          product_popular_categories(*)
+          product_popular_categories(*),
+          product_dimension_images(*)
         `)
         .eq('show_in_kids_category', true)
 
@@ -87,7 +88,12 @@ export async function GET(
           color: variant.color,
           depth: variant.depth,
           firmness: variant.firmness,
-          size: variant.size
+          size: variant.size,
+          // Add dimension fields
+          length: variant.length,
+          width: variant.width,
+          height: variant.height,
+          availability: variant.availability
         })) || [],
         features: product.product_features?.map((feature: any) => feature.feature_name) || [],
         reasonsToLove: product.product_reasons_to_love?.map((reason: any) => reason.reason_text) || [],
@@ -147,7 +153,8 @@ export async function GET(
           product_faqs(*),
           product_warranty_sections(*),
           product_dimensions(*),
-          product_popular_categories(*)
+          product_popular_categories(*),
+          product_dimension_images(*)
         `)
         .eq('show_in_sales_category', true)
 
@@ -208,7 +215,12 @@ export async function GET(
           color: variant.color,
           depth: variant.depth,
           firmness: variant.firmness,
-          size: variant.size
+          size: variant.size,
+          // Add dimension fields
+          length: variant.length,
+          width: variant.width,
+          height: variant.height,
+          availability: variant.availability
         })) || [],
         features: product.product_features?.map((feature: any) => feature.feature_name) || [],
         reasonsToLove: product.product_reasons_to_love?.map((reason: any) => reason.reason_text) || [],
@@ -237,6 +249,15 @@ export async function GET(
           comfortLayer: product.product_dimensions.comfort_layer,
           supportLayer: product.product_dimensions.support_layer
         } : null,
+        // Dimension images for the dimensions section
+        dimensionImages: product.product_dimension_images?.map((img: any) => ({
+          id: img.id,
+          imageUrl: buildUrl(img),
+          fileName: img.file_name,
+          fileSize: img.file_size,
+          fileType: img.file_type,
+          sortOrder: img.sort_order
+        })).filter((img: any) => img.imageUrl) || [],
         popularCategories: product.product_popular_categories?.map((cat: any) => cat.popular_category_name) || [],
         createdAt: product.created_at,
         updatedAt: product.updated_at
@@ -278,7 +299,8 @@ export async function GET(
         product_faqs(*),
         product_warranty_sections(*),
         product_dimensions(*),
-        product_popular_categories(*)
+        product_popular_categories(*),
+        product_dimension_images(*)
       `)
       .eq('category_id', categoryData.id)
       .eq('categories.slug', category)
@@ -340,7 +362,12 @@ export async function GET(
         color: variant.color,
         depth: variant.depth,
         firmness: variant.firmness,
-        size: variant.size
+        size: variant.size,
+        // Add dimension fields
+        length: variant.length,
+        width: variant.width,
+        height: variant.height,
+        availability: variant.availability
       })) || [],
       features: product.product_features?.map((feature: any) => feature.feature_name) || [],
       reasonsToLove: product.product_reasons_to_love?.map((reason: any) => reason.reason_text) || [],
@@ -369,6 +396,15 @@ export async function GET(
         comfortLayer: product.product_dimensions.comfort_layer,
         supportLayer: product.product_dimensions.support_layer
       } : null,
+               // Dimension images for the dimensions section
+         dimensionImages: product.product_dimension_images?.map((img: any) => ({
+           id: img.id,
+           imageUrl: buildUrl(img),
+           fileName: img.file_name,
+           fileSize: img.file_size,
+           fileType: img.file_type,
+           sortOrder: img.sort_order
+         })).filter((img: any) => img.imageUrl) || [],
       popularCategories: product.product_popular_categories?.map((cat: any) => cat.popular_category_name) || [],
       createdAt: product.created_at,
       updatedAt: product.updated_at

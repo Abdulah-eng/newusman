@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { Star, Circle, Zap, Layers, Ruler, Truck, Leaf, Recycle, Feather, Snowflake, Sprout, Brain, PackageOpen, Mountain, Droplet, Umbrella, Scroll, ArrowLeftRight, SlidersHorizontal, Grid, Gem, Waves, Shield, Users, ShieldCheck, Palette, Package, DollarSign, Award, Wrench, Minimize, Baby, Check, Radio, VolumeX, Heart } from 'lucide-react'
+import { Star, Circle, Zap, Layers, Ruler, Truck, Leaf, Recycle, Feather, Snowflake, Sprout, Brain, PackageOpen, Mountain, Droplet, Umbrella, Scroll, ArrowLeftRight, SlidersHorizontal, Grid, Gem, Waves, Shield, Users, ShieldCheck, Palette, Package, DollarSign, Award, Wrench, Minimize, Baby, Check, Radio, VolumeX, Heart, Trees } from 'lucide-react'
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
@@ -151,6 +151,14 @@ export function ProductCard({ product }: ProductCardProps) {
         if (text.includes('eco') || text.includes('organic') || text.includes('sustain')) return () => <Leaf className="h-4 w-4" />
         if (text.includes('waterproof') || text.includes('cover')) return () => <Umbrella className="h-4 w-4" />
         if (text.includes('warranty')) return () => <Shield className="h-4 w-4" />
+        // Additional mappings aligned with "Features you'll love"
+        if (text.includes('adjustable') && (text.includes('height') || text.includes('base'))) return () => <SlidersHorizontal className="h-4 w-4" />
+        if (text.includes('easy') && text.includes('assembly')) return () => <Wrench className="h-4 w-4" />
+        if (text.includes('upholster') || text.includes('headboard')) return () => <Package className="h-4 w-4" />
+        if (text.includes('wood')) return () => <Trees className="h-4 w-4" />
+        if (text.includes('metal') || text.includes('frame')) return () => <Shield className="h-4 w-4" />
+        if (text.includes('construction') || text.includes('built')) return () => <Wrench className="h-4 w-4" />
+        if (text.includes('design') || text.includes('style')) return () => <Palette className="h-4 w-4" />
         return () => <Star className="h-4 w-4" />
       }
       return safeProduct.features.slice(0, 6).map(label => ({ label, Icon: getFeatureIcon(label) }))

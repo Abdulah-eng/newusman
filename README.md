@@ -250,3 +250,77 @@ This project is licensed under the MIT License.
 ## 📞 Support
 
 For support or questions, please contact the development team or create an issue in the repository.
+
+## 🔄 Recent Updates
+
+### Product Variant Enhancements
+
+This update adds new fields to product variants in the admin panel and database:
+
+#### New Fields Added
+- **length** (VARCHAR(100)) - Product length
+- **width** (VARCHAR(100)) - Product width  
+- **height** (VARCHAR(100)) - Product height
+- **availability** (BOOLEAN) - Whether the variant is available for purchase
+
+#### Database Changes
+- Added new columns to `product_variants` table
+- Created migration script: `migrations/add-variant-dimensions-availability.sql`
+- Migration runner: `run-migration.js`
+
+### Dimensions & Specifications Enhancements
+
+This update significantly enhances the Dimensions & Specifications section in the product adding form:
+
+#### New Features
+- **Editable Headings**: All dimension field headings can now be customized
+  - Mattress Size
+  - Maximum Height
+  - Weight Capacity
+  - Pocket Springs
+  - Comfort Layer
+  - Support Layer
+- **Multiple Image Upload**: Admins can add unlimited images to the dimensions section
+- **Image Management**: Upload, preview, and remove dimension images with drag-and-drop support
+
+#### Database Changes
+- Added editable heading columns to `product_dimensions` table
+- Created new `product_dimension_images` table for storing multiple images
+- Created migration script: `migrations/add-dimension-images.sql`
+- Migration runner: `run-dimension-migration.js`
+
+#### UI Improvements
+- Enhanced Dimensions & Specifications section with image upload interface
+- Editable heading inputs above each dimension field
+- Image preview and management controls
+- Responsive grid layout for better organization
+
+### Running Migrations
+
+To apply the database changes, run the appropriate migration script:
+
+```bash
+# For variant enhancements
+node run-migration.js
+
+# For dimension enhancements (safe version)
+node run-safe-dimension-migration.js
+```
+
+Make sure you have the required environment variables set:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+### Troubleshooting Database Errors
+
+If you encounter the error `ERROR: 42P07: relation "product_dimensions" already exists`, this means the database already has some of the required tables. The solution is to use the safe migration script:
+
+1. **Use the safe migration**: Run `node run-safe-dimension-migration.js` instead of the regular migration
+2. **Check database state**: Use `node check-database-state.js` to see which tables already exist
+3. **Safe migration features**: The safe migration automatically checks for existing tables and columns before creating them
+
+The safe migration will:
+- Check if tables exist before creating them
+- Add only missing columns
+- Handle existing constraints gracefully
+- Provide detailed feedback about what was created vs. what already existed

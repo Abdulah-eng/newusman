@@ -1188,6 +1188,11 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
                         <option value="firmness">Firmness</option>
                         <option value="quality">Quality</option>
                         <option value="durability">Durability</option>
+                        <option value="wood">Wood</option>
+                        <option value="metal">Metal</option>
+                        <option value="upholstery">Upholstery</option>
+                        <option value="construction">Construction</option>
+                        <option value="design">Design</option>
                       </select>
                     </div>
 

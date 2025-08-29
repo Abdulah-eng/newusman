@@ -63,6 +63,10 @@ type VariantRow = {
   depth?: string
   firmness?: string
   size?: string
+  length?: string
+  width?: string
+  height?: string
+  availability: boolean
   originalPrice?: number
   currentPrice?: number
 }
@@ -1842,8 +1846,26 @@ function ProductForm() {
     weightCapacity: '200 kg',
     pocketSprings: '1000 count',
     comfortLayer: '8 cm',
-    supportLayer: '17 cm'
+    supportLayer: '17 cm',
+    // Editable headings
+    mattressSizeHeading: 'Mattress Size',
+    maxHeightHeading: 'Maximum Height',
+    weightCapacityHeading: 'Weight Capacity',
+    pocketSpringsHeading: 'Pocket Springs',
+    comfortLayerHeading: 'Comfort Layer',
+    supportLayerHeading: 'Support Layer'
   })
+
+  // Dimension images state
+  const [dimensionImages, setDimensionImages] = useState<Array<{
+    id: string
+    file: File | null
+    imageUrl: string
+    fileName: string
+    fileSize: number
+    fileType: string
+    sortOrder: number
+  }>>([])
 
   // Popular categories state
   const [selectedPopularCategories, setSelectedPopularCategories] = useState<string[]>([])
@@ -1901,6 +1923,10 @@ function ProductForm() {
         depth: '',
         firmness: '',
         size: '',
+        length: '',
+        width: '',
+        height: '',
+        availability: true,
         originalPrice: undefined,
         currentPrice: undefined,
       },
@@ -1979,6 +2005,39 @@ function ProductForm() {
 
   const updateDimension = (field: keyof typeof dimensions, value: string) => {
     setDimensions(prev => ({ ...prev, [field]: value }))
+  }
+
+  // Dimension images functions
+  const addDimensionImage = () => {
+    const newImage = {
+      id: crypto.randomUUID(),
+      file: null,
+      imageUrl: '',
+      fileName: '',
+      fileSize: 0,
+      fileType: '',
+      sortOrder: dimensionImages.length
+    }
+    setDimensionImages(prev => [...prev, newImage])
+  }
+
+  const updateDimensionImage = (id: string, updates: Partial<typeof dimensionImages[0]>) => {
+    setDimensionImages(prev => prev.map(img => 
+      img.id === id ? { ...img, ...updates } : img
+    ))
+  }
+
+  const removeDimensionImage = (id: string) => {
+    setDimensionImages(prev => prev.filter(img => img.id !== id))
+  }
+
+  const handleDimensionImageUpload = (id: string, file: File) => {
+    updateDimensionImage(id, {
+      file,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    })
   }
 
   // Recommended products functions
@@ -2124,8 +2183,16 @@ function ProductForm() {
       weightCapacity: '200 kg',
       pocketSprings: '1000 count',
       comfortLayer: '8 cm',
-      supportLayer: '17 cm'
+      supportLayer: '17 cm',
+      // Editable headings
+      mattressSizeHeading: 'Mattress Size',
+      maxHeightHeading: 'Maximum Height',
+      weightCapacityHeading: 'Weight Capacity',
+      pocketSpringsHeading: 'Pocket Springs',
+      comfortLayerHeading: 'Comfort Layer',
+      supportLayerHeading: 'Support Layer'
     })
+    setDimensionImages([])
     setSelectedBunkbedMattresses([])
     setSelectedPopularCategories([])
     setSelectedRecommendedProducts([])
@@ -2217,7 +2284,34 @@ function ProductForm() {
         updatedDescriptionParagraphs.push({ ...para, image: imageUrl || '', uploadedFile: null })
       }
 
-      // 3) Build payload with URL images (typed URLs + uploaded URLs)
+      // 3) Upload dimension images to storage and collect public URLs
+      const updatedDimensionImages = [] as typeof dimensionImages
+      for (let i = 0; i < dimensionImages.length; i++) {
+        const img = dimensionImages[i]
+        let imageUrl = img.imageUrl
+        if (img.file) {
+          const file = img.file
+          const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
+          const filePath = `dimensions/${Date.now()}-${i}-${safeName}`
+          const { error: dimUploadError } = await supabase
+            .storage
+            .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+            .upload(filePath, file, { upsert: true, contentType: file.type })
+          if (dimUploadError) {
+            console.error('[Admin Save] Dimension image upload error:', dimUploadError, 'for', filePath)
+          } else {
+            const { data: publicData } = supabase
+              .storage
+              .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+              .getPublicUrl(filePath)
+            console.log('[Admin Save] Dimension public URL for', filePath, '=>', publicData?.publicUrl)
+            imageUrl = publicData?.publicUrl || imageUrl
+          }
+        }
+        updatedDimensionImages.push({ ...img, imageUrl: imageUrl || '', file: null })
+      }
+
+              // 4) Build payload with URL images (typed URLs + uploaded URLs)
       console.log('[Admin Save] Characteristics being sent:', {
         firmnessScale,
         supportLevel,
@@ -2258,7 +2352,17 @@ function ProductForm() {
         })),
         faqs,
         warrantySections,
-        dimensions,
+        dimensions: {
+          ...dimensions,
+          // Include editable headings
+          mattressSizeHeading: dimensions.mattressSizeHeading,
+          maxHeightHeading: dimensions.maxHeightHeading,
+          weightCapacityHeading: dimensions.weightCapacityHeading,
+          pocketSpringsHeading: dimensions.pocketSpringsHeading,
+          comfortLayerHeading: dimensions.comfortLayerHeading,
+          supportLayerHeading: dimensions.supportLayerHeading
+        },
+        dimensionImages: updatedDimensionImages,
         popularCategories: getPopularCategories().filter(cat => selectedPopularCategories.includes(cat.name)),
         recommendedProducts: selectedRecommendedProducts.map(product => ({
           recommendedProductId: product.id,
@@ -2580,6 +2684,10 @@ function ProductForm() {
                   {useDepth && <th className="p-2">Depth</th>}
                   {useFirmness && <th className="p-2">Firmness</th>}
                   {useSize && <th className="p-2">Size</th>}
+                  <th className="p-2">Length</th>
+                  <th className="p-2">Width</th>
+                  <th className="p-2">Height</th>
+                  <th className="p-2">Available</th>
                   <th className="p-2">Original Price</th>
                   <th className="p-2">Now Price</th>
                   <th className="p-2"></th>
@@ -2593,6 +2701,19 @@ function ProductForm() {
                     {useDepth && <td className="p-2 min-w-[120px]"><Input value={v.depth || ''} onChange={e => updateVariant(v.id, { depth: e.target.value })} placeholder="Depth" /></td>}
                     {useFirmness && <td className="p-2 min-w-[160px]"><Input value={v.firmness || ''} onChange={e => updateVariant(v.id, { firmness: e.target.value })} placeholder="Firmness" /></td>}
                     {useSize && <td className="p-2 min-w-[140px]"><Input value={v.size || ''} onChange={e => updateVariant(v.id, { size: e.target.value })} placeholder="Size" /></td>}
+                    <td className="p-2 min-w-[100px]"><Input value={v.length || ''} onChange={e => updateVariant(v.id, { length: e.target.value })} placeholder="Length" /></td>
+                    <td className="p-2 min-w-[100px]"><Input value={v.width || ''} onChange={e => updateVariant(v.id, { width: e.target.value })} placeholder="Width" /></td>
+                    <td className="p-2 min-w-[100px]"><Input value={v.height || ''} onChange={e => updateVariant(v.id, { height: e.target.value })} placeholder="Height" /></td>
+                    <td className="p-2 min-w-[100px]">
+                      <select 
+                        value={v.availability ? 'true' : 'false'} 
+                        onChange={e => updateVariant(v.id, { availability: e.target.value === 'true' })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
+                    </td>
                     <td className="p-2 min-w-[140px]"><Input type="number" value={v.originalPrice ?? ''} onChange={e => updateVariant(v.id, { originalPrice: e.target.value ? Number(e.target.value) : undefined })} placeholder="Original" /></td>
                     <td className="p-2 min-w-[140px]"><Input type="number" value={v.currentPrice ?? ''} onChange={e => updateVariant(v.id, { currentPrice: e.target.value ? Number(e.target.value) : undefined })} placeholder="Now" /></td>
                     <td className="p-2"><Button variant="ghost" onClick={() => removeVariant(v.id)}>Remove</Button></td>
@@ -2600,7 +2721,7 @@ function ProductForm() {
                 ))}
                 {variants.length === 0 && (
                   <tr>
-                    <td colSpan={1 + (useColor ? 1 : 0) + (useDepth ? 1 : 0) + (useFirmness ? 1 : 0) + (useSize ? 1 : 0)} className="p-4 text-gray-500">
+                    <td colSpan={1 + (useColor ? 1 : 0) + (useDepth ? 1 : 0) + (useFirmness ? 1 : 0) + (useSize ? 1 : 0) + 4} className="p-4 text-gray-500">
                       No variants yet. Click "Add blank row" to start.
                     </td>
                   </tr>
@@ -2882,8 +3003,68 @@ function ProductForm() {
       {/* Dimensions & Specifications */}
       <Card className="p-4">
         <h2 className="text-xl font-semibold mb-4">Dimensions & Specifications</h2>
-        <p className="text-sm text-gray-600 mb-4">Enter product dimensions and technical specifications.</p>
+        <p className="text-sm text-gray-600 mb-4">Enter product dimensions and technical specifications. You can customize the headings and add multiple images.</p>
         
+        {/* Dimension Images Section */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Dimension Images</h3>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm"
+              onClick={addDimensionImage}
+            >
+              Add Image
+            </Button>
+          </div>
+          
+          {dimensionImages.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+              {dimensionImages.map((image, index) => (
+                <div key={image.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">Image {index + 1}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeDimensionImage(image.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs text-gray-600 mb-1 block">Upload Image</Label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) handleDimensionImageUpload(image.id, file)
+                        }}
+                        className="w-full text-sm"
+                      />
+                    </div>
+                    
+                    {image.file && (
+                      <div className="text-xs text-gray-600">
+                        <p><strong>File:</strong> {image.fileName}</p>
+                        <p><strong>Size:</strong> {(image.fileSize / 1024).toFixed(1)} KB</p>
+                        <p><strong>Type:</strong> {image.fileType}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Dimensions Grid with Editable Headings */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <Label className="text-sm font-medium mb-2 block">Height</Label>
@@ -2909,48 +3090,108 @@ function ProductForm() {
               placeholder="135cm"
             />
           </div>
+          
+          {/* Mattress Size with Editable Heading */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">Mattress Size</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label className="text-sm font-medium block">Heading</Label>
+              <Input 
+                value={dimensions.mattressSizeHeading} 
+                onChange={e => updateDimension('mattressSizeHeading', e.target.value)}
+                placeholder="Mattress Size"
+                className="text-xs"
+              />
+            </div>
             <Input 
               value={dimensions.mattressSize} 
               onChange={e => updateDimension('mattressSize', e.target.value)}
               placeholder="135cm x L 190cm cm"
             />
           </div>
+          
+          {/* Maximum Height with Editable Heading */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">Maximum Height</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label className="text-sm font-medium block">Heading</Label>
+              <Input 
+                value={dimensions.maxHeightHeading} 
+                onChange={e => updateDimension('maxHeightHeading', e.target.value)}
+                placeholder="Maximum Height"
+                className="text-xs"
+              />
+            </div>
             <Input 
               value={dimensions.maxHeight} 
               onChange={e => updateDimension('maxHeight', e.target.value)}
               placeholder="25 cm"
             />
           </div>
+          
+          {/* Weight Capacity with Editable Heading */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">Weight Capacity</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label className="text-sm font-medium block">Heading</Label>
+              <Input 
+                value={dimensions.weightCapacityHeading} 
+                onChange={e => updateDimension('weightCapacityHeading', e.target.value)}
+                placeholder="Weight Capacity"
+                className="text-xs"
+              />
+            </div>
             <Input 
               value={dimensions.weightCapacity} 
               onChange={e => updateDimension('weightCapacity', e.target.value)}
               placeholder="200 kg"
             />
           </div>
+          
+          {/* Pocket Springs with Editable Heading */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">Pocket Springs</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label className="text-sm font-medium block">Heading</Label>
+              <Input 
+                value={dimensions.pocketSpringsHeading} 
+                onChange={e => updateDimension('pocketSpringsHeading', e.target.value)}
+                placeholder="Pocket Springs"
+                className="text-xs"
+              />
+            </div>
             <Input 
               value={dimensions.pocketSprings} 
               onChange={e => updateDimension('pocketSprings', e.target.value)}
               placeholder="1000 count"
             />
           </div>
+          
+          {/* Comfort Layer with Editable Heading */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">Comfort Layer</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label className="text-sm font-medium block">Heading</Label>
+              <Input 
+                value={dimensions.comfortLayerHeading} 
+                onChange={e => updateDimension('comfortLayerHeading', e.target.value)}
+                placeholder="Comfort Layer"
+                className="text-xs"
+              />
+            </div>
             <Input 
               value={dimensions.comfortLayer} 
               onChange={e => updateDimension('comfortLayer', e.target.value)}
               placeholder="8 cm"
             />
           </div>
+          
+          {/* Support Layer with Editable Heading */}
           <div>
-            <Label className="text-sm font-medium mb-2 block">Support Layer</Label>
+            <div className="flex items-center gap-2 mb-2">
+              <Label className="text-sm font-medium block">Heading</Label>
+              <Input 
+                value={dimensions.supportLayerHeading} 
+                onChange={e => updateDimension('supportLayerHeading', e.target.value)}
+                placeholder="Support Layer"
+                className="text-xs"
+              />
+            </div>
             <Input 
               value={dimensions.supportLayer} 
               onChange={e => updateDimension('supportLayer', e.target.value)}

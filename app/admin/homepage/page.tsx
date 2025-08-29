@@ -400,13 +400,13 @@ export default function HomePageAdmin() {
       const filePath = `homepage/${fileName}`
 
       const { error: uploadError } = await supabase.storage
-        .from('images')
+        .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
         .upload(filePath, file)
 
       if (uploadError) throw uploadError
 
       const { data: { publicUrl } } = supabase.storage
-        .from('images')
+        .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
         .getPublicUrl(filePath)
 
       setImageFunction(publicUrl)

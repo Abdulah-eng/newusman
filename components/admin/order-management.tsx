@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Eye, Package, Truck, CheckCircle } from 'lucide-react'
+import { Eye, Package, Truck, CheckCircle, Trash2 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +26,16 @@ export function OrderManagement() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const dispatchOrder = async (id: string) => {
+    await fetch('/api/orders/dispatch', { method: 'POST', body: JSON.stringify({ orderId: id }) })
+    fetchOrders()
+  }
+
+  const deleteOrder = async (id: string) => {
+    await fetch('/api/admin/orders?id=' + id, { method: 'DELETE' })
+    fetchOrders()
   }
 
   const getStatusBadge = (status: string) => {
@@ -86,10 +96,20 @@ export function OrderManagement() {
                     <div className="text-sm text-gray-600">
                       {order.order_items?.length || 0} items
                     </div>
+                    <div className="flex items-center gap-2">
+                    <Button variant="secondary" size="sm" onClick={() => dispatchOrder(order.id)}>
+                      <Truck className="h-4 w-4 mr-2" />
+                      Dispatch
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => deleteOrder(order.id)}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
                     <Button variant="ghost" size="sm">
                       <Eye className="h-4 w-4 mr-2" />
                       View Details
                     </Button>
+                    </div>
                   </div>
                 </div>
               ))}

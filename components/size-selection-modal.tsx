@@ -11,6 +11,10 @@ interface SizeOption {
   inStock: boolean
   wasPrice: number
   currentPrice: number
+  // Variant-specific dimensions
+  length?: string
+  width?: string
+  height?: string
 }
 
 interface SizeSelectionModalProps {
@@ -83,6 +87,19 @@ export function SizeSelectionModal({
                     <div className="flex-1">
                       <h3 className="font-bold text-gray-900 text-lg">{size.name}</h3>
                       <p className="text-sm text-gray-600">{size.dimensions}</p>
+                      
+                                             {/* Variant Dimensions */}
+                       {(size.length || size.width || size.height) && (
+                         <div className="mt-2">
+                           <span className="text-sm text-gray-600">
+                             {size.height && `${size.height}`}
+                             {size.width && size.height && ' × '}
+                             {size.width && `${size.width}`}
+                             {size.length && (size.width || size.height) && ' × '}
+                             {size.length && `${size.length}`}
+                           </span>
+                         </div>
+                       )}
                     </div>
                     
                     {/* Selection Indicator */}

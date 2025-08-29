@@ -48,8 +48,54 @@ export function MegaMenu({ category, isVisible, onClose }: MegaMenuProps) {
   const [products, setProducts] = useState<MegaMenuProduct[]>([])
 
   useEffect(() => {
-    if (!isVisible) return
+    if (!isVisible || !category) {
+      return
+    }
+    let cancelled = false
+    const controller = new AbortController()
+    const load = async () => {
+      try {
+        // Fetch real products for this category from our API
+        const res = await fetch(`/api/products/category/${category}`, { signal: controller.signal })
+        if (!res.ok) return
+        const data = await res.json()
+        if (cancelled) return
+        const apiProducts = (data?.products || []).slice(0, 8)
+        const mapped: MegaMenuProduct[] = apiProducts.map((p: any) => ({
+          id: Number(p.id),
+          name: p.name || p.title || 'Product',
+          brand: p.brand || 'Brand',
+          brandColor: p.brandColor,
+          badge: p.badge,
+          badgeColor: p.badgeColor,
+          image: p.image || p.images?.[0],
+          images: p.images || (p.image ? [p.image] : []),
+          rating: Number(p.rating ?? 4.5),
+          reviewCount: Number(p.reviewCount ?? 0),
+          firmness: p.firmness || p.firmness_description,
+          firmnessLevel: Number(p.firmnessLevel ?? p.firmness_scale ?? 0),
+          features: p.features || p.reasons_to_love || [],
+          originalPrice: Number(p.originalPrice ?? p.original_price ?? p.price ?? 0),
+          currentPrice: Number(p.currentPrice ?? p.current_price ?? p.price ?? 0),
+          savings: Number(p.savings ?? 0),
+          freeDelivery: p.freeDelivery,
+          sizes: p.sizes || [],
+          selectedSize: p.selectedSize,
+          monthlyPrice: p.monthlyPrice,
+          category: p.category || category,
+          price: Number(p.price ?? p.current_price ?? p.currentPrice ?? 0)
+        }))
+        setProducts(mapped)
+      } catch (e) {
+        // ignore abort errors
+      }
+    }
     setProducts([])
+    load()
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
   }, [category, isVisible])
 
   const handleAddToCart = (product: MegaMenuProduct) => {

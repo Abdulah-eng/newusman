@@ -46,7 +46,12 @@ export default async function ProductDetailPage({ params }: PageProps) {
           color: v.color,
           depth: v.depth,
           firmness: v.firmness,
-          size: v.size
+          size: v.size,
+          // Add dimension fields
+          length: v.length,
+          width: v.width,
+          height: v.height,
+          availability: v.availability
         }))
         product = { ...product, variants: normalized }
       }
@@ -103,9 +108,12 @@ export default async function ProductDetailPage({ params }: PageProps) {
     dimensions: product.dimensions || {},
     dispatchTime: product.dispatchTime || product.dispatch_time,
     reasonsToBuy: product.customReasons || product.custom_reasons || [],
-    // Pass through marketing reasons arrays for "Features you'll love"
+    // Pass through product features (same as product cards)
+    features: product.features || [],
+    // Restore marketing reasons arrays for "Features you'll love"
     reasonsToLove: (product.product_reasons_to_love?.map((r: any) => r.reason_text) || product.reasonsToLove || product.reasons_to_love || []),
-    reasonsToLoveDescriptions: (product.product_reasons_to_love?.map((r: any) => r.description).filter(Boolean) || []),
+    reasonsToLoveDescriptions: (product.product_reasons_to_love?.map((r: any) => r.description).filter(Boolean) || product.feature_descriptions || []),
+    reasonsToLoveIcons: (product.product_reasons_to_love?.map((r: any) => r.icon) || product.feature_icons || []),
     customReasons: product.customReasons || product.custom_reasons || [],
     customReasonsDescriptions: (product.custom_reasons || product.customReasons || []).map((r: any) => r?.description).filter(Boolean),
     promotionalOffers: product.promotionalOffers || [],
@@ -118,7 +126,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
     shortDescription: product.shortDescription || product.short_description,
     longDescription: product.longDescription || product.long_description,
     // Add the description paragraphs from database
-    descriptionParagraphs: product.descriptionParagraphs || []
+    descriptionParagraphs: product.descriptionParagraphs || [],
+    // Add dimension images for the dimensions section
+    dimensionImages: product.dimensionImages || []
   }
 
   // Log reasons so you can verify from the terminal during SSR
@@ -143,6 +153,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
     airCirculationLevel: (productDetail as any).airCirculationLevel,
     durabilityLevel: (productDetail as any).durabilityLevel,
   })
+  
+  // Debug dimension images
+  console.log('[Product Detail Page] dimensionImages from API:', product.dimensionImages)
+  console.log('[Product Detail Page] dimensionImages in productDetail:', productDetail.dimensionImages)
   // Debug: log variants clearly for troubleshooting
   try {
     const variants = (productDetail as any).variants || []

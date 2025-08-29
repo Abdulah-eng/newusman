@@ -5,6 +5,8 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Drop existing tables if they exist (in reverse dependency order)
+DROP TABLE IF EXISTS order_items CASCADE;
+DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS product_recommendations CASCADE;
 DROP TABLE IF EXISTS product_popular_categories CASCADE;
 DROP TABLE IF EXISTS product_dimensions CASCADE;
@@ -20,7 +22,7 @@ DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 
 -- Categories table
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(50) NOT NULL UNIQUE,
     slug VARCHAR(50) NOT NULL UNIQUE,
@@ -39,7 +41,7 @@ INSERT INTO categories (name, slug) VALUES
 ON CONFLICT (slug) DO NOTHING;
 
 -- Products table (main product information)
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     category_id UUID NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
@@ -59,7 +61,7 @@ CREATE TABLE products (
 );
 
 -- Product images table
-CREATE TABLE product_images (
+CREATE TABLE IF NOT EXISTS product_images (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     image_url TEXT,
@@ -72,7 +74,7 @@ CREATE TABLE product_images (
 );
 
 -- Product variants table
-CREATE TABLE product_variants (
+CREATE TABLE IF NOT EXISTS product_variants (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     sku VARCHAR(100) UNIQUE,
@@ -83,12 +85,16 @@ CREATE TABLE product_variants (
     depth VARCHAR(100),
     firmness VARCHAR(100),
     size VARCHAR(100),
+    length VARCHAR(100),
+    width VARCHAR(100),
+    height VARCHAR(100),
+    availability BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Product features table
-CREATE TABLE product_features (
+CREATE TABLE IF NOT EXISTS product_features (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     feature_name VARCHAR(255) NOT NULL,
@@ -96,7 +102,7 @@ CREATE TABLE product_features (
 );
 
 -- Product reasons to love table
-CREATE TABLE product_reasons_to_love (
+CREATE TABLE IF NOT EXISTS product_reasons_to_love (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     reason_text VARCHAR(500) NOT NULL,
@@ -105,7 +111,7 @@ CREATE TABLE product_reasons_to_love (
 );
 
 -- Custom reasons to buy table
-CREATE TABLE product_custom_reasons (
+CREATE TABLE IF NOT EXISTS product_custom_reasons (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     reason_text VARCHAR(500) NOT NULL,
@@ -113,7 +119,7 @@ CREATE TABLE product_custom_reasons (
 );
 
 -- Product description paragraphs table
-CREATE TABLE product_description_paragraphs (
+CREATE TABLE IF NOT EXISTS product_description_paragraphs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     heading VARCHAR(255) NOT NULL,
@@ -127,7 +133,7 @@ CREATE TABLE product_description_paragraphs (
 );
 
 -- Product FAQs table
-CREATE TABLE product_faqs (
+CREATE TABLE IF NOT EXISTS product_faqs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     question TEXT NOT NULL,
@@ -137,7 +143,7 @@ CREATE TABLE product_faqs (
 );
 
 -- Product warranty sections table
-CREATE TABLE product_warranty_sections (
+CREATE TABLE IF NOT EXISTS product_warranty_sections (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     heading VARCHAR(255) NOT NULL,
@@ -147,7 +153,7 @@ CREATE TABLE product_warranty_sections (
 );
 
 -- Product dimensions table
-CREATE TABLE product_dimensions (
+CREATE TABLE IF NOT EXISTS product_dimensions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE UNIQUE,
     height VARCHAR(50),
@@ -159,12 +165,30 @@ CREATE TABLE product_dimensions (
     pocket_springs VARCHAR(100),
     comfort_layer VARCHAR(100),
     support_layer VARCHAR(100),
+    mattress_size_heading VARCHAR(100) DEFAULT 'Mattress Size',
+    maximum_height_heading VARCHAR(100) DEFAULT 'Maximum Height',
+    weight_capacity_heading VARCHAR(100) DEFAULT 'Weight Capacity',
+    pocket_springs_heading VARCHAR(100) DEFAULT 'Pocket Springs',
+    comfort_layer_heading VARCHAR(100) DEFAULT 'Comfort Layer',
+    support_layer_heading VARCHAR(100) DEFAULT 'Support Layer',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Product dimension images table
+CREATE TABLE IF NOT EXISTS product_dimension_images (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    image_url TEXT NOT NULL,
+    file_name VARCHAR(255),
+    file_size INTEGER,
+    file_type VARCHAR(100),
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Product popular categories table
-CREATE TABLE product_popular_categories (
+CREATE TABLE IF NOT EXISTS product_popular_categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     popular_category_name VARCHAR(100) NOT NULL,
@@ -175,7 +199,7 @@ CREATE TABLE product_popular_categories (
 );
 
 -- Product recommended products table
-CREATE TABLE product_recommendations (
+CREATE TABLE IF NOT EXISTS product_recommendations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     recommended_product_id UUID REFERENCES products(id) ON DELETE CASCADE,
@@ -212,6 +236,34 @@ CREATE INDEX IF NOT EXISTS idx_product_images_product_id ON product_images(produ
 CREATE INDEX IF NOT EXISTS idx_product_features_product_id ON product_features(product_id);
 CREATE INDEX IF NOT EXISTS idx_product_reasons_product_id ON product_reasons_to_love(product_id);
 CREATE INDEX IF NOT EXISTS idx_product_popular_categories_product_id ON product_popular_categories(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_dimension_images_product_id ON product_dimension_images(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_dimension_images_sort_order ON product_dimension_images(sort_order);
+
+-- Orders table
+CREATE TABLE IF NOT EXISTS orders (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    order_number VARCHAR(32) UNIQUE,
+    stripe_session_id TEXT,
+    customer_name TEXT,
+    customer_email TEXT NOT NULL,
+    shipping_address JSONB,
+    billing_address JSONB,
+    total_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending | dispatched | cancelled
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Order items store only SKU and quantity (plus unit price snapshot)
+CREATE TABLE IF NOT EXISTS order_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    sku VARCHAR(100) NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    unit_price DECIMAL(10,2) NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 
 -- Drop existing trigger function if it exists
 DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
@@ -251,6 +303,9 @@ ALTER TABLE product_warranty_sections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_dimensions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_popular_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_recommendations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_dimension_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Allow all operations" ON products;
@@ -265,6 +320,9 @@ DROP POLICY IF EXISTS "Allow all operations" ON product_warranty_sections;
 DROP POLICY IF EXISTS "Allow all operations" ON product_dimensions;
 DROP POLICY IF EXISTS "Allow all operations" ON product_popular_categories;
 DROP POLICY IF EXISTS "Allow all operations" ON product_recommendations;
+DROP POLICY IF EXISTS "Allow all operations" ON product_dimension_images;
+DROP POLICY IF EXISTS "Allow all operations" ON orders;
+DROP POLICY IF EXISTS "Allow all operations" ON order_items;
 
 -- For now, allow all operations (you can restrict this later with proper auth)
 CREATE POLICY "Allow all operations" ON products FOR ALL USING (true);
@@ -279,6 +337,9 @@ CREATE POLICY "Allow all operations" ON product_warranty_sections FOR ALL USING 
 CREATE POLICY "Allow all operations" ON product_dimensions FOR ALL USING (true);
 CREATE POLICY "Allow all operations" ON product_popular_categories FOR ALL USING (true);
 CREATE POLICY "Allow all operations" ON product_recommendations FOR ALL USING (true);
+CREATE POLICY "Allow all operations" ON product_dimension_images FOR ALL USING (true);
+CREATE POLICY "Allow all operations" ON orders FOR ALL USING (true);
+CREATE POLICY "Allow all operations" ON order_items FOR ALL USING (true);
 
 -- Success message
 SELECT 'Database schema created successfully!' as status;
