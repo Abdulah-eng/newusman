@@ -8,6 +8,9 @@ export async function GET(
   try {
     const { id } = await params
 
+    // OPTIMIZATION: Add caching headers for better performance
+    const cacheControl = 'public, s-maxage=300, stale-while-revalidate=600' // Cache for 5 minutes, stale for 10 minutes
+
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     if (!uuidRegex.test(id)) {
@@ -239,6 +242,10 @@ export async function GET(
 
     return NextResponse.json({
       product: transformedProduct
+    }, {
+      headers: {
+        'Cache-Control': cacheControl
+      }
     })
 
   } catch (error) {

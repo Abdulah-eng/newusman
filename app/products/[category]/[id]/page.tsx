@@ -4,6 +4,178 @@ import Image from "next/image"
 import { Check, Star } from "lucide-react"
 import { ProductDetailHappy } from "@/components/product-detail-happy"
 import { ProductGridNew } from "@/components/product-grid-new"
+import { Suspense } from "react"
+
+// Lazy load components for better performance
+const LazyReviewsSection = ({ productDetail }: { productDetail: any }) => (
+  <div className="mt-10 border border-gray-200 rounded-xl p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-orange-50 to-blue-50">
+    <div className="text-center mb-6 sm:mb-8">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">Customer Reviews</h2>
+      <div className="flex items-center justify-center gap-2 sm:gap-4 mb-4">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className={`h-4 w-4 sm:h-5 sm:w-5 ${i < (productDetail.rating || 4) ? "text-orange-500 fill-current" : "text-gray-300"}`} />
+            ))}
+          </div>
+          <span className="text-base sm:text-lg font-semibold text-gray-700">{productDetail.rating || 4.0}</span>
+        </div>
+        <span className="text-gray-500">•</span>
+        <span className="text-sm sm:text-base text-gray-600">Based on {productDetail.reviewCount || 0} reviews</span>
+      </div>
+      <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">Real customers share their experience with the {productDetail.name}</p>
+    </div>
+
+    {/* Review Grid */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      {/* Review 1 */}
+      <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center">
+            <span className="text-white font-semibold text-base sm:text-lg">S</span>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Sarah M.</h4>
+            <div className="flex items-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${i < 5 ? "text-orange-500 fill-current" : "text-gray-300"}`} />
+              ))}
+            </div>
+          </div>
+        </div>
+        <p className="text-sm sm:text-base text-gray-700 mb-4">"Absolutely love this mattress! The medium-firm feel is perfect and the pocket springs provide amazing support. I wake up feeling refreshed every morning."</p>
+        <div className="text-xs sm:text-sm text-gray-500">Verified Purchase • 2 weeks ago</div>
+      </div>
+
+      {/* Review 2 */}
+      <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center">
+            <span className="text-white font-semibold text-base sm:text-lg">M</span>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Michael R.</h4>
+            <div className="flex items-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${i < 4 ? "text-orange-500 fill-current" : "text-gray-300"}`} />
+              ))}
+            </div>
+          </div>
+        </div>
+        <p className="text-sm sm:text-base text-gray-700 mb-4">"Great value for money! The memory foam layer is so comfortable and the delivery was super fast. My back pain has significantly improved."</p>
+        <div className="text-xs sm:text-sm text-gray-500">Verified Purchase • 1 month ago</div>
+      </div>
+
+      {/* Review 3 */}
+      <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-green-400 to-teal-400 flex items-center justify-center">
+            <span className="text-white font-semibold text-base sm:text-lg">E</span>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Emma L.</h4>
+            <div className="flex items-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${i < 5 ? "text-orange-500 fill-current" : "text-gray-300"}`} />
+              ))}
+            </div>
+          </div>
+        </div>
+        <p className="text-sm sm:text-base text-gray-700 mb-4">"Perfect mattress for our guest room! Guests always compliment how comfortable it is. The quality is excellent and it looks great too."</p>
+        <div className="text-xs sm:text-sm text-gray-500">Verified Purchase • 3 weeks ago</div>
+      </div>
+
+      {/* Review 4 */}
+      <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-pink-400 to-red-400 flex items-center justify-center">
+            <span className="text-white font-semibold text-base sm:text-lg">D</span>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">David K.</h4>
+            <div className="flex items-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${i < 4 ? "text-orange-500 fill-current" : "text-gray-300"}`} />
+              ))}
+            </div>
+          </div>
+        </div>
+        <p className="text-sm sm:text-base text-gray-700 mb-4">"Switched from a much more expensive mattress and honestly prefer this one! The pocket springs are fantastic and it stays cool throughout the night."</p>
+        <div className="text-xs sm:text-sm text-gray-500">Verified Purchase • 2 months ago</div>
+      </div>
+
+      {/* Review 5 */}
+      <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-yellow-400 to-orange-400 flex items-center justify-center">
+            <span className="text-white font-semibold text-base sm:text-lg">L</span>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Lisa P.</h4>
+            <div className="flex items-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${i < 5 ? "text-orange-500 fill-current" : "text-gray-300"}`} />
+              ))}
+            </div>
+          </div>
+        </div>
+        <p className="text-sm sm:text-base text-gray-700 mb-4">"Best mattress I've ever owned! The combination of pocket springs and memory foam is perfect. No more tossing and turning at night."</p>
+        <div className="text-xs sm:text-sm text-gray-500">Verified Purchase • 1 week ago</div>
+      </div>
+
+      {/* Review 6 */}
+      <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-indigo-400 to-blue-400 flex items-center justify-center">
+            <span className="text-white font-semibold text-base sm:text-lg">J</span>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">James W.</h4>
+            <div className="flex items-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${i < 4 ? "text-orange-500 fill-current" : "text-gray-300"}`} />
+              ))}
+            </div>
+          </div>
+        </div>
+        <p className="text-sm sm:text-base text-gray-700 mb-4">"Excellent mattress for the price! The quality is outstanding and it's incredibly comfortable. Highly recommend to anyone looking for a great mattress."</p>
+        <div className="text-xs sm:text-sm text-gray-500">Verified Purchase • 1 month ago</div>
+      </div>
+    </div>
+
+    {/* Review Stats */}
+    <div className="mt-6 sm:mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+      <div className="text-center">
+        <div className="text-2xl sm:text-3xl font-bold text-orange-600 mb-2">98%</div>
+        <div className="text-xs sm:text-sm text-gray-600">Would Recommend</div>
+      </div>
+      <div className="text-center">
+        <div className="text-2xl sm:text-3xl font-bold text-orange-600 mb-2">{productDetail.rating || 4.0}/5</div>
+        <div className="text-xs sm:text-sm text-gray-600">Average Rating</div>
+      </div>
+      <div className="text-center">
+        <div className="text-2xl sm:text-3xl font-bold text-orange-600 mb-2">{productDetail.reviewCount || 0}</div>
+        <div className="text-xs sm:text-sm text-gray-600">Total Reviews</div>
+      </div>
+      <div className="text-center">
+        <div className="text-2xl sm:text-3xl font-bold text-orange-600 mb-2">5★</div>
+        <div className="text-xs sm:text-sm text-gray-600">Most Common</div>
+      </div>
+    </div>
+
+    {/* Write Review Button */}
+    <div className="text-center mt-6 sm:mt-8">
+      <button 
+        className="bg-orange-600 hover:bg-orange-700 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 mx-auto text-sm sm:text-base"
+      >
+        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+        Write a Review
+      </button>
+    </div>
+  </div>
+)
 
 interface PageProps {
   params: { category: string; id: string }
@@ -13,7 +185,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const { category, id } = await params
 
   // Resolve a robust base URL for server-side fetches (works in dev/prod)
-  const hdrs = headers()
+  const hdrs = await headers()
   const host = hdrs.get('host') || 'localhost:3000'
   const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http'
   const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL && process.env.NEXT_PUBLIC_BASE_URL.trim().length > 0)
@@ -108,8 +280,6 @@ export default async function ProductDetailPage({ params }: PageProps) {
     dimensions: product.dimensions || {},
     dispatchTime: product.dispatchTime || product.dispatch_time,
     reasonsToBuy: product.customReasons || product.custom_reasons || [],
-    // Pass through product features (same as product cards)
-    features: product.features || [],
     // Restore marketing reasons arrays for "Features you'll love"
     reasonsToLove: (product.product_reasons_to_love?.map((r: any) => r.reason_text) || product.reasonsToLove || product.reasons_to_love || []),
     reasonsToLoveDescriptions: (product.product_reasons_to_love?.map((r: any) => r.description).filter(Boolean) || product.feature_descriptions || []),
@@ -264,173 +434,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
         )}
 
         {/* Product Reviews Section */}
-        <div className="mt-10 border border-gray-200 rounded-xl p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-orange-50 to-blue-50">
-          <div className="text-center mb-6 sm:mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">Customer Reviews</h2>
-            <div className="flex items-center justify-center gap-2 sm:gap-4 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`h-4 w-4 sm:h-5 sm:w-5 ${i < (productDetail.rating || 4) ? "text-orange-500 fill-current" : "text-gray-300"}`} />
-                  ))}
-                </div>
-                <span className="text-base sm:text-lg font-semibold text-gray-700">{productDetail.rating || 4.0}</span>
-              </div>
-              <span className="text-gray-500">•</span>
-              <span className="text-sm sm:text-base text-gray-600">Based on {productDetail.reviewCount || 0} reviews</span>
-            </div>
-            <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">Real customers share their experience with the {productDetail.name}</p>
-          </div>
-
-          {/* Review Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {/* Review 1 */}
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100">
-              <div className="flex items-center gap-3 sm:gap-4 mb-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center">
-                  <span className="text-white font-semibold text-base sm:text-lg">S</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Sarah M.</h4>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${i < 5 ? "text-orange-500 fill-current" : "text-gray-300"}`} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm sm:text-base text-gray-700 mb-4">"Absolutely love this mattress! The medium-firm feel is perfect and the pocket springs provide amazing support. I wake up feeling refreshed every morning."</p>
-              <div className="text-xs sm:text-sm text-gray-500">Verified Purchase • 2 weeks ago</div>
-            </div>
-
-            {/* Review 2 */}
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100">
-              <div className="flex items-center gap-3 sm:gap-4 mb-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center">
-                  <span className="text-white font-semibold text-base sm:text-lg">M</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Michael R.</h4>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${i < 4 ? "text-orange-500 fill-current" : "text-gray-300"}`} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm sm:text-base text-gray-700 mb-4">"Great value for money! The memory foam layer is so comfortable and the delivery was super fast. My back pain has significantly improved."</p>
-              <div className="text-xs sm:text-sm text-gray-500">Verified Purchase • 1 month ago</div>
-            </div>
-
-            {/* Review 3 */}
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100">
-              <div className="flex items-center gap-3 sm:gap-4 mb-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-green-400 to-teal-400 flex items-center justify-center">
-                  <span className="text-white font-semibold text-base sm:text-lg">E</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Emma L.</h4>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${i < 5 ? "text-orange-500 fill-current" : "text-gray-300"}`} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm sm:text-base text-gray-700 mb-4">"Perfect mattress for our guest room! Guests always compliment how comfortable it is. The quality is excellent and it looks great too."</p>
-              <div className="text-xs sm:text-sm text-gray-500">Verified Purchase • 3 weeks ago</div>
-            </div>
-
-            {/* Review 4 */}
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100">
-              <div className="flex items-center gap-3 sm:gap-4 mb-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-pink-400 to-red-400 flex items-center justify-center">
-                  <span className="text-white font-semibold text-base sm:text-lg">D</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 text-sm sm:text-base">David K.</h4>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${i < 4 ? "text-orange-500 fill-current" : "text-gray-300"}`} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm sm:text-base text-gray-700 mb-4">"Switched from a much more expensive mattress and honestly prefer this one! The pocket springs are fantastic and it stays cool throughout the night."</p>
-              <div className="text-xs sm:text-sm text-gray-500">Verified Purchase • 2 months ago</div>
-            </div>
-
-            {/* Review 5 */}
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100">
-              <div className="flex items-center gap-3 sm:gap-4 mb-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-yellow-400 to-orange-400 flex items-center justify-center">
-                  <span className="text-white font-semibold text-base sm:text-lg">L</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Lisa P.</h4>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${i < 5 ? "text-orange-500 fill-current" : "text-gray-300"}`} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm sm:text-base text-gray-700 mb-4">"Best mattress I've ever owned! The combination of pocket springs and memory foam is perfect. No more tossing and turning at night."</p>
-              <div className="text-xs sm:text-sm text-gray-500">Verified Purchase • 1 week ago</div>
-            </div>
-
-            {/* Review 6 */}
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100">
-              <div className="flex items-center gap-3 sm:gap-4 mb-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-indigo-400 to-blue-400 flex items-center justify-center">
-                  <span className="text-white font-semibold text-base sm:text-lg">J</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 text-sm sm:text-base">James W.</h4>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${i < 4 ? "text-orange-500 fill-current" : "text-gray-300"}`} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm sm:text-base text-gray-700 mb-4">"Excellent mattress for the price! The quality is outstanding and it's incredibly comfortable. Highly recommend to anyone looking for a great mattress."</p>
-              <div className="text-xs sm:text-sm text-gray-500">Verified Purchase • 1 month ago</div>
-            </div>
-          </div>
-
-          {/* Review Stats */}
-          <div className="mt-6 sm:mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-            <div className="text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-orange-600 mb-2">98%</div>
-              <div className="text-xs sm:text-sm text-gray-600">Would Recommend</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-orange-600 mb-2">{productDetail.rating || 4.0}/5</div>
-              <div className="text-xs sm:text-sm text-gray-600">Average Rating</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-orange-600 mb-2">{productDetail.reviewCount || 0}</div>
-              <div className="text-xs sm:text-sm text-gray-600">Total Reviews</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-orange-600 mb-2">5★</div>
-              <div className="text-xs sm:text-sm text-gray-600">Most Common</div>
-            </div>
-          </div>
-
-          {/* Write Review Button */}
-          <div className="text-center mt-6 sm:mt-8">
-            <button 
-              className="bg-orange-600 hover:bg-orange-700 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 mx-auto text-sm sm:text-base"
-            >
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Write a Review
-            </button>
-          </div>
-        </div>
+        <Suspense fallback={<div>Loading reviews...</div>}>
+          <LazyReviewsSection productDetail={productDetail} />
+        </Suspense>
       </div>
       <ProductGridNew products={alsoViewed} title="Customers also viewed" />
     </div>

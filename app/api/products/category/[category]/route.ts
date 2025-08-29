@@ -8,6 +8,9 @@ export async function GET(
   try {
     const { category } = await params
 
+    // OPTIMIZATION: Add caching headers for better performance
+    const cacheControl = 'public, s-maxage=300, stale-while-revalidate=600' // Cache for 5 minutes, stale for 10 minutes
+
     // Handle special cases for kids and sales categories
     if (category === 'kids') {
       console.log('🔍 Kids Category: Fetching products with show_in_kids_category = true')
@@ -266,6 +269,10 @@ export async function GET(
       return NextResponse.json({
         products: transformedProducts,
         count: transformedProducts.length
+      }, {
+        headers: {
+          'Cache-Control': cacheControl
+        }
       })
     }
 
@@ -413,6 +420,10 @@ export async function GET(
     return NextResponse.json({
       products: transformedProducts,
       count: transformedProducts.length
+    }, {
+      headers: {
+        'Cache-Control': cacheControl
+      }
     })
 
   } catch (error) {
