@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
 			color,
 			depth,
 			firmness,
-			size
+			size,
+			variantImage
 		} = body || {}
 
 		if (!productId) {
@@ -59,7 +60,8 @@ export async function POST(req: NextRequest) {
 				color: color || null,
 				depth: depth || null,
 				firmness: firmness || null,
-				size: size || null
+				size: size || null,
+				variant_image: variantImage || null
 			})
 			.select()
 			.single()
@@ -77,7 +79,7 @@ export async function POST(req: NextRequest) {
 }
 
 // PUT /api/variants -> update a variant
-// Body: { variantId: string, sku?, originalPrice?, currentPrice?, color?, depth?, firmness?, size? }
+// Body: { variantId: string, sku?, originalPrice?, currentPrice?, color?, depth?, firmness?, size?, variantImage? }
 export async function PUT(req: NextRequest) {
 	try {
 		const body = await req.json()
@@ -89,7 +91,8 @@ export async function PUT(req: NextRequest) {
 			color,
 			depth,
 			firmness,
-			size
+			size,
+			variantImage
 		} = body || {}
 
 		if (!variantId) {
@@ -104,6 +107,7 @@ export async function PUT(req: NextRequest) {
 		if (depth !== undefined) update.depth = depth
 		if (firmness !== undefined) update.firmness = firmness
 		if (size !== undefined) update.size = size
+		if (variantImage !== undefined) update.variant_image = variantImage
 
 		const { data, error } = await supabase
 			.from('product_variants')

@@ -165,7 +165,9 @@ export async function GET(
         length: variant.length,
         width: variant.width,
         height: variant.height,
-        availability: variant.availability
+        availability: variant.availability,
+        // Add variant image
+        variant_image: variant.variant_image
       })) || [],
       features: product.product_features?.map((feature: any) => feature.feature_name) || [],
       reasonsToLove: product.product_reasons_to_love?.map((reason: any) => reason.reason_text) || [],

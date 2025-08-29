@@ -266,7 +266,8 @@ export async function POST(request: NextRequest) {
             length: variant?.length ?? null,
             width: variant?.width ?? null,
             height: variant?.height ?? null,
-            availability: variant?.availability ?? true
+            availability: variant?.availability ?? true,
+            variant_image: variant?.variant_image ?? null
           }
           // Per-row debug
           console.log(`[Save Product] variant[${index}] mapped row:`, row)

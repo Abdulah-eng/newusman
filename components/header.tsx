@@ -40,7 +40,7 @@ export default function Header() {
     // Add a small delay before closing to allow moving to dropdown
     const timeout = setTimeout(() => {
     setActiveDropdown(null)
-    }, 150) // 150ms delay
+    }, 200) // 200ms delay
     setHoverTimeout(timeout)
   }
 
@@ -551,11 +551,11 @@ export default function Header() {
           )}
 
           {/* Product Dropdowns */}
-          <div className="absolute top-full left-0 w-full z-50">
+          <div className="absolute top-full left-0 w-full z-50 transition-all duration-200">
                   {/* Mattresses Content */}
                   {activeDropdown === 'mattresses' && (
               <div 
-                className="w-full bg-white shadow-2xl border-t border-gray-100"
+                className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
                 onMouseEnter={() => handleCategoryHover('mattresses')}
                 onMouseLeave={handleCategoryLeave}
               >
@@ -872,7 +872,7 @@ export default function Header() {
                   {/* Beds Content */}
                   {activeDropdown === 'beds' && (
               <div 
-                className="w-full bg-white shadow-2xl border-t border-gray-100"
+                className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
                 onMouseEnter={() => handleCategoryHover('beds')}
                 onMouseLeave={handleCategoryLeave}
               >
@@ -1126,7 +1126,7 @@ export default function Header() {
                   {/* Sofas Content */}
                   {activeDropdown === 'sofas' && (
               <div 
-                className="w-full bg-white shadow-2xl border-t border-gray-100"
+                className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
                 onMouseEnter={() => handleCategoryHover('sofas')}
                 onMouseLeave={handleCategoryLeave}
               >
@@ -1414,7 +1414,11 @@ export default function Header() {
 
                   {/* Pillows Content */}
                   {activeDropdown === 'pillows' && (
-              <div className="w-full bg-white shadow-2xl border-t border-gray-100">
+              <div 
+                className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
+                onMouseEnter={() => handleCategoryHover('pillows')}
+                onMouseLeave={handleCategoryLeave}
+              >
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-4 gap-4">
                       {/* Product Card 1 */}
@@ -1531,7 +1535,11 @@ export default function Header() {
 
                   {/* Toppers Content */}
                   {activeDropdown === 'toppers' && (
-              <div className="w-full bg-white shadow-2xl border-t border-gray-100">
+              <div 
+                className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
+                onMouseEnter={() => handleCategoryHover('toppers')}
+                onMouseLeave={handleCategoryLeave}
+              >
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-4 gap-4">
                       {/* Product Card 1 */}
@@ -1648,7 +1656,11 @@ export default function Header() {
 
                   {/* Bunkbeds Content */}
                   {activeDropdown === 'bunkbeds' && (
-              <div className="w-full bg-white shadow-2xl border-t border-gray-100">
+              <div 
+                className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
+                onMouseEnter={() => handleCategoryHover('bunkbeds')}
+                onMouseLeave={handleCategoryLeave}
+              >
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-4 gap-4">
                       {/* Product Card 1 */}
@@ -1765,7 +1777,11 @@ export default function Header() {
 
                   {/* Kids Content */}
                   {activeDropdown === 'kids' && (
-              <div className="w-full bg-white shadow-2xl border-t border-gray-100">
+              <div 
+                className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
+                onMouseEnter={() => handleCategoryHover('kids')}
+                onMouseLeave={handleCategoryLeave}
+              >
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-5 gap-2">
                     {/* Category Name & Image - Left Side */}
@@ -1929,7 +1945,11 @@ export default function Header() {
 
                   {/* Guide Content */}
                   {activeDropdown === 'guides' && (
-              <div className="w-full bg-white shadow-2xl border-t border-gray-100">
+              <div 
+                className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
+                onMouseEnter={() => handleCategoryHover('guides')}
+                onMouseLeave={handleCategoryLeave}
+              >
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-4 gap-4">
                       {/* Product Card 1 */}

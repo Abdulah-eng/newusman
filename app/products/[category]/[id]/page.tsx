@@ -223,7 +223,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
           length: v.length,
           width: v.width,
           height: v.height,
-          availability: v.availability
+          availability: v.availability,
+          // Add variant image
+          variant_image: v.variant_image
         }))
         product = { ...product, variants: normalized }
       }

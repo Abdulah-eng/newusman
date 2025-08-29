@@ -411,7 +411,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
               }
             })
             setBasketSidebarOpen(true)
-            setIsAutoSelectionMode(false)
+          setIsAutoSelectionMode(false)
           }, 100)
         }
       }, 150) // Increased delay to ensure size modal is fully closed and lastSelection is set
@@ -444,7 +444,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
                 }
               })
               setBasketSidebarOpen(true)
-              setIsAutoSelectionMode(false)
+        setIsAutoSelectionMode(false)
             }, 100)
           } else if (!selectedSize) {
             // Size is missing, open size modal
@@ -453,7 +453,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
         } else if (hasSizes && !selectedSize) {
           // Only size is required and not selected
           setSizeModalOpen(true)
-        } else {
+    } else {
           // No more selections needed, add to cart directly
           setTimeout(() => {
             // Directly add to cart without validation to avoid reopening modals
@@ -848,7 +848,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
       } else if (hasColors && !selectedColor && lastSelection !== 'color') {
         startSmartSelectionWithPriority('color')
       } else {
-        startSmartSelection()
+      startSmartSelection()
       }
 
       return
@@ -1813,15 +1813,32 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
             {/* Main Large Image */}
 
-            <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-gray-50 cursor-pointer mb-4" onClick={() => {
-
+            <div 
+              className="relative w-full h-96 lg:h-[28rem] xl:h-[32rem] rounded-xl overflow-hidden bg-gray-50 cursor-pointer mb-4 flex items-center justify-center group" 
+              onClick={() => {
               const currentIndex = gallery.findIndex(img => img === selectedImage);
-
               setModalImageIndex(currentIndex >= 0 ? currentIndex : 0);
-
               setImageModalOpen(true);
-
-            }}>
+              }}
+              onKeyDown={(e) => {
+                if (gallery.length > 1) {
+                  if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    const currentIndex = gallery.findIndex(img => img === selectedImage);
+                    const newIndex = currentIndex > 0 ? currentIndex - 1 : gallery.length - 1;
+                    setSelectedImage(gallery[newIndex]);
+                  } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    const currentIndex = gallery.findIndex(img => img === selectedImage);
+                    const newIndex = currentIndex < gallery.length - 1 ? currentIndex + 1 : 0;
+                    setSelectedImage(gallery[newIndex]);
+                  }
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label={`View ${product.name} image gallery`}
+            >
 
               <Image 
 
@@ -1831,7 +1848,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                 fill 
 
-                className="object-cover"
+                className="object-contain"
 
                 priority
 
@@ -1847,6 +1864,47 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
               />
 
+              {/* Navigation Arrows - Only show when gallery has multiple images */}
+              {gallery.length > 1 && (
+                <>
+                  {/* Left Arrow */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const currentIndex = gallery.findIndex(img => img === selectedImage);
+                      const newIndex = currentIndex > 0 ? currentIndex - 1 : gallery.length - 1;
+                      setSelectedImage(gallery[newIndex]);
+                    }}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-xl transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100 z-20 border border-gray-200 hover:border-gray-300"
+                    aria-label="Previous image"
+                  >
+                    <svg className="w-6 h-6 text-gray-700 hover:text-gray-900 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Right Arrow */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const currentIndex = gallery.findIndex(img => img === selectedImage);
+                      const newIndex = currentIndex < gallery.length - 1 ? currentIndex + 1 : 0;
+                      setSelectedImage(gallery[newIndex]);
+                    }}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white/95 hover:bg-white rounded-full flex items-center justify-center shadow-xl transition-all duration-300 hover:scale-110 opacity-0 group-hover:opacity-100 z-20 border border-gray-200 hover:border-gray-300"
+                    aria-label="Next image"
+                  >
+                    <svg className="w-6 h-6 text-gray-700 hover:text-gray-900 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+
+                  {/* Image Counter Indicator */}
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 shadow-lg border border-white/20">
+                    {gallery.findIndex(img => img === selectedImage) + 1} / {gallery.length}
+                  </div>
+                </>
+              )}
             </div>
 
             
@@ -2346,21 +2404,99 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
               ) : (
 
-                /* Show placeholder when no database features exist */
+                /* Show fallback features with descriptions when no database features exist */
 
-                <div className="text-center py-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
 
-                  <div className="w-16 h-16 mx-auto mb-4 text-gray-400">
+                  {productFeatures.map((feature, idx) => {
 
-                    <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    const getFallbackDescription = (label: string) => {
+                      const text = label.toLowerCase()
+                      
+                      // Mattress-specific descriptions
+                      if (text.includes('pocket') || text.includes('spring')) {
+                        return "Individually pocketed springs work to give you support exactly where you need it."
+                      }
+                      if (text.includes('memory') || text.includes('foam')) {
+                        return "Advanced memory foam technology that contours to your body shape for ultimate comfort."
+                      }
+                      if (text.includes('cool') || text.includes('breath') || text.includes('air')) {
+                        return "Breathable materials and air circulation technology keep you cool throughout the night."
+                      }
+                      if (text.includes('gel') || text.includes('temperature')) {
+                        return "Temperature-regulating gel technology adapts to your body heat for optimal sleep."
+                      }
+                      if (text.includes('edge')) {
+                        return "Reinforced edge support provides consistent comfort from center to edge."
+                      }
+                      if (text.includes('firm')) {
+                        return "Optimal firmness level provides the perfect balance of support and comfort."
+                      }
+                      if (text.includes('anti') || text.includes('bacterial') || text.includes('microbial')) {
+                        return "Anti-microbial treatment protects against bacteria and allergens for a healthier sleep environment."
+                      }
+                      if (text.includes('eco') || text.includes('organic') || text.includes('sustain')) {
+                        return "Eco-friendly materials made from sustainable and organic sources."
+                      }
+                      if (text.includes('waterproof') || text.includes('cover')) {
+                        return "Waterproof cover protects your mattress from spills and accidents."
+                      }
+                      if (text.includes('warranty')) {
+                        return "Comprehensive warranty coverage gives you peace of mind for years to come."
+                      }
+                      if (text.includes('support') || text.includes('orth')) {
+                        return "Orthopedic support system designed to promote proper spinal alignment."
+                      }
+                      if (text.includes('hypo') || text.includes('allergen')) {
+                        return "Hypoallergenic materials perfect for those with sensitive skin or allergies."
+                      }
+                      if (text.includes('delivery') || text.includes('shipping')) {
+                        return "Fast and reliable delivery service to get your mattress to you quickly."
+                      }
+                      if (text.includes('washable') || text.includes('removable')) {
+                        return "Easy-care removable and washable covers for simple maintenance."
+                      }
+                      if (text.includes('value') || text.includes('price') || text.includes('save')) {
+                        return "Exceptional value with premium quality at an affordable price point."
+                      }
+                      if (text.includes('durable') || text.includes('long')) {
+                        return "Built to last with durable materials and expert craftsmanship."
+                      }
+                      if (text.includes('luxury') || text.includes('premium')) {
+                        return "Luxury quality materials and construction for the ultimate sleep experience."
+                      }
+                      if (text.includes('wood')) {
+                        return "Premium solid wood construction ensures durability and timeless beauty."
+                      }
+                      if (text.includes('metal') || text.includes('frame')) {
+                        return "Sturdy metal frame construction provides reliable support and stability."
+                      }
+                      if (text.includes('upholstery') || text.includes('headboard')) {
+                        return "Beautiful upholstered headboard adds elegance and comfort to your bedroom."
+                      }
+                      if (text.includes('construction') || text.includes('built')) {
+                        return "Expert craftsmanship and quality construction for lasting performance."
+                      }
+                      if (text.includes('design') || text.includes('style')) {
+                        return "Contemporary design that complements any bedroom decor style."
+                      }
+                      
+                      // Default description
+                      return "Premium feature designed to enhance your comfort and satisfaction."
+                    }
 
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-
-                    </svg>
-
+                    return (
+                      <div key={`fallback-${feature.label}-${idx}`} className="text-center min-w-0">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 text-orange-500 flex items-center justify-center">
+                          {typeof feature.Icon === 'function' ? <feature.Icon /> : null}
                   </div>
-
-                  <p className="text-gray-500 text-sm">Features will be displayed here when available from database</p>
+                        <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 break-words">{feature.label}</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                          {getFallbackDescription(feature.label)}
+                        </p>
+                      </div>
+                    )
+                  })}
 
               </div>
 
@@ -4188,7 +4324,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
             <div className="border-0 rounded-lg p-4 bg-white mb-2 cursor-pointer" onClick={() => startSmartSelectionWithPriority('color')}>
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
                   <div className="w-6 h-6 text-gray-600">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"/>
@@ -4199,12 +4335,12 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
                   </span>
                 </div>
                 <div className="w-6 h-6 text-gray-600">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
-                  </svg>
+                    </svg>
+                </div>
                 </div>
               </div>
-            </div>
 
 
 

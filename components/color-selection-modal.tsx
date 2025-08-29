@@ -44,6 +44,7 @@ interface ColorSelectionModalProps {
     firmness?: string
     size?: string
     currentPrice?: number
+    variant_image?: string
   }>
 }
 
@@ -272,6 +273,27 @@ export function ColorSelectionModal({
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600 font-medium">Color:</span>
                       <span className="font-semibold text-gray-900">{localSelectedColor}</span>
+                      {(() => {
+                        if (!variants || !localSelectedColor) return null
+                        
+                        // Find the variant image for the selected color
+                        const selectedVariant = variants.find(v => 
+                          v.color === localSelectedColor && 
+                          (!selectedSize || v.size === selectedSize)
+                        )
+                        
+                        if (!selectedVariant?.variant_image) return null
+                        
+                        return (
+                          <div className="w-8 h-8 rounded-md overflow-hidden border border-gray-300 shadow-sm ml-2">
+                            <img 
+                              src={selectedVariant.variant_image} 
+                              alt={`${localSelectedColor} variant`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )
+                      })()}
                     </div>
                   )}
                   {!showOnlyColors && localSelectedDepth && (
@@ -386,27 +408,55 @@ export function ColorSelectionModal({
                         <div className="flex items-center gap-4">
                           {/* Color Swatch */}
                           <div className="flex-shrink-0">
-                            {color.image ? (
-                              <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200 shadow-lg">
-                                <img 
-                                  src={color.image} 
-                                  alt={color.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            ) : (
-                              <div 
-                                className="w-16 h-16 rounded-lg border-2 shadow-lg relative overflow-hidden"
-                                style={{ 
-                                  backgroundColor: color.hex || '#f3f4f6',
-                                  backgroundImage: color.hex ? 'none' : 'linear-gradient(45deg, #f3f4f6 25%, transparent 25%), linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f3f4f6 75%), linear-gradient(-45deg, transparent 75%, #f3f4f6 75%)',
-                                  backgroundSize: '20px 20px',
-                                  backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
-                                }}
-                              >
-                                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                              </div>
-                            )}
+                            {(() => {
+                              // First try to find variant image for this color
+                              if (variants && variants.length > 0) {
+                                const variantWithImage = variants.find(v => 
+                                  v.color === color.name && 
+                                  (!selectedSize || v.size === selectedSize) &&
+                                  v.variant_image
+                                )
+                                
+                                if (variantWithImage?.variant_image) {
+                                  return (
+                                    <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200 shadow-lg">
+                                      <img 
+                                        src={variantWithImage.variant_image} 
+                                        alt={`${color.name} variant`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  )
+                                }
+                              }
+                              
+                              // Fallback to original color.image or color swatch
+                              if (color.image) {
+                                return (
+                                  <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200 shadow-lg">
+                                    <img 
+                                      src={color.image} 
+                                      alt={color.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                )
+                              }
+                              
+                              return (
+                                <div 
+                                  className="w-16 h-16 rounded-lg border-2 shadow-lg relative overflow-hidden"
+                                  style={{ 
+                                    backgroundColor: color.hex || '#f3f4f6',
+                                    backgroundImage: color.hex ? 'none' : 'linear-gradient(45deg, #f3f4f6 25%, transparent 25%), linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f3f4f6 75%), linear-gradient(-45deg, transparent 75%, #f3f4f6 75%)',
+                                    backgroundSize: '20px 20px',
+                                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+                                  }}
+                                >
+                                  <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                </div>
+                              )
+                            })()}
                           </div>
                           
                           {/* Color Details */}
@@ -513,28 +563,56 @@ export function ColorSelectionModal({
                         <div className="flex items-center gap-4">
                           {/* Enhanced Color Swatch */}
                           <div className="flex-shrink-0">
-                            {color.image ? (
-                              <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg">
-                                <img 
-                                  src={color.image} 
-                                  alt={color.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            ) : (
-                              <div 
-                                className="w-16 h-16 rounded-xl border-2 shadow-lg relative overflow-hidden"
-                                style={{ 
-                                  backgroundColor: color.hex || '#f3f4f6',
-                                  backgroundImage: color.hex ? 'none' : 'linear-gradient(45deg, #f3f4f6 25%, transparent 25%), linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f3f4f6 75%), linear-gradient(-45deg, transparent 75%, #f3f4f6 75%)',
-                                  backgroundSize: '20px 20px',
-                                  backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
-                                }}
-                              >
-                                {/* Subtle shine effect */}
-                                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent"></div>
-                              </div>
-                            )}
+                            {(() => {
+                              // First try to find variant image for this color
+                              if (variants && variants.length > 0) {
+                                const variantWithImage = variants.find(v => 
+                                  v.color === color.name && 
+                                  (!selectedSize || v.size === selectedSize) &&
+                                  v.variant_image
+                                )
+                                
+                                if (variantWithImage?.variant_image) {
+                                  return (
+                                    <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg">
+                                      <img 
+                                        src={variantWithImage.variant_image} 
+                                        alt={`${color.name} variant`}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  )
+                                }
+                              }
+                              
+                              // Fallback to original color.image or color swatch
+                              if (color.image) {
+                                return (
+                                  <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg">
+                                    <img 
+                                      src={color.image} 
+                                      alt={color.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                )
+                              }
+                              
+                              return (
+                                <div 
+                                  className="w-16 h-16 rounded-xl border-2 shadow-lg relative overflow-hidden"
+                                  style={{ 
+                                    backgroundColor: color.hex || '#f3f4f6',
+                                    backgroundImage: color.hex ? 'none' : 'linear-gradient(45deg, #f3f4f6 25%, transparent 25%), linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f3f4f6 75%), linear-gradient(-45deg, transparent 75%, #f3f4f6 75%)',
+                                    backgroundSize: '20px 20px',
+                                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+                                  }}
+                                >
+                                  {/* Subtle shine effect */}
+                                  <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent"></div>
+                                </div>
+                              )
+                            })()}
                           </div>
                           
                           {/* Enhanced Color Details */}

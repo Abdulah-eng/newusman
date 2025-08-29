@@ -69,6 +69,7 @@ type VariantRow = {
   availability: boolean
   originalPrice?: number
   currentPrice?: number
+  variant_image?: string
 }
 
 // Presets removed by request – admin will type values directly in variant rows
@@ -1894,6 +1895,11 @@ function ProductForm() {
   const [loadingToppers, setLoadingToppers] = useState(true)
   const [selectedRecommendedProducts, setSelectedRecommendedProducts] = useState<any[]>([])
 
+  // Product selector modal state
+  const [productSelectorOpen, setProductSelectorOpen] = useState(false)
+  const [selectedCategoryForSelector, setSelectedCategoryForSelector] = useState<string>('')
+  const [searchTerm, setSearchTerm] = useState('')
+
   // Fetch recommended products on component mount
   useEffect(() => {
     fetchRecommendedProducts()
@@ -1929,6 +1935,7 @@ function ProductForm() {
         availability: true,
         originalPrice: undefined,
         currentPrice: undefined,
+        variant_image: '',
       },
     ]))
   }
@@ -2133,7 +2140,47 @@ function ProductForm() {
     setSelectedRecommendedProducts(prev => prev.filter(p => p.id !== productId))
   }
 
+  // Product selector modal functions
+  const openProductSelector = (category: string) => {
+    setSelectedCategoryForSelector(category)
+    setSearchTerm('')
+    setProductSelectorOpen(true)
+  }
+
+  const closeProductSelector = () => {
+    setProductSelectorOpen(false)
+    setSelectedCategoryForSelector('')
+    setSearchTerm('')
+  }
+
+  const getProductsForCategory = (category: string) => {
+    switch (category) {
+      case 'mattresses': return mattresses;
+      case 'beds': return beds;
+      case 'sofas': return sofas;
+      case 'pillows': return pillows;
+      case 'toppers': return toppers;
+      case 'bunkbeds': return mattresses; // bunkbeds use mattresses
+      default: return [];
+    }
+  }
+
+  const getLoadingStateForCategory = (category: string) => {
+    switch (category) {
+      case 'mattresses': return loadingMattresses;
+      case 'beds': return loadingBeds;
+      case 'sofas': return loadingSofas;
+      case 'pillows': return loadingPillows;
+      case 'toppers': return loadingToppers;
+      case 'bunkbeds': return loadingMattresses;
+      default: return false;
+    }
+  }
+
     const resetForm = () => {
+    // No confirmation dialog - just clear the form
+    setIsResetting(true)
+    
     setSelectedCategory('mattresses')
     setVariants([])
     setAttributesConfirmed(false)
@@ -2196,6 +2243,9 @@ function ProductForm() {
     setSelectedBunkbedMattresses([])
     setSelectedPopularCategories([])
     setSelectedRecommendedProducts([])
+    
+    // Reset the resetting state
+    setIsResetting(false)
   }
 
   // Clear features and reasons when category changes
@@ -2228,6 +2278,7 @@ function ProductForm() {
   }
 
   const handleSave = async () => {
+    setIsSaving(true)
     try {
       // 1) Upload any selected files to Supabase Storage and collect public URLs
       const uploadedUrls: string[] = []
@@ -2393,14 +2444,16 @@ function ProductForm() {
 
       const result = await response.json()
       console.log('[Admin Save] Product created result:', result)
-      alert(`Product saved successfully! Product ID: ${result.productId}`)
       
-      // Reset form after successful save
+      // Show single success message and automatically clear form
+      alert('Product is saved')
       resetForm()
       
     } catch (error) {
       console.error('Error saving product:', error)
       alert(`Error saving product: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -2420,6 +2473,8 @@ function ProductForm() {
   const [selectedBunkbedMattresses, setSelectedBunkbedMattresses] = useState<string[]>([])
   const [availableMattresses, setAvailableMattresses] = useState<Array<{ id: string; name: string; size: string }>>([])
   const [loadingBunkbedMattresses, setLoadingBunkbedMattresses] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
 
   // Function to fetch real mattresses for bunkbed selection
   const fetchBunkbedMattresses = async () => {
@@ -2558,6 +2613,73 @@ function ProductForm() {
         </div>
       </Card>
 
+      {/* Product Images - Moved to top for better flow */}
+      <Card className="p-4">
+        <h2 className="text-xl font-semibold mb-4">Product Images</h2>
+        <p className="text-sm text-gray-600 mb-4">Add product images that will be displayed prominently on the product page.</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div className="font-semibold mb-2">Product Images</div>
+            
+            {/* URL Input */}
+            <div className="mb-4">
+              <Label className="text-sm text-gray-600 mb-2 block">Add Image URLs</Label>
+              <div className="flex gap-2 mb-3">
+                <Input placeholder="https://..." value={newImage} onChange={e => setNewImage(e.target.value)} />
+                <Button onClick={() => { if (newImage.trim()) { setImages(imgs => [...imgs, newImage.trim()]); setNewImage('') } }}>Add URL</Button>
+              </div>
+              {images.length > 0 && (
+                <ul className="space-y-2">
+                  {images.map((url, idx) => (
+                    <li key={`${url}-${idx}`} className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded">
+                      <span className="truncate text-sm text-gray-700">{url}</span>
+                      <Button variant="ghost" size="sm" onClick={() => setImages(imgs => imgs.filter((_, i) => i !== idx))}>Remove</Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* File Upload */}
+            <div className="mb-4">
+              <Label className="text-sm text-gray-600 mb-2 block">Upload Image Files</Label>
+              <div className="flex gap-2 mb-3">
+                <Input 
+                  type="file" 
+                  accept="image/*" 
+                  multiple 
+                  onChange={handleFileUpload}
+                  className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+              </div>
+              {uploadedFiles.length > 0 && (
+                <ul className="space-y-2">
+                  {uploadedFiles.map((file, idx) => (
+                    <li key={`${file.name}-${idx}`} className="flex items-center justify-between gap-2 p-2 bg-blue-50 rounded">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-blue-800">{file.name}</span>
+                        <span className="text-xs text-blue-600">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => removeUploadedFile(idx)}>Remove</Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Summary */}
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <div className="text-sm text-gray-600">
+                <strong>Total Images:</strong> {images.length + uploadedFiles.length}
+                {images.length > 0 && <span className="ml-2">• URLs: {images.length}</span>}
+                {uploadedFiles.length > 0 && <span className="ml-2">• Files: {uploadedFiles.length}</span>}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
              {/* Step 1: Attribute Selection */}
        {!attributesConfirmed && (
          <Card className="p-4">
@@ -2690,6 +2812,7 @@ function ProductForm() {
                   <th className="p-2">Available</th>
                   <th className="p-2">Original Price</th>
                   <th className="p-2">Now Price</th>
+                  <th className="p-2">Image</th>
                   <th className="p-2"></th>
                 </tr>
               </thead>
@@ -2716,12 +2839,82 @@ function ProductForm() {
                     </td>
                     <td className="p-2 min-w-[140px]"><Input type="number" value={v.originalPrice ?? ''} onChange={e => updateVariant(v.id, { originalPrice: e.target.value ? Number(e.target.value) : undefined })} placeholder="Original" /></td>
                     <td className="p-2 min-w-[140px]"><Input type="number" value={v.currentPrice ?? ''} onChange={e => updateVariant(v.id, { currentPrice: e.target.value ? Number(e.target.value) : undefined })} placeholder="Now" /></td>
+                    <td className="p-2 min-w-[200px]">
+                      <div className="space-y-2">
+                        {/* Image Preview */}
+                        {v.variant_image && (
+                          <div className="relative w-16 h-16 border rounded overflow-hidden">
+                            <img 
+                              src={v.variant_image} 
+                              alt="Variant preview" 
+                              className="w-full h-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => updateVariant(v.id, { variant_image: '' })}
+                              className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
+                        
+                        {/* Upload Button */}
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="file"
+                            id={`variantImageUpload-${v.id}`}
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              
+                              try {
+                                const formData = new FormData()
+                                formData.append('file', file)
+                                
+                                const response = await fetch('/api/upload', {
+                                  method: 'POST',
+                                  body: formData
+                                })
+                                
+                                if (response.ok) {
+                                  const { url } = await response.json()
+                                  updateVariant(v.id, { variant_image: url })
+                                } else {
+                                  const error = await response.json()
+                                  alert(`Upload failed: ${error.error || 'Failed to upload image'}`)
+                                }
+                              } catch (error) {
+                                console.error('Upload error:', error)
+                                alert('Failed to upload image')
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={`variantImageUpload-${v.id}`}
+                            className="cursor-pointer inline-flex items-center px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                          >
+                            📷 Upload
+                          </label>
+                          
+                          {/* URL Input as fallback */}
+                          <Input
+                            value={v.variant_image || ''}
+                            onChange={(e) => updateVariant(v.id, { variant_image: e.target.value })}
+                            placeholder="Or enter URL"
+                            className="flex-1 text-xs"
+                          />
+                        </div>
+                      </div>
+                    </td>
                     <td className="p-2"><Button variant="ghost" onClick={() => removeVariant(v.id)}>Remove</Button></td>
                   </tr>
                 ))}
                 {variants.length === 0 && (
                   <tr>
-                    <td colSpan={1 + (useColor ? 1 : 0) + (useDepth ? 1 : 0) + (useFirmness ? 1 : 0) + (useSize ? 1 : 0) + 4} className="p-4 text-gray-500">
+                    <td colSpan={1 + (useColor ? 1 : 0) + (useDepth ? 1 : 0) + (useFirmness ? 1 : 0) + (useSize ? 1 : 0) + 5} className="p-4 text-gray-500">
                       No variants yet. Click "Add blank row" to start.
                     </td>
                   </tr>
@@ -3231,153 +3424,32 @@ function ProductForm() {
 
       <Card className="p-4">
         <h2 className="text-xl font-semibold mb-4">Recommended Products</h2>
-        <p className="text-sm text-gray-600 mb-4">These products will appear in the sidebar when customers add this mattress to their basket.</p>
+        <p className="text-sm text-gray-600 mb-4">These products will appear in the sidebar when customers add this product to their basket.</p>
         
-        <div className="space-y-4">
-          {/* Mattresses */}
-          <div>
-            <h3 className="font-semibold text-gray-800 mb-2">Mattresses</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {loadingMattresses ? (
-                <div className="p-3 border rounded-lg bg-gray-50">
-                  <div className="text-sm text-gray-500">Loading mattresses...</div>
-                </div>
-              ) : mattresses.length > 0 ? (
-                mattresses.map((product) => (
-                  <div key={product.id} className="p-3 border rounded-lg bg-white hover:bg-gray-50 cursor-pointer">
-                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                    <div className="text-xs text-gray-500">£{product.currentPrice?.toFixed(2) || '0.00'}</div>
+        {/* Category Buttons */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+          {categories.map((category) => (
                     <button
-                      onClick={() => handleRecommendedProductSelect(product)}
-                      className="mt-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                    >
-                      Select
-                    </button>
+              key={category.value}
+              onClick={() => openProductSelector(category.value)}
+              className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 text-center"
+            >
+              <div className="text-lg font-semibold text-gray-800 mb-1">{category.label}</div>
+              <div className="text-sm text-gray-500">
+                {(() => {
+                  switch (category.value) {
+                    case 'mattresses': return mattresses.length;
+                    case 'beds': return beds.length;
+                    case 'sofas': return sofas.length;
+                    case 'pillows': return pillows.length;
+                    case 'toppers': return toppers.length;
+                    case 'bunkbeds': return mattresses.length; // bunkbeds use mattresses
+                    default: return 0;
+                  }
+                })()} products
                   </div>
-                ))
-              ) : (
-                <div className="p-3 border rounded-lg bg-gray-50">
-                  <div className="text-sm text-gray-500">No mattresses found</div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Beds */}
-          <div>
-            <h3 className="font-semibold text-gray-800 mb-2">Beds</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {loadingBeds ? (
-                <div className="p-3 border rounded-lg bg-gray-50">
-                  <div className="text-sm text-gray-500">Loading beds...</div>
-                </div>
-              ) : beds.length > 0 ? (
-                beds.map((product) => (
-                  <div key={product.id} className="p-3 border rounded-lg bg-white hover:bg-gray-50 cursor-pointer">
-                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                    <div className="text-xs text-gray-500">£{product.currentPrice?.toFixed(2) || '0.00'}</div>
-                    <button
-                      onClick={() => handleRecommendedProductSelect(product)}
-                      className="mt-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                    >
-                      Select
                     </button>
-                  </div>
-                ))
-              ) : (
-                <div className="p-3 border rounded-lg bg-gray-50">
-                  <div className="text-sm text-gray-500">No beds found</div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Sofas */}
-          <div>
-            <h3 className="font-semibold text-gray-800 mb-2">Sofas</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {loadingSofas ? (
-                <div className="p-3 border rounded-lg bg-gray-50">
-                  <div className="text-sm text-gray-500">Loading sofas...</div>
-                </div>
-              ) : sofas.length > 0 ? (
-                sofas.map((product) => (
-                  <div key={product.id} className="p-3 border rounded-lg bg-white hover:bg-gray-50 cursor-pointer">
-                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                    <div className="text-xs text-gray-500">£{product.currentPrice?.toFixed(2) || '0.00'}</div>
-                    <button
-                      onClick={() => handleRecommendedProductSelect(product)}
-                      className="mt-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                    >
-                      Select
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <div className="p-3 border rounded-lg bg-gray-50">
-                  <div className="text-sm text-gray-500">No sofas found</div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Pillows */}
-          <div>
-            <h3 className="font-semibold text-gray-800 mb-2">Pillows</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {loadingPillows ? (
-                <div className="p-3 border rounded-lg bg-gray-50">
-                  <div className="text-sm text-gray-500">Loading pillows...</div>
-                </div>
-              ) : pillows.length > 0 ? (
-                pillows.map((product) => (
-                  <div key={product.id} className="p-3 border rounded-lg bg-white hover:bg-gray-50 cursor-pointer">
-                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                    <div className="text-xs text-gray-500">£{product.currentPrice?.toFixed(2) || '0.00'}</div>
-                    <button
-                      onClick={() => handleRecommendedProductSelect(product)}
-                      className="mt-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                    >
-                      Select
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <div className="p-3 border rounded-lg bg-gray-50">
-                  <div className="text-sm text-gray-500">No pillows found</div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Toppers */}
-          <div>
-            <h3 className="font-semibold text-gray-800 mb-2">Toppers</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {loadingToppers ? (
-                <div className="p-3 border rounded-lg bg-gray-50">
-                  <div className="text-sm text-gray-500">Loading toppers...</div>
-                </div>
-              ) : toppers.length > 0 ? (
-                toppers.map((product) => (
-                  <div key={product.id} className="p-3 border rounded-lg bg-white hover:bg-gray-50 cursor-pointer">
-                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                    <div className="text-xs text-gray-500">£{product.currentPrice?.toFixed(2) || '0.00'}</div>
-                    <button
-                      onClick={() => handleRecommendedProductSelect(product)}
-                      className="mt-2 text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                    >
-                      Select
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <div className="p-3 border rounded-lg bg-gray-50">
-                  <div className="text-sm text-gray-500">No toppers found</div>
-                </div>
-              )}
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Selected Recommended Products */}
@@ -3521,71 +3593,185 @@ function ProductForm() {
             </div>
           </div>
           )}
-          <div className="md:col-span-2">
-            <div className="font-semibold mb-2">Product Images</div>
-            
-            {/* URL Input */}
-            <div className="mb-4">
-              <Label className="text-sm text-gray-600 mb-2 block">Add Image URLs</Label>
-              <div className="flex gap-2 mb-3">
-                <Input placeholder="https://..." value={newImage} onChange={e => setNewImage(e.target.value)} />
-                <Button onClick={() => { if (newImage.trim()) { setImages(imgs => [...imgs, newImage.trim()]); setNewImage('') } }}>Add URL</Button>
+        </div>
+
+                 <div className="mt-4 flex gap-2">
+           <Button onClick={handleSave} disabled={isSaving}>
+             {isSaving ? (
+               <>
+                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                 Saving...
+               </>
+             ) : (
+               `Save ${categories.find(c => c.value === selectedCategory)?.label || 'Product'}`
+             )}
+           </Button>
+           <Button variant="secondary" onClick={resetForm} disabled={isResetting}>
+             {isResetting ? (
+               <>
+                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                 Clearing...
+               </>
+             ) : (
+               'Reset Form'
+             )}
+           </Button>
+         </div>
+      </Card>
+
+      {/* Product Selector Modal */}
+      {productSelectorOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 text-white p-6 rounded-t-2xl relative overflow-hidden flex-shrink-0">
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 0%, transparent 50%)`
+                }}></div>
               </div>
-              {images.length > 0 && (
-                <ul className="space-y-2">
-                  {images.map((url, idx) => (
-                    <li key={`${url}-${idx}`} className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded">
-                      <span className="truncate text-sm text-gray-700">{url}</span>
-                      <Button variant="ghost" size="sm" onClick={() => setImages(imgs => imgs.filter((_, i) => i !== idx))}>Remove</Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+                      Select {categories.find(c => c.value === selectedCategoryForSelector)?.label || 'Products'}
+                    </h2>
+                  </div>
+                  <button
+                    onClick={closeProductSelector}
+                    className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 border border-white/20"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p className="text-white/90 text-base">
+                  Choose up to 3 products to recommend with this product
+                </p>
+              </div>
             </div>
 
-            {/* File Upload */}
-            <div className="mb-4">
-              <Label className="text-sm text-gray-600 mb-2 block">Upload Image Files</Label>
-              <div className="flex gap-2 mb-3">
-                <Input 
-                  type="file" 
-                  accept="image/*" 
-                  multiple 
-                  onChange={handleFileUpload}
-                  className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            {/* Search Bar */}
+            <div className="px-6 py-4 bg-white border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <Input
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-1"
                 />
+                <span className="text-sm text-gray-500">
+                  {(() => {
+                    const products = getProductsForCategory(selectedCategoryForSelector)
+                    const filtered = products.filter(p => 
+                      p.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    return `${filtered.length} of ${products.length} products`
+                  })()}
+                </span>
               </div>
-              {uploadedFiles.length > 0 && (
-                <ul className="space-y-2">
-                  {uploadedFiles.map((file, idx) => (
-                    <li key={`${file.name}-${idx}`} className="flex items-center justify-between gap-2 p-2 bg-blue-50 rounded">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-blue-800">{file.name}</span>
-                        <span className="text-xs text-blue-600">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => removeUploadedFile(idx)}>Remove</Button>
-                    </li>
-                  ))}
-                </ul>
+            </div>
+
+            {/* Products Grid */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {getLoadingStateForCategory(selectedCategoryForSelector) ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading products...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(() => {
+                    const products = getProductsForCategory(selectedCategoryForSelector)
+                    const filtered = products.filter(p => 
+                      p.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    
+                    if (filtered.length === 0) {
+                      return (
+                        <div className="col-span-full text-center py-8">
+                          <p className="text-gray-500">
+                            {searchTerm ? 'No products match your search' : 'No products found in this category'}
+                          </p>
+    </div>
+  )
+}
+
+                    return filtered.map((product) => {
+                      const isSelected = selectedRecommendedProducts.some(p => p.id === product.id)
+                      const isDisabled = !isSelected && selectedRecommendedProducts.length >= 3
+                      
+                      return (
+                        <div 
+                          key={product.id} 
+                          className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                            isSelected 
+                              ? 'border-green-500 bg-green-50 shadow-md' 
+                              : isDisabled
+                                ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                                : 'border-gray-200 bg-white hover:border-blue-400 hover:shadow-md'
+                          }`}
+                          onClick={() => {
+                            if (isDisabled) return
+                            if (isSelected) {
+                              handleRecommendedProductDeselect(product.id)
+                            } else {
+                              handleRecommendedProductSelect(product)
+                            }
+                          }}
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900 text-sm mb-1">{product.name}</h3>
+                              <p className="text-xs text-gray-500 mb-2">{product.category}</p>
+                              <div className="text-lg font-bold text-blue-600">
+                                £{product.currentPrice?.toFixed(2) || '0.00'}
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm">
+                                ✓
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-500">
+                              {isSelected ? 'Selected' : isDisabled ? 'Max 3 products' : 'Click to select'}
+                            </span>
+                            {!isSelected && !isDisabled && (
+                              <button className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors">
+                                Select
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })
+                  })()}
+                </div>
               )}
             </div>
 
-            {/* Summary */}
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <div className="text-sm text-gray-600">
-                <strong>Total Images:</strong> {images.length + uploadedFiles.length}
-                {images.length > 0 && <span className="ml-2">• URLs: {images.length}</span>}
-                {uploadedFiles.length > 0 && <span className="ml-2">• Files: {uploadedFiles.length}</span>}
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-2xl">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  <strong>Selected:</strong> {selectedRecommendedProducts.length}/3 products
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={closeProductSelector}>
+                    Close
+                  </Button>
+                  <Button onClick={closeProductSelector} className="bg-blue-600 hover:bg-blue-700">
+                    Done
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-
-                 <div className="mt-4 flex gap-2">
-           <Button onClick={handleSave}>Save {categories.find(c => c.value === selectedCategory)?.label}</Button>
-           <Button variant="secondary" onClick={resetForm}>Reset Form</Button>
-         </div>
-      </Card>
+      )}
     </div>
   )
 }

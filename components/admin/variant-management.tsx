@@ -113,7 +113,14 @@ export function VariantManagement({ productId, category, productName, onVariants
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             variantId: editingVariant.id,
-            ...variant
+            sku: variant.sku,
+            originalPrice: variant.original_price,
+            currentPrice: variant.current_price,
+            color: variant.color,
+            depth: variant.depth,
+            firmness: variant.firmness,
+            size: variant.size,
+            variantImage: variant.variant_image
           })
         })
         
@@ -136,7 +143,14 @@ export function VariantManagement({ productId, category, productName, onVariants
           body: JSON.stringify({
             productId,
             category,
-            ...variant
+            sku: variant.sku,
+            originalPrice: variant.original_price,
+            currentPrice: variant.current_price,
+            color: variant.color,
+            depth: variant.depth,
+            firmness: variant.firmness,
+            size: variant.size,
+            variantImage: variant.variant_image
           })
         })
         
@@ -349,16 +363,100 @@ export function VariantManagement({ productId, category, productName, onVariants
 
           {/* Variant Image */}
           <div className="space-y-2">
-            <Label htmlFor="variantImage">Variant Image URL</Label>
-            <Input
-              id="variantImage"
-              value={variant.variant_image || ''}
-              onChange={(e) => isNew 
-                ? setNewVariant({ ...newVariant, variant_image: e.target.value })
-                : setEditingVariant({ ...editingVariant!, variant_image: e.target.value })
-              }
-              placeholder="https://example.com/image.jpg"
-            />
+            <Label htmlFor="variantImage">Variant Image</Label>
+            <div className="space-y-3">
+              {/* Image Preview */}
+              {variant.variant_image && (
+                <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
+                  <img 
+                    src={variant.variant_image} 
+                    alt="Variant preview" 
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => isNew 
+                      ? setNewVariant({ ...newVariant, variant_image: '' })
+                      : setEditingVariant({ ...editingVariant!, variant_image: '' })
+                    }
+                    className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              
+              {/* Upload Button */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  id="variantImageUpload"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    
+                    try {
+                      const formData = new FormData()
+                      formData.append('file', file)
+                      
+                      const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                      })
+                      
+                      if (response.ok) {
+                        const { url } = await response.json()
+                        if (isNew) {
+                          setNewVariant({ ...newVariant, variant_image: url })
+                        } else {
+                          setEditingVariant({ ...editingVariant!, variant_image: url })
+                        }
+                      } else {
+                        const error = await response.json()
+                        toast({
+                          title: "Upload Failed",
+                          description: error.error || 'Failed to upload image',
+                          variant: "destructive"
+                        })
+                      }
+                    } catch (error) {
+                      console.error('Upload error:', error)
+                      toast({
+                        title: "Upload Failed",
+                        description: 'Failed to upload image',
+                        variant: "destructive"
+                      })
+                    }
+                  }}
+                />
+                <label
+                  htmlFor="variantImageUpload"
+                  className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Upload Image
+                </label>
+                
+                {/* URL Input as fallback */}
+                <Input
+                  id="variantImage"
+                  value={variant.variant_image || ''}
+                  onChange={(e) => isNew 
+                    ? setNewVariant({ ...newVariant, variant_image: e.target.value })
+                    : setEditingVariant({ ...editingVariant!, variant_image: e.target.value })
+                  }
+                  placeholder="Or enter image URL directly"
+                  className="flex-1"
+                />
+              </div>
+              
+              <p className="text-xs text-gray-500">
+                Upload an image for this variant (recommended for color variants). 
+                Supported formats: JPG, PNG, GIF. Max size: 5MB.
+              </p>
+            </div>
           </div>
 
           {/* Weight */}
