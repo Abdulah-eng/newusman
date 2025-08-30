@@ -1090,7 +1090,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                     {/* Base Product Dimensions - Simple LxWxH */}
                     {product.dimensions && (product.dimensions.length || product.dimensions.width || product.dimensions.height) && (
                       <div className="mt-3">
-                        <div className="text-sm text-gray-600 font-medium mb-1">Base Dimensions:</div>
+                        <div className="text-sm text-gray-600 font-medium mb-1">Dimensions:</div>
                         <div className="text-lg font-bold text-gray-800">
                           {product.dimensions.length && `${product.dimensions.length.replace('L ', '').replace('cm', '')}cm`}
                           {product.dimensions.width && product.dimensions.length && ' × '}
@@ -1666,9 +1666,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                     <div key={index} className="flex items-start gap-3">
 
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
 
-                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
 
@@ -1676,13 +1676,13 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                       </div>
 
-                      <div>
+                      <div className="min-w-0 flex-1">
 
-                        <div className="text-sm sm:text-base font-semibold text-gray-900 leading-relaxed">{reason}</div>
+                        <div className="text-sm sm:text-base font-semibold text-gray-900 leading-relaxed break-words">{reason}</div>
 
                         {(product as any).customReasonsDescriptions?.[index] && (
 
-                          <div className="text-xs sm:text-sm text-gray-600 leading-relaxed mt-1">{(product as any).customReasonsDescriptions[index]}</div>
+                          <div className="text-xs sm:text-sm text-gray-600 leading-relaxed mt-1 break-words">{(product as any).customReasonsDescriptions[index]}</div>
 
                         )}
 
@@ -3939,7 +3939,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                   <div className="flex-1">
 
                     <div className="text-lg font-semibold text-gray-600 mb-2">
-                      {hasOnlyOneVariant ? 'Price' : 'Base Product Price'}
+                      {hasOnlyOneVariant ? 'Price' : 'Price'}
                     </div>
 
                     <div className="space-y-1">
@@ -3972,7 +3972,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                     {/* Base Product Dimensions - Simple LxWxH */}
                     {product.dimensions && (product.dimensions.length || product.dimensions.width || product.dimensions.height) && (
                       <div className="mt-3">
-                        <div className="text-sm text-gray-600 font-medium mb-1">Base Dimensions:</div>
+                        <div className="text-sm text-gray-600 font-medium mb-1">Dimensions:</div>
                         <div className="text-lg font-bold text-gray-800">
                           {product.dimensions.length && `${product.dimensions.length.replace('L ', '').replace('cm', '')}cm`}
                           {product.dimensions.width && product.dimensions.length && ' × '}

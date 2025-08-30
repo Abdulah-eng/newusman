@@ -192,50 +192,64 @@ export default async function ProductDetailPage({ params }: PageProps) {
     ? process.env.NEXT_PUBLIC_BASE_URL
     : `${protocol}://${host}`
 
-  // Fetch product from database
+  // OPTIMIZATION: Make all API calls parallel instead of sequential
+  const [productResponse, variantsResponse, relatedProductsResponse] = await Promise.allSettled([
+    fetch(`${baseUrl}/api/products/${id}`),
+    fetch(`${baseUrl}/api/variants?productId=${id}`),
+    fetch(`${baseUrl}/api/products/category/${category}`)
+  ])
+
+  // Handle product data
   let product: any = null
-  try {
-    const response = await fetch(`${baseUrl}/api/products/${id}`)
-    if (response.ok) {
-      const data = await response.json()
+  if (productResponse.status === 'fulfilled' && productResponse.value.ok) {
+    try {
+      const data = await productResponse.value.json()
       product = data.product
+    } catch (error) {
+      console.error('Error parsing product data:', error)
     }
-  } catch (error) {
-    console.error('Error fetching product:', error)
   }
 
-  // Force-load variants directly by product_id and override
-  try {
-    if (product?.id) {
-      const vRes = await fetch(`${baseUrl}/api/variants?productId=${product.id}`)
-      if (vRes.ok) {
-        const vData = await vRes.json()
-        const directVariants = Array.isArray(vData.variants) ? vData.variants : []
-        const normalized = directVariants.map((v: any) => ({
-          sku: v.sku,
-          originalPrice: v.original_price,
-          currentPrice: v.current_price,
-          color: v.color,
-          depth: v.depth,
-          firmness: v.firmness,
-          size: v.size,
-          // Add dimension fields
-          length: v.length,
-          width: v.width,
-          height: v.height,
-          availability: v.availability,
-          // Add variant image
-          variant_image: v.variant_image
-        }))
-        product = { ...product, variants: normalized }
-      }
+  // Handle variants data
+  if (product?.id && variantsResponse.status === 'fulfilled' && variantsResponse.value.ok) {
+    try {
+      const vData = await variantsResponse.value.json()
+      const directVariants = Array.isArray(vData.variants) ? vData.variants : []
+      const normalized = directVariants.map((v: any) => ({
+        sku: v.sku,
+        originalPrice: v.original_price,
+        currentPrice: v.current_price,
+        color: v.color,
+        depth: v.depth,
+        firmness: v.firmness,
+        size: v.size,
+        // Add dimension fields
+        length: v.length,
+        width: v.width,
+        height: v.height,
+        availability: v.availability,
+        // Add variant image
+        variant_image: v.variant_image
+      }))
+      product = { ...product, variants: normalized }
+    } catch (e) {
+      console.warn('[Product Detail Page] variants parsing failed:', e)
     }
-  } catch (e) {
-    console.warn('[Product Detail Page] direct variants fetch failed:', e)
   }
 
   if (!product) {
     notFound()
+  }
+
+  // Handle related products
+  let alsoViewed: any[] = []
+  if (relatedProductsResponse.status === 'fulfilled' && relatedProductsResponse.value.ok) {
+    try {
+      const data = await relatedProductsResponse.value.json()
+      alsoViewed = data.products?.filter((p: any) => String(p.id) !== String(id)).slice(0, 8) || []
+    } catch (error) {
+      console.error('Error parsing related products:', error)
+    }
   }
 
   // Transform the product data to match ProductDetailCard interface
@@ -378,18 +392,6 @@ export default async function ProductDetailPage({ params }: PageProps) {
     console.log('[Product Detail Page] unique firmness:', uniqueFirmness)
   } catch (e) {
     console.log('[Product Detail Page] variants debug error:', e)
-  }
-
-  // Related products from the same category excluding current id
-  let alsoViewed: any[] = []
-  try {
-    const response = await fetch(`${baseUrl}/api/products/category/${category}`)
-    if (response.ok) {
-      const data = await response.json()
-      alsoViewed = data.products?.filter((p: any) => String(p.id) !== String(id)).slice(0, 8) || []
-    }
-  } catch (error) {
-    console.error('Error fetching related products:', error)
   }
 
   return (

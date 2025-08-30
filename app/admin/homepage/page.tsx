@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 import { AdminNav } from '@/components/admin/admin-nav'
+import { CacheManager } from '@/components/admin/cache-manager'
+import { ImageUploadTest } from '@/components/admin/image-upload-test'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -486,6 +488,16 @@ export default function HomePageAdmin() {
         </div>
 
         <div className="space-y-6">
+          {/* Cache Management */}
+          <div className="flex justify-end">
+            <CacheManager />
+          </div>
+          
+          {/* Image Upload Test */}
+          <Card className="p-6">
+            <ImageUploadTest />
+          </Card>
+          
           {/* Hero Section */}
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Hero Section</h2>

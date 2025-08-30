@@ -50,40 +50,40 @@ export async function GET(
     }
 
     // Debug logging for free gift and badges
-    console.log('[API /products/:id] Free gift debug:', {
-      id: product.id,
-      name: product.name,
-      free_gift_product_id: product.free_gift_product_id,
-      free_gift_enabled: product.free_gift_enabled,
-      badges: product.badges,
-      hasFreeGiftBadge: product.badges && Array.isArray(product.badges) && product.badges.some((b: any) => b.type === 'free_gift' && b.enabled)
-    })
+    // console.log('[API /products/:id] Free gift debug:', {
+    //   id: enrichedProduct.id,
+    //   name: enrichedProduct.name,
+    //   free_gift_product_id: enrichedProduct.free_gift_product_id,
+    //   free_gift_enabled: enrichedProduct.free_gift_enabled,
+    //   badges: enrichedProduct.badges,
+    //   hasFreeGiftBadge: enrichedProduct.badges && Array.isArray(enrichedProduct.badges) && enrichedProduct.badges.some((b: any) => b.type === 'free_gift' && b.enabled)
+    // })
 
     // Debug logging for dimension images
-    console.log('[API /products/:id] Raw product data:', {
-      id: product.id,
-      name: product.name,
-      hasProductDimensions: !!product.product_dimensions,
-      hasProductDimensionImages: !!product.product_dimension_images,
-      productDimensionsCount: product.product_dimensions ? 1 : 0,
-      productDimensionImagesCount: Array.isArray(product.product_dimension_images) ? product.product_dimension_images.length : 0
-    })
+    // console.log('[API /products/:id] Raw product data:', {
+    //   id: enrichedProduct.id,
+    //   name: enrichedProduct.name,
+    //   hasProductDimensions: !!enrichedProduct.product_dimensions,
+    //   hasProductDimensionImages: !!enrichedProduct.product_dimension_images,
+    //   productDimensionsCount: enrichedProduct.product_dimensions ? 1 : 0,
+    //   productDimensionImagesCount: Array.isArray(enrichedProduct.product_dimension_images) ? enrichedProduct.product_dimension_images.length : 0
+    // })
 
-    if (product.product_dimension_images) {
-      console.log('[API /products/:id] Raw product_dimension_images:', product.product_dimension_images)
-      console.log('[API /products/:id] product_dimension_images type:', typeof product.product_dimension_images)
-      console.log('[API /products/:id] product_dimension_images isArray:', Array.isArray(product.product_dimension_images))
-    }
+    // if (enrichedProduct.product_dimension_images) {
+    //   console.log('[API /products/:id] Raw product_dimension_images:', enrichedProduct.product_dimension_images)
+    //   console.log('[API /products/:id] product_dimension_images type:', typeof enrichedProduct.product_dimension_images)
+    //   console.log('[API /products/:id] product_dimension_images isArray:', Array.isArray(enrichedProduct.product_dimension_images))
+    // }
 
-    if (product.product_dimensions) {
-      console.log('[API /products/:id] Raw product_dimensions:', product.product_dimensions)
-    }
+    // if (enrichedProduct.product_dimensions) {
+    //   console.log('[API /products/:id] Raw product_dimensions:', enrichedProduct.product_dimensions)
+    // }
 
-    try {
-      console.log('[API /products/:id] id:', id,
-        'raw variants count:', Array.isArray((product as any).product_variants) ? (product as any).product_variants.length : 0,
-        'raw images count:', Array.isArray((product as any).product_images) ? (product as any).product_images.length : 0)
-    } catch {}
+    // try {
+    //   console.log('[API /products/:id] id:', id,
+    //     'raw variants count:', Array.isArray((enrichedProduct as any).product_variants) ? (enrichedProduct as any).product_variants.length : 0,
+    //     'raw images count:', Array.isArray((enrichedProduct as any).product_images) ? (enrichedProduct as any).product_images.length : 0)
+    // } catch {}
 
     // Helper to build valid URLs from either image_url or file_name
     const fileBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || ''

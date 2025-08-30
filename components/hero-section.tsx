@@ -12,15 +12,13 @@ interface HeroSectionProps {
 export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [selectedCategory, setSelectedCategory] = useState('mattresses')
-  const { content, loading, error } = useHomePageContent()
+  const { content, loading, error, bannerImages } = useHomePageContent()
 
-
-
-  // Carousel images for the left banner - use database content if available
-  const hasDatabaseImages = content.hero?.slidingImages?.filter(img => img)?.length > 0
+  // Use cached banner images for instant access
+  const hasDatabaseImages = bannerImages.carousel.length > 0
   
   const carouselImages = hasDatabaseImages
-    ? content.hero.slidingImages.filter(img => img).map((src, index) => ({
+    ? bannerImages.carousel.map((src, index) => ({
         src: src,
         alt: `Hero Image ${index + 1}`,
         title: "PREMIUM",
@@ -29,37 +27,27 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
         discount: "SALE UP TO 40% OFF",
         edition: "NEW ARRIVAL"
       }))
-    : [
-        {
-          src: "/banner.jpg",
-          alt: "Outdoor Super Sale",
-          title: "OUTDOOR",
-          subtitle: "SUPER SALE",
-          price: "$39.99",
-          discount: "SALE UP TO 30% OFF",
-          edition: "2020 EDITION"
-        },
-        {
-          src: "/sofa.jpeg",
-          alt: "Sofa Collection",
-          title: "SOFA",
-          subtitle: "COLLECTION",
-          price: "$299.99",
-          discount: "SALE UP TO 40% OFF",
-          edition: "NEW ARRIVAL"
-        },
-        {
-          src: "/hi.jpeg",
-          alt: "Bedroom Essentials",
-          title: "BEDROOM",
-          subtitle: "ESSENTIALS",
-          price: "$199.99",
-          discount: "SALE UP TO 35% OFF",
-          edition: "BEST SELLER"
+    : []
+
+  // Immediate image preloading for instant display
+  useEffect(() => {
+    if (bannerImages.carousel.length > 0) {
+      bannerImages.carousel.forEach(src => {
+        if (src) {
+          const img = new window.Image()
+          img.src = src
         }
-      ]
-
-
+      })
+    }
+    if (bannerImages.smallImage1) {
+      const img1 = new window.Image()
+      img1.src = bannerImages.smallImage1
+    }
+    if (bannerImages.smallImage2) {
+      const img2 = new window.Image()
+      img2.src = bannerImages.smallImage2
+    }
+  }, [bannerImages])
 
   // Auto-advance carousel every 4 seconds
   useEffect(() => {
@@ -91,98 +79,112 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Banner - Carousel */}
           <div className="lg:col-span-2 relative h-96 lg:h-[500px] overflow-hidden rounded-lg group">
-            <Image
-              src={carouselImages[currentSlide]?.src || "/banner.jpg"}
-              alt={carouselImages[currentSlide]?.alt || "Hero Image"}
-              fill
-              className="object-cover transition-transform duration-500"
-            />
+            {carouselImages.length > 0 ? (
+              <Image
+                src={carouselImages[currentSlide]?.src || ""}
+                alt={carouselImages[currentSlide]?.alt || "Hero Image"}
+                fill
+                className="object-cover transition-transform duration-500"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-200 animate-pulse">
+                <div className="w-full h-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
+              </div>
+            )}
             
             {/* Carousel Navigation */}
-            <button
-              onClick={prevSlide}
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors duration-300"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            
-            <button
-              onClick={nextSlide}
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors duration-300"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-            
-            {/* Carousel Indicators */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-              {carouselImages.map((_, index) => (
+            {carouselImages.length > 0 && (
+              <>
                 <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`w-3 h-3 rounded-full transition-colors duration-300 ${
-                    index === currentSlide ? 'bg-white' : 'bg-white/50'
-                  }`}
-                />
-              ))}
-            </div>
+                  onClick={prevSlide}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors duration-300"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                
+                <button
+                  onClick={nextSlide}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors duration-300"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+                
+                {/* Carousel Indicators */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+                  {carouselImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlide(index)}
+                      className={`w-3 h-3 rounded-full transition-colors duration-300 ${
+                        index === currentSlide ? 'bg-white' : 'bg-white/50'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
             
             {/* Carousel Content Overlay */}
-            <div className="absolute inset-0 bg-black/20 flex items-end">
-              <div className="text-white p-8 w-full">
-                <div className="mb-2">
-                  <span className="text-sm font-medium bg-orange-500 px-3 py-1 rounded-full">
-                    {carouselImages[currentSlide]?.edition || "NEW ARRIVAL"}
-                  </span>
+            {carouselImages.length > 0 && (
+              <div className="absolute inset-0 bg-black/20 flex items-end">
+                <div className="text-white p-8 w-full">
+                  <div className="mb-2">
+                    <span className="text-sm font-medium bg-orange-500 px-3 py-1 rounded-full">
+                      {carouselImages[currentSlide]?.edition || "NEW ARRIVAL"}
+                    </span>
+                  </div>
+                  <h2 className="text-4xl lg:text-6xl font-bold mb-2 font-display">
+                    {carouselImages[currentSlide]?.title || "PREMIUM"}
+                  </h2>
+                  <h3 className="text-2xl lg:text-4xl font-semibold mb-4 font-modern">
+                    {carouselImages[currentSlide]?.subtitle || "COLLECTION"}
+                  </h3>
+                  <div className="flex items-center gap-4 mb-4">
+                    <span className="text-2xl font-bold text-orange-400">
+                      {carouselImages[currentSlide]?.price || "$299.99"}
+                    </span>
+                    <span className="text-lg text-orange-300">
+                      {carouselImages[currentSlide]?.discount || "SALE UP TO 40% OFF"}
+                    </span>
+                  </div>
+                  <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold text-lg transition-colors duration-300">
+                    Shop Now
+                  </button>
                 </div>
-                <h2 className="text-4xl lg:text-6xl font-bold mb-2 font-display">
-                  {carouselImages[currentSlide]?.title || "PREMIUM"}
-                </h2>
-                <h3 className="text-2xl lg:text-4xl font-semibold mb-4 font-modern">
-                  {carouselImages[currentSlide]?.subtitle || "COLLECTION"}
-                </h3>
-                <div className="flex items-center gap-4 mb-4">
-                  <span className="text-2xl font-bold text-orange-400">
-                    {carouselImages[currentSlide]?.price || "$299.99"}
-                  </span>
-                  <span className="text-lg text-orange-300">
-                    {carouselImages[currentSlide]?.discount || "SALE UP TO 40% OFF"}
-                  </span>
-                </div>
-                <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold text-lg transition-colors duration-300">
-                  Shop Now
-                </button>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Right Banners */}
           <div className="flex flex-col gap-3 h-96 lg:h-[500px]">
             {/* Image 1 */}
             <div className="relative w-full h-1/2 overflow-hidden rounded-lg group">
-              <Image
-                src={content.hero?.smallImage1 || "/hello.jpeg"}
-                alt="Bedroom Collection"
-                fill
-                className="object-cover transition-transform duration-500"
-              />
-              {content.hero?.smallImage1 && (
-                <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs">
-                  DB
+                             {bannerImages.smallImage1 ? (
+                 <Image
+                   src={bannerImages.smallImage1}
+                   alt="Bedroom Collection"
+                   fill
+                   className="object-cover transition-transform duration-500"
+                 />
+               ) : (
+                <div className="w-full h-full bg-gray-200 animate-pulse">
+                  <div className="w-full h-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
                 </div>
               )}
             </div>
 
             {/* Image 2 */}
             <div className="relative w-full h-1/2 overflow-hidden rounded-lg group">
-              <Image
-                src={content.hero?.smallImage2 || "/hell.jpeg"}
-                alt="Living Room"
-                fill
-                className="object-cover transition-transform duration-500"
-              />
-              {content.hero?.smallImage2 && (
-                <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs">
-                  DB
+                             {bannerImages.smallImage2 ? (
+                 <Image
+                   src={bannerImages.smallImage2}
+                   alt="Living Room"
+                   fill
+                   className="object-cover transition-transform duration-500"
+                 />
+               ) : (
+                <div className="w-full h-full bg-gray-200 animate-pulse">
+                  <div className="w-full h-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
                 </div>
               )}
             </div>
@@ -199,18 +201,19 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
             
             {/* Image 1 */}
             <div className="relative w-full aspect-[4/3] overflow-hidden rounded-lg group">
-              <Image
-                src={content.image_cards?.[0]?.image || "/sofacollect.jpg"}
-                alt="Sofa Collection"
-                fill
-                className="object-cover transition-transform duration-500"
-              />
-              {/* Database indicator */}
-              {content.image_cards?.[0]?.image && (
-                <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
-                  DB
+              {content.image_cards?.[0]?.image ? (
+                <Image
+                  src={content.image_cards?.[0]?.image}
+                  alt="Sofa Collection"
+                  fill
+                  className="object-cover transition-transform duration-500"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 animate-pulse">
+                  <div className="w-full h-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
                 </div>
               )}
+              
               <div className="absolute inset-0 bg-black/20 flex items-end">
                 <div className="text-white p-4 w-full">
                   <h3 className="text-lg font-bold mb-2 font-display">
@@ -228,18 +231,19 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
 
             {/* Image 2 */}
             <div className="relative w-full aspect-[4/3] overflow-hidden rounded-lg group">
-              <Image
-                src={content.image_cards?.[1]?.image || "/bedcollect.jpeg"}
-                alt="Bed Collection"
-                fill
-                className="object-cover transition-transform duration-500"
-              />
-              {/* Database indicator */}
-              {content.image_cards?.[1]?.image && (
-                <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
-                  DB
+              {content.image_cards?.[1]?.image ? (
+                <Image
+                  src={content.image_cards?.[1]?.image}
+                  alt="Bed Collection"
+                  fill
+                  className="object-cover transition-transform duration-500"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 animate-pulse">
+                  <div className="w-full h-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
                 </div>
               )}
+              
               <div className="absolute inset-0 bg-black/20 flex items-end">
                 <div className="text-white p-4 w-full">
                   <h3 className="text-lg font-bold mb-2 font-display">
@@ -257,18 +261,19 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
 
             {/* Image 3 */}
             <div className="relative w-full aspect-[4/3] overflow-hidden rounded-lg group">
-              <Image
-                src={content.image_cards?.[2]?.image || "/hello.jpeg"}
-                alt="Mattress Collection"
-                fill
-                className="object-cover transition-transform duration-500"
-              />
-              {/* Database indicator */}
-              {content.image_cards?.[2]?.image && (
-                <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
-                  DB
+              {content.image_cards?.[2]?.image ? (
+                <Image
+                  src={content.image_cards?.[2]?.image}
+                  alt="Mattress Collection"
+                  fill
+                  className="object-cover transition-transform duration-500"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 animate-pulse">
+                  <div className="w-full h-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
                 </div>
               )}
+              
               <div className="absolute inset-0 bg-black/20 flex items-end">
                 <div className="text-white p-4 w-full">
                   <h3 className="text-lg font-bold mb-2 font-display">
@@ -286,18 +291,19 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
 
             {/* Image 4 */}
             <div className="relative w-full aspect-[4/3] overflow-hidden rounded-lg group">
-              <Image
-                src={content.image_cards?.[3]?.image || "/hi.jpeg"}
-                alt="Accessories Collection"
-                fill
-                className="object-cover transition-transform duration-500"
-              />
-              {/* Database indicator */}
-              {content.image_cards?.[3]?.image && (
-                <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
-                  DB
+              {content.image_cards?.[3]?.image ? (
+                <Image
+                  src={content.image_cards?.[3]?.image}
+                  alt="Accessories Collection"
+                  fill
+                  className="object-cover transition-transform duration-500"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 animate-pulse">
+                  <div className="w-full h-full bg-gradient-to-r from-gray-300 via-gray-400 to-gray-300 animate-pulse"></div>
                 </div>
               )}
+              
               <div className="absolute inset-0 bg-black/20 flex items-end">
                 <div className="text-white p-4 w-full">
                   <h3 className="text-lg font-bold mb-2 font-display">

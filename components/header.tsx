@@ -7,16 +7,42 @@ import { Search, ShoppingCart, Heart, Mail, X, Truck, HeadphonesIcon, ArrowRight
 import { Input } from "@/components/ui/input"
 import { Sora } from 'next/font/google'
 import { useCart } from "@/lib/cart-context"
+import { usePathname } from 'next/navigation'
 
 const sora = Sora({ subsets: ['latin'], weight: ['800'] })
 
 export default function Header() {
   const { state } = useCart()
+  const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isTopBarVisible, setIsTopBarVisible] = useState(true)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null)
   const [salesDropdownOpen, setSalesDropdownOpen] = useState(false)
+
+  // Check if we're on a category page
+  const isOnCategoryPage = pathname && (
+    pathname.startsWith('/mattresses') ||
+    pathname.startsWith('/beds') ||
+    pathname.startsWith('/sofas') ||
+    pathname.startsWith('/kids') ||
+    pathname.startsWith('/pillows') ||
+    pathname.startsWith('/toppers') ||
+    pathname.startsWith('/bunkbeds') ||
+    pathname.startsWith('/guides')
+  )
+
+  // Disable dropdowns when on category pages
+  const handleCategoryHover = (category: string) => {
+    if (isOnCategoryPage) return // Disable dropdowns on category pages
+    
+    // Clear any existing timeout
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout)
+      setHoverTimeout(null)
+    }
+    setActiveDropdown(category)
+  }
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -26,15 +52,6 @@ export default function Header() {
       }
     }
   }, [hoverTimeout])
-
-  const handleCategoryHover = (category: string) => {
-    // Clear any existing timeout
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout)
-      setHoverTimeout(null)
-    }
-    setActiveDropdown(category)
-  }
 
   const handleCategoryLeave = () => {
     // Add a small delay before closing to allow moving to dropdown
@@ -349,18 +366,18 @@ export default function Header() {
           <div className="flex items-center justify-center pt-8 pb-3">
             <div className="flex items-center gap-4 lg:gap-6 xl:gap-8 text-sm font-medium">
               {/* Mattresses Dropdown */}
-              <div className="group relative" onMouseEnter={() => handleCategoryHover('mattresses')} onMouseLeave={handleCategoryLeave}>
-                <Link href="/mattresses" className="flex items-center gap-1 hover:text-orange-400 transition-colors">
-                  Mattresses <ChevronDown className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-transform group-hover:rotate-180" />
+              <div className={`group relative ${isOnCategoryPage && pathname.startsWith('/mattresses') ? 'opacity-50 cursor-not-allowed' : ''}`} onMouseEnter={() => handleCategoryHover('mattresses')} onMouseLeave={handleCategoryLeave}>
+                <Link href="/mattresses" className={`flex items-center gap-1 transition-colors ${isOnCategoryPage && pathname.startsWith('/mattresses') ? 'text-gray-400' : 'hover:text-orange-400'}`}>
+                  Mattresses <ChevronDown className={`w-4 h-4 transition-transform ${isOnCategoryPage && pathname.startsWith('/mattresses') ? 'text-gray-400' : 'text-gray-300 group-hover:text-orange-400 group-hover:rotate-180'}`} />
                 </Link>
                 {/* Transparent bridge to prevent gap */}
                 <div className="absolute top-full left-0 right-0 h-4 bg-transparent"></div>
               </div>
 
               {/* Beds Dropdown */}
-              <div className="group relative" onMouseEnter={() => handleCategoryHover('beds')} onMouseLeave={handleCategoryLeave}>
-                <Link href="/beds" className="flex items-center gap-1 hover:text-orange-400 transition-colors">
-                  Beds <ChevronDown className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-transform group-hover:rotate-180" />
+              <div className={`group relative ${isOnCategoryPage && pathname.startsWith('/beds') ? 'opacity-50 cursor-not-allowed' : ''}`} onMouseEnter={() => handleCategoryHover('beds')} onMouseLeave={handleCategoryLeave}>
+                <Link href="/beds" className={`flex items-center gap-1 transition-colors ${isOnCategoryPage && pathname.startsWith('/beds') ? 'text-gray-400' : 'hover:text-orange-400'}`}>
+                  Beds <ChevronDown className={`w-4 h-4 transition-transform ${isOnCategoryPage && pathname.startsWith('/beds') ? 'text-gray-400' : 'text-gray-300 group-hover:text-orange-400 group-hover:rotate-180'}`} />
                 </Link>
                 {/* Transparent bridge to prevent gap */}
                 <div className="absolute top-full left-0 right-0 h-4 bg-transparent"></div>
@@ -368,21 +385,21 @@ export default function Header() {
 
               {/* Sofas Dropdown */}
               <div 
-                className="group relative"
+                className={`group relative ${isOnCategoryPage && pathname.startsWith('/sofas') ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onMouseEnter={() => handleCategoryHover('sofas')}
                 onMouseLeave={handleCategoryLeave}
               >
-                <Link href="/sofas" className="flex items-center gap-1 hover:text-orange-400 transition-colors">
-                  Sofas <ChevronDown className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-transform group-hover:rotate-180" />
+                <Link href="/sofas" className={`flex items-center gap-1 transition-colors ${isOnCategoryPage && pathname.startsWith('/sofas') ? 'text-gray-400' : 'hover:text-orange-400'}`}>
+                  Sofas <ChevronDown className={`w-4 h-4 transition-transform ${isOnCategoryPage && pathname.startsWith('/sofas') ? 'text-gray-400' : 'text-gray-300 group-hover:text-orange-400 group-hover:rotate-180'}`} />
                 </Link>
                 {/* Transparent bridge to prevent gap */}
                 <div className="absolute top-full left-0 right-0 h-4 bg-transparent"></div>
               </div>
 
               {/* Kids Dropdown */}
-              <div className="group relative" onMouseEnter={() => handleCategoryHover('kids')} onMouseLeave={handleCategoryLeave}>
-                <Link href="/kids" className="flex items-center gap-1 hover:text-orange-400 transition-colors">
-                  Kids <ChevronDown className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-transform group-hover:rotate-180" />
+              <div className={`group relative ${isOnCategoryPage && pathname.startsWith('/kids') ? 'opacity-50 cursor-not-allowed' : ''}`} onMouseEnter={() => handleCategoryHover('kids')} onMouseLeave={handleCategoryLeave}>
+                <Link href="/kids" className={`flex items-center gap-1 transition-colors ${isOnCategoryPage && pathname.startsWith('/kids') ? 'text-gray-400' : 'hover:text-orange-400'}`}>
+                  Kids <ChevronDown className={`w-4 h-4 transition-transform ${isOnCategoryPage && pathname.startsWith('/kids') ? 'text-gray-400' : 'text-gray-300 group-hover:text-orange-400 group-hover:rotate-180'}`} />
                 </Link>
                 {/* Transparent bridge to prevent gap */}
                 <div className="absolute top-full left-0 right-0 h-4 bg-transparent"></div>
@@ -390,21 +407,21 @@ export default function Header() {
 
               {/* Pillows Dropdown */}
               <div 
-                className="group relative"
+                className={`group relative ${isOnCategoryPage && pathname.startsWith('/pillows') ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onMouseEnter={() => handleCategoryHover('pillows')}
                 onMouseLeave={handleCategoryLeave}
               >
-                <Link href="/pillows" className="flex items-center gap-1 hover:text-orange-400 transition-colors">
-                  Pillows <ChevronDown className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-transform group-hover:rotate-180" />
+                <Link href="/pillows" className={`flex items-center gap-1 transition-colors ${isOnCategoryPage && pathname.startsWith('/pillows') ? 'text-gray-400' : 'hover:text-orange-400'}`}>
+                  Pillows <ChevronDown className={`w-4 h-4 transition-transform ${isOnCategoryPage && pathname.startsWith('/pillows') ? 'text-gray-400' : 'text-gray-300 group-hover:text-orange-400 group-hover:rotate-180'}`} />
                 </Link>
                 {/* Transparent bridge to prevent gap */}
                 <div className="absolute top-full left-0 right-0 h-4 bg-transparent"></div>
               </div>
 
               {/* Toppers Dropdown */}
-              <div className="group relative" onMouseEnter={() => handleCategoryHover('toppers')} onMouseLeave={handleCategoryLeave}>
-                <Link href="/toppers" className="flex items-center gap-1 hover:text-orange-400 transition-colors">
-                  Toppers <ChevronDown className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-transform group-hover:rotate-180" />
+              <div className={`group relative ${isOnCategoryPage && pathname.startsWith('/toppers') ? 'opacity-50 cursor-not-allowed' : ''}`} onMouseEnter={() => handleCategoryHover('toppers')} onMouseLeave={handleCategoryLeave}>
+                <Link href="/toppers" className={`flex items-center gap-1 transition-colors ${isOnCategoryPage && pathname.startsWith('/toppers') ? 'text-gray-400' : 'hover:text-orange-400'}`}>
+                  Toppers <ChevronDown className={`w-4 h-4 transition-transform ${isOnCategoryPage && pathname.startsWith('/toppers') ? 'text-gray-400' : 'text-gray-300 group-hover:text-orange-400 group-hover:rotate-180'}`} />
                 </Link>
                 {/* Transparent bridge to prevent gap */}
                 <div className="absolute top-full left-0 right-0 h-4 bg-transparent"></div>
@@ -412,12 +429,12 @@ export default function Header() {
 
               {/* Bunkbeds Dropdown */}
               <div 
-                className="group relative"
+                className={`group relative ${isOnCategoryPage && pathname.startsWith('/bunkbeds') ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onMouseEnter={() => handleCategoryHover('bunkbeds')}
                 onMouseLeave={handleCategoryLeave}
               >
-                <Link href="/bunkbeds" className="flex items-center gap-1 hover:text-orange-400 transition-colors">
-                  Bunkbeds <ChevronDown className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-transform group-hover:rotate-180" />
+                <Link href="/bunkbeds" className={`flex items-center gap-1 transition-colors ${isOnCategoryPage && pathname.startsWith('/bunkbeds') ? 'text-gray-400' : 'hover:text-orange-400'}`}>
+                  Bunkbeds <ChevronDown className={`w-4 h-4 transition-transform ${isOnCategoryPage && pathname.startsWith('/bunkbeds') ? 'text-gray-400' : 'text-gray-300 group-hover:text-orange-400 group-hover:rotate-180'}`} />
                 </Link>
                 {/* Transparent bridge to prevent gap */}
                 <div className="absolute top-full left-0 right-0 h-4 bg-transparent"></div>
@@ -425,12 +442,12 @@ export default function Header() {
 
               {/* Guides Dropdown */}
               <div 
-                className="group relative"
+                className={`group relative ${isOnCategoryPage && pathname.startsWith('/guides') ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onMouseEnter={() => handleCategoryHover('guides')}
                 onMouseLeave={handleCategoryLeave}
               >
-                <Link href="/guides" className="flex items-center gap-1 hover:text-orange-400 transition-colors">
-                  Guide <ChevronDown className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-transform group-hover:rotate-180" />
+                <Link href="/guides" className={`flex items-center gap-1 transition-colors ${isOnCategoryPage && pathname.startsWith('/guides') ? 'text-gray-400' : 'hover:text-orange-400'}`}>
+                  Guide <ChevronDown className={`w-4 h-4 transition-transform ${isOnCategoryPage && pathname.startsWith('/guides') ? 'text-gray-400' : 'text-gray-300 group-hover:text-orange-400 group-hover:rotate-180'}`} />
                 </Link>
                 {/* Transparent bridge to prevent gap */}
                 <div className="absolute top-full left-0 right-0 h-4 bg-transparent"></div>
@@ -553,7 +570,7 @@ export default function Header() {
           {/* Product Dropdowns */}
           <div className="absolute top-full left-0 w-full z-50 transition-all duration-200">
                   {/* Mattresses Content */}
-                  {activeDropdown === 'mattresses' && (
+                  {activeDropdown === 'mattresses' && !isOnCategoryPage && (
               <div 
                 className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
                 onMouseEnter={() => handleCategoryHover('mattresses')}
@@ -870,7 +887,7 @@ export default function Header() {
                   )}
 
                   {/* Beds Content */}
-                  {activeDropdown === 'beds' && (
+                  {activeDropdown === 'beds' && !isOnCategoryPage && (
               <div 
                 className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
                 onMouseEnter={() => handleCategoryHover('beds')}
@@ -1124,7 +1141,7 @@ export default function Header() {
                   )}
 
                   {/* Sofas Content */}
-                  {activeDropdown === 'sofas' && (
+                  {activeDropdown === 'sofas' && !isOnCategoryPage && (
               <div 
                 className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
                 onMouseEnter={() => handleCategoryHover('sofas')}
@@ -1413,7 +1430,7 @@ export default function Header() {
                   )}
 
                   {/* Pillows Content */}
-                  {activeDropdown === 'pillows' && (
+                  {activeDropdown === 'pillows' && !isOnCategoryPage && (
               <div 
                 className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
                 onMouseEnter={() => handleCategoryHover('pillows')}
@@ -1534,7 +1551,7 @@ export default function Header() {
                   )}
 
                   {/* Toppers Content */}
-                  {activeDropdown === 'toppers' && (
+                  {activeDropdown === 'toppers' && !isOnCategoryPage && (
               <div 
                 className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
                 onMouseEnter={() => handleCategoryHover('toppers')}
@@ -1655,7 +1672,7 @@ export default function Header() {
                   )}
 
                   {/* Bunkbeds Content */}
-                  {activeDropdown === 'bunkbeds' && (
+                  {activeDropdown === 'bunkbeds' && !isOnCategoryPage && (
               <div 
                 className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
                 onMouseEnter={() => handleCategoryHover('bunkbeds')}
@@ -1776,7 +1793,7 @@ export default function Header() {
                   )}
 
                   {/* Kids Content */}
-                  {activeDropdown === 'kids' && (
+                  {activeDropdown === 'kids' && !isOnCategoryPage && (
               <div 
                 className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
                 onMouseEnter={() => handleCategoryHover('kids')}
@@ -1944,7 +1961,7 @@ export default function Header() {
                   )}
 
                   {/* Guide Content */}
-                  {activeDropdown === 'guides' && (
+                  {activeDropdown === 'guides' && !isOnCategoryPage && (
               <div 
                 className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
                 onMouseEnter={() => handleCategoryHover('guides')}
