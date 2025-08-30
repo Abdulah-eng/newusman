@@ -15,10 +15,7 @@ import { AdminNav } from '@/components/admin/admin-nav'
 interface Product {
   id: string
   name: string
-  category: {
-    name: string
-    slug: string
-  }
+  category_id: string
   rating: number | null
   headline: string | null
   currentPrice: number | null
@@ -50,7 +47,7 @@ export default function AdminProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('created_at')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [categories, setCategories] = useState<Array<{ name: string; slug: string }>>([])
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string }>>([])
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   // Fetch products and categories on component mount
@@ -63,7 +60,7 @@ export default function AdminProductsPage() {
     try {
       const { data, error } = await supabase
         .from('categories')
-        .select('name, slug')
+        .select('id, name, slug')
         .order('name')
 
       if (error) {
@@ -80,14 +77,14 @@ export default function AdminProductsPage() {
   const fetchProducts = async () => {
     setLoading(true)
     try {
-      console.log('Fetching products with category:', selectedCategory, 'sortBy:', sortBy, 'sortOrder:', sortOrder)
+      // Console log removed for performance
       
       let query = supabase
         .from('products')
         .select(`
           id,
           name,
-          category:categories(name, slug),
+          category_id,
           rating,
           headline,
           created_at,
@@ -98,7 +95,7 @@ export default function AdminProductsPage() {
         .order(sortBy, { ascending: sortOrder === 'asc' })
 
       if (selectedCategory !== 'all') {
-        query = query.eq('category.slug', selectedCategory)
+        query = query.eq('category_id', selectedCategory)
       }
 
       const { data, error } = await query
@@ -109,7 +106,10 @@ export default function AdminProductsPage() {
         return
       }
 
-      console.log('Successfully fetched products:', data?.length || 0)
+      // Console log removed for performance
+      // Console log removed for performance
+      // Console log removed for performance
+      // Console log removed for performance
       setProducts(data || [])
     } catch (error) {
       console.error('Error fetching products:', error)
@@ -152,11 +152,18 @@ export default function AdminProductsPage() {
     return Math.max(...variants.map(v => v.current_price || v.original_price || 0))
   }
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.headline?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const getCategoryInfo = (categoryId: string) => {
+    return categories.find(cat => cat.id === categoryId) || null
+  }
+
+  const filteredProducts = products.filter(product => {
+    const categoryInfo = getCategoryInfo(product.category_id)
+    return (
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.headline?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (categoryInfo?.name && categoryInfo.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    )
+  })
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
@@ -217,7 +224,7 @@ export default function AdminProductsPage() {
               >
                 <option value="all">All Categories</option>
                 {categories.map((category) => (
-                  <option key={category.slug} value={category.slug}>
+                  <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
                 ))}
@@ -334,9 +341,18 @@ export default function AdminProductsPage() {
 
                       {/* Category */}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {product.category.name}
-                        </span>
+                        {(() => {
+                          const categoryInfo = getCategoryInfo(product.category_id)
+                          return categoryInfo ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {categoryInfo.name}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              No Category
+                            </span>
+                          )
+                        })()}
                       </td>
 
                       {/* Price Range */}
@@ -392,7 +408,15 @@ export default function AdminProductsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => window.open(`/products/${product.category.slug}/${product.id}`, '_blank')}
+                            onClick={() => {
+                              const categoryInfo = getCategoryInfo(product.category_id)
+                              if (categoryInfo?.slug) {
+                                window.open(`/products/${categoryInfo.slug}/${product.id}`, '_blank')
+                              } else {
+                                alert('Cannot view product: No category assigned')
+                              }
+                            }}
+                            disabled={!getCategoryInfo(product.category_id)?.slug}
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             View

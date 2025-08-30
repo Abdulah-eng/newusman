@@ -110,20 +110,20 @@ export function BasketSidebar({ isOpen, onClose, product }: BasketSidebarProps) 
       setLoadingRecommended(true)
       try {
         if (product?.id) {
-          console.log('Fetching recommendations for product:', product.id)
+          // Fetching recommendations for product
           // Fetch recommendations for the specific product
           const response = await fetch(`/api/products/${product.id}/recommendations`)
           if (response.ok) {
             const data = await response.json()
-            console.log('Received recommendations:', data.recommendations)
+            // Received recommendations
             setRecommendedProducts(data.recommendations || [])
           } else {
-            console.log('Failed to fetch specific recommendations, falling back to generic')
+            // Failed to fetch specific recommendations, falling back to generic
             // Fallback to generic recommendations if specific ones fail
             await fetchGenericRecommendations()
           }
         } else {
-          console.log('No specific product, fetching generic recommendations')
+          // No specific product, fetching generic recommendations
           // No specific product, fetch generic recommendations
           await fetchGenericRecommendations()
         }

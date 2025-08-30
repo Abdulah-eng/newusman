@@ -24,7 +24,7 @@ export default function GuidesPage() {
     const fetchGuides = async () => {
       try {
         setLoading(true)
-        console.log('🔍 Guides Page: Fetching ideas & guides from homepage content')
+        // Console log removed for performance
         
         const response = await fetch('/api/homepage-content')
         if (!response.ok) {
@@ -32,13 +32,13 @@ export default function GuidesPage() {
         }
         
         const data = await response.json()
-        console.log('🔍 Guides Page: Homepage content data:', data)
+        // Console log removed for performance
         
         // The API returns an object with section names as keys, not an array
-        console.log('🔍 Guides Page: API response structure:', data)
+        // Console log removed for performance
         
         if (data && data.ideas_guides) {
-          console.log('🔍 Guides Page: Found ideas_guides section:', data.ideas_guides)
+          // Console log removed for performance
           
           // Ensure ideas_guides is an array
           if (Array.isArray(data.ideas_guides)) {
@@ -48,8 +48,8 @@ export default function GuidesPage() {
             setGuides([])
           }
         } else {
-          console.log('🔍 Guides Page: No ideas_guides section found, using empty array')
-          console.log('🔍 Guides Page: Available sections:', Object.keys(data || {}))
+          // Console log removed for performance
+          // Console log removed for performance)
           setGuides([])
         }
       } catch (error) {

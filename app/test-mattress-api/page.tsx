@@ -18,16 +18,16 @@ export default function TestMattressAPI() {
     setError(null)
     
     try {
-      console.log('🧪 Testing Mattress API for product ID:', productId)
+      // Console log removed for performance
       const response = await fetch(`/api/products/${productId}`)
-      console.log('🧪 API Response status:', response.status)
+      // Console log removed for performance
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       
       const data = await response.json()
-      console.log('🧪 API Response data:', data)
+      // Console log removed for performance
       setApiResponse(data)
     } catch (err) {
       console.error('🧪 API Test error:', err)

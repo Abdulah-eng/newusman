@@ -14,7 +14,7 @@ export function CacheManager() {
     setIsClearing(true)
     try {
       cacheManager.clear('homepage_content_cache')
-      console.log('✅ Homepage cache cleared')
+      // Console log removed for performance
       
       // Force a page refresh to reload fresh data
       setTimeout(() => {
@@ -31,7 +31,7 @@ export function CacheManager() {
     setIsClearing(true)
     try {
       cacheManager.clearAll()
-      console.log('✅ All caches cleared')
+      // Console log removed for performance
       
       // Force a page refresh to reload fresh data
       setTimeout(() => {
@@ -54,7 +54,7 @@ export function CacheManager() {
       const response = await fetch('/api/homepage-content')
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ Fresh homepage content loaded')
+        // Console log removed for performance
         
         // Save to cache
         cacheManager.set('homepage_content_cache', data)

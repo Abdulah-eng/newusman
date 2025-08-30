@@ -124,25 +124,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     
     // Debug: Log the incoming data
-    console.log('Incoming product data:', {
-      category: body.category,
-      name: body.name,
-      firmnessScale: body.firmnessScale,
-      supportLevel: body.supportLevel,
-      pressureReliefLevel: body.pressureReliefLevel,
-      airCirculationLevel: body.airCirculationLevel,
-      durabilityLevel: body.durabilityLevel
-    })
+    // Incoming product data received
     
     // Log the validation results
-    console.log('Validation results:', {
-      firmnessScale: body.firmnessScale,
-      validatedFirmness: body.firmnessScale && ['Soft', 'Soft-Medium', 'Medium', 'Medium-Firm', 'Firm', 'Extra-firm'].includes(body.firmnessScale) ? body.firmnessScale : 'INVALID',
-      supportLevel: body.supportLevel,
-      pressureReliefLevel: body.pressureReliefLevel,
-      airCirculationLevel: body.airCirculationLevel,
-      durabilityLevel: body.durabilityLevel
-    })
+    // Validation results processed
     
     // Extract data from the request body
     const {
@@ -151,6 +136,7 @@ export async function POST(request: NextRequest) {
       rating,
       headline,
       longDescription,
+      warrantyDeliveryLine,
       firmnessScale,
       supportLevel,
       pressureReliefLevel,
@@ -213,6 +199,7 @@ export async function POST(request: NextRequest) {
         rating: rating ? parseFloat(rating) : null,
         headline,
         long_description: longDescription || null,
+        warranty_delivery_line: warrantyDeliveryLine || null,
         firmness_scale: validateFirmnessScale(firmnessScale),
         support_level: validateComfortLevel(supportLevel),
         pressure_relief_level: validateComfortLevel(pressureReliefLevel),
@@ -278,7 +265,7 @@ export async function POST(request: NextRequest) {
     if (variants && variants.length > 0) {
       try {
         // Debug: log incoming variants payload
-        console.log('[Save Product] incoming variants (raw):', Array.isArray(variants) ? variants : [])
+        // Console log removed for performance:', Array.isArray(variants) ? variants : [])
 
         const attr = (selectedAttributes || {}) as {
           useColor?: boolean
@@ -304,12 +291,12 @@ export async function POST(request: NextRequest) {
             variant_image: variant?.variant_image ?? null
           }
           // Per-row debug
-          console.log(`[Save Product] variant[${index}] mapped row:`, row)
+          // Console log removed for performance
           return row
         })
 
         // Final debug: mapped payload
-        console.log('[Save Product] variants mapped for insert:', variantData)
+        // Console log removed for performance
 
         const { data: insertedVariants, error: variantError } = await supabase
           .from('product_variants')
@@ -320,9 +307,9 @@ export async function POST(request: NextRequest) {
           console.error('Variant insertion error:', variantError)
           console.error('Variant insertion payload:', variantData)
         } else {
-          console.log('[Save Product] variants inserted OK. Count:', insertedVariants?.length || 0)
+          // Console log removed for performance
           try {
-            console.log('[Save Product] inserted variants (first 5):', (insertedVariants || []).slice(0, 5))
+            // Console log removed for performance:', (insertedVariants || []).slice(0, 5))
           } catch {}
         }
       } catch (e) {
@@ -330,7 +317,7 @@ export async function POST(request: NextRequest) {
         console.error('[Save Product] variants raw payload (on error):', variants)
       }
     } else {
-      console.log('[Save Product] no variants provided or empty array; skipping variant insert')
+      // Console log removed for performance
     }
 
     // Insert product features
@@ -450,7 +437,7 @@ export async function POST(request: NextRequest) {
 
       // Debug: log what we are about to save for reasons_to_love
       try {
-        console.log('[Save Product] reasons_to_love (with descriptions):', rowsWithDesc)
+        // Console log removed for performance:', rowsWithDesc)
       } catch {}
 
       let reasonError: any = null
@@ -498,7 +485,7 @@ export async function POST(request: NextRequest) {
 
       // Debug: log what we are about to save for custom reasons
       try {
-        console.log('[Save Product] custom_reasons (with descriptions):', customReasonDataWithDesc)
+        // Console log removed for performance:', customReasonDataWithDesc)
       } catch {}
 
       // Try inserting with description column; if the column does not exist, fall back to legacy insert
@@ -685,7 +672,7 @@ export async function POST(request: NextRequest) {
       if (recommendedProductError) {
         console.error('Recommended product insertion error:', recommendedProductError)
       } else {
-        console.log('Successfully inserted recommended products:', recommendedProductData)
+        // Console log removed for performance
       }
     }
 
@@ -714,7 +701,7 @@ export async function POST(request: NextRequest) {
         if (freeGiftError) {
           console.error('Free gift relationship insertion error:', freeGiftError)
         } else {
-          console.log('Successfully inserted free gift relationship')
+          // Console log removed for performance
         }
       }
       
@@ -728,7 +715,7 @@ export async function POST(request: NextRequest) {
         if (updateError) {
           console.error('Product update with badges/free gift error:', updateError)
         } else {
-          console.log('Successfully updated product with badges and free gift data')
+          // Console log removed for performance
         }
       }
     }

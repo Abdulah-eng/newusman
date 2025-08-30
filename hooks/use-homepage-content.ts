@@ -71,7 +71,7 @@ export function useHomePageContent() {
     if (typeof window !== 'undefined') {
       const cachedData = cacheManager.getImmediate<HomePageContent>(CACHE_KEY)
       if (cachedData) {
-        console.log('🚀 Immediate cache hit - showing images instantly')
+        // Immediate cache hit - showing images instantly
         return cachedData
       }
     }
@@ -154,8 +154,8 @@ export function useHomePageContent() {
         }
         
         const data = await response.json()
-        console.log('🔍 useHomePageContent - Raw API response:', data)
-        console.log('🔍 useHomePageContent - Mattresses section:', data.mattresses)
+              // Raw API response received
+      // Mattresses section loaded
         
         setContent(data)
         saveToCache(data)

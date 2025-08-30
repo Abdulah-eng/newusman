@@ -394,17 +394,7 @@ export function ProductCard({ product }: ProductCardProps) {
       safeProduct.badges?.some(b => b.type === 'free_gift' && b.enabled)
     )
     
-    // Debug logging
-    console.log('Product being added to cart:', {
-      id: safeProduct.id,
-      name: safeProduct.name,
-      badges: safeProduct.badges,
-      free_gift_product_id: safeProduct.free_gift_product_id,
-      free_gift_enabled: safeProduct.free_gift_enabled,
-      free_gift_product_name: safeProduct.free_gift_product_name,
-      free_gift_product_image: safeProduct.free_gift_product_image,
-      hasFreeGift
-    })
+    // Product being added to cart
     
     const payload = {
       id: safeProduct.id,
@@ -426,18 +416,9 @@ export function ProductCard({ product }: ProductCardProps) {
         freeGiftProductName: giftProductName,
         freeGiftProductImage: safeProduct.free_gift_product_image || ''
       })
-      console.log('Free gift will be added:', {
-        freeGiftProductId: safeProduct.free_gift_product_id,
-        freeGiftProductName: giftProductName,
-        freeGiftProductImage: safeProduct.free_gift_product_image || '',
-        source: 'product_card'
-      })
+      // Free gift will be added
     } else {
-      console.log('No free gift details available - reasons:', {
-        hasFreeGiftProductId: !!safeProduct.free_gift_product_id,
-        free_gift_enabled: safeProduct.free_gift_enabled,
-        hasFreeGiftBadge: safeProduct.badges?.some(b => b.type === 'free_gift' && b.enabled)
-      })
+      // No free gift details available
     }
     
     dispatch({

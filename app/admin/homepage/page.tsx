@@ -199,13 +199,13 @@ export default function HomePageAdmin() {
               })
               break
             case 'mattresses':
-              console.log('🔍 Admin - Loading mattresses section:', item.content)
+              // Console log removed for performance
               // Handle both old and new structure for backward compatibility
               if (item.content.mattressCards) {
-                console.log('🔍 Admin - Using new structure with mattress cards')
+                // Console log removed for performance
                 setMattressesSection(item.content)
               } else {
-                console.log('🔍 Admin - Converting old structure to new structure')
+                // Console log removed for performance
                 // Convert old structure to new structure
                 setMattressesSection({
                   productIds: item.content.productIds || [],
@@ -218,13 +218,13 @@ export default function HomePageAdmin() {
               }
               break
             case 'bedroom_inspiration':
-              console.log('🔍 Admin - Loading bedroom inspiration section:', item.content)
+              // Console log removed for performance
               // Handle both old and new structure for backward compatibility
               if (item.content.productCards) {
-                console.log('🔍 Admin - Using new structure with product cards')
+                // Console log removed for performance
                 setBedroomInspiration(item.content)
               } else {
-                console.log('🔍 Admin - Converting old structure to new structure')
+                // Console log removed for performance
                 // Convert old structure to new structure
                 setBedroomInspiration({
                   productIds: item.content.productIds || [],
@@ -253,7 +253,7 @@ export default function HomePageAdmin() {
   const loadProducts = async () => {
     setLoading(true)
     try {
-      console.log('Starting to load products...')
+      // Console log removed for performance
       
       // Load all products for deal of day with category info
       const { data: products, error: productsError } = await supabase
@@ -282,7 +282,7 @@ export default function HomePageAdmin() {
         image: '/placeholder.jpg'
       })) || []
       
-      console.log('Loaded products:', transformedProducts)
+      // Console log removed for performance
       setAllProducts(transformedProducts)
 
       // Load mattresses (products in mattress category)
@@ -310,7 +310,7 @@ export default function HomePageAdmin() {
         image: '/placeholder.jpg'
       })) || []
       
-      console.log('Loaded mattresses:', transformedMattresses)
+      // Console log removed for performance
       setAllMattresses(transformedMattresses)
 
       // Load sofas (products in sofa category)
@@ -338,10 +338,10 @@ export default function HomePageAdmin() {
         image: '/placeholder.jpg'
       })) || []
       
-      console.log('Loaded sofas:', transformedSofas)
+      // Console log removed for performance
       setAllSofas(transformedSofas)
 
-      console.log('All products loaded successfully')
+      // Console log removed for performance
     } catch (error) {
       console.error('Error loading products:', error)
       alert(`Error loading products: ${error.message || 'Unknown error'}. Please check your database connection.`)
@@ -364,12 +364,12 @@ export default function HomePageAdmin() {
         { section: 'ideas_guides', content: ideasGuides, order_index: 8 }
       ]
 
-      console.log('Saving content sections:', contentSections)
+      // Console log removed for performance
 
       for (const section of contentSections) {
-        console.log(`Saving section: ${section.section}`)
+        // Console log removed for performance
         if (section.section === 'mattresses') {
-          console.log('🔍 Admin - Saving mattresses section with content:', section.content)
+          // Console log removed for performance
         }
         const { error } = await supabase
           .from('homepage_content')
@@ -383,7 +383,7 @@ export default function HomePageAdmin() {
           console.error(`Error saving section ${section.section}:`, error)
           throw error
         }
-        console.log(`Successfully saved section: ${section.section}`)
+        // Console log removed for performance
       }
 
       alert('Homepage content saved successfully!')
@@ -397,6 +397,33 @@ export default function HomePageAdmin() {
 
   const handleImageUpload = async (file: File, setImageFunction: (url: string) => void) => {
     try {
+      // Use optimized upload API for homepage images
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('preset', 'medium') // Use medium preset for homepage images
+      
+      const response = await fetch('/api/upload-optimized', {
+        method: 'POST',
+        body: formData
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        setImageFunction(result.url)
+        
+        // Show size comparison alert for homepage images
+        const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
+        const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
+        const savingsPercent = result.compressionRatio
+        
+        alert(`Homepage image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
+        
+        // Console log removed for performance
+      } else {
+        const error = await response.json()
+        console.error('[Homepage Upload] Optimized upload error:', error)
+        
+        // Fallback to regular upload if optimized upload fails
       const fileExt = file.name.split('.').pop()
       const fileName = `${Math.random()}.${fileExt}`
       const filePath = `homepage/${fileName}`
@@ -412,6 +439,8 @@ export default function HomePageAdmin() {
         .getPublicUrl(filePath)
 
       setImageFunction(publicUrl)
+        alert('Image uploaded successfully (fallback mode)')
+      }
     } catch (error) {
       console.error('Error uploading image:', error)
       alert('Error uploading image. Please try again.')

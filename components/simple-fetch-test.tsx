@@ -12,16 +12,16 @@ export default function SimpleFetchTest() {
     setLoading(true)
     setError(null)
     try {
-      console.log('🧪 SimpleFetchTest: Starting fetch...')
+      // Starting fetch
       const response = await fetch('/api/homepage-content')
-      console.log('🧪 SimpleFetchTest: Response received:', response.status, response.ok)
+              // Response received
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`)
       }
       
       const result = await response.json()
-      console.log('🧪 SimpleFetchTest: Data received:', result)
+              // Data received
       setData(result)
     } catch (err) {
       console.error('🧪 SimpleFetchTest: Error:', err)

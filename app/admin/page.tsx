@@ -1767,6 +1767,7 @@ function ProductForm() {
   const [rating, setRating] = useState<number>(4.5)
   const [headline, setHeadline] = useState('Premium Sleep Experience')
   const [longDescription, setLongDescription] = useState('Write a compelling description about comfort, materials and value.')
+  const [warrantyDeliveryLine, setWarrantyDeliveryLine] = useState('10-Year Warranty • Free Delivery • 100-Night Trial')
   
   // Description paragraphs with images
   const [descriptionParagraphs, setDescriptionParagraphs] = useState([
@@ -2039,7 +2040,7 @@ function ProductForm() {
   // Recommended products functions
   const fetchRecommendedProducts = async () => {
     try {
-      console.log('Fetching recommended products for all categories...')
+      // Console log removed for performance
       
       // Fetch products for each category
       const [mattressesRes, bedsRes, sofasRes, pillowsRes, toppersRes] = await Promise.all([
@@ -2053,8 +2054,8 @@ function ProductForm() {
       // Handle mattresses
       if (mattressesRes.ok) {
         const data = await mattressesRes.json()
-        console.log('Mattresses loaded:', data.products?.length || 0)
-        console.log('Sample mattress data:', data.products?.[0])
+        // Console log removed for performance
+        // Console log removed for performance
         setMattresses(data.products || [])
       } else {
         const errorData = await mattressesRes.json().catch(() => ({}))
@@ -2065,7 +2066,7 @@ function ProductForm() {
       // Handle beds
       if (bedsRes.ok) {
         const data = await bedsRes.json()
-        console.log('Beds loaded:', data.products?.length || 0)
+        // Console log removed for performance
         setBeds(data.products || [])
       } else {
         const errorData = await bedsRes.json().catch(() => ({}))
@@ -2076,7 +2077,7 @@ function ProductForm() {
       // Handle sofas
       if (sofasRes.ok) {
         const data = await sofasRes.json()
-        console.log('Sofas loaded:', data.products?.length || 0)
+        // Console log removed for performance
         setSofas(data.products || [])
       } else {
         const errorData = await sofasRes.json().catch(() => ({}))
@@ -2087,7 +2088,7 @@ function ProductForm() {
       // Handle pillows
       if (pillowsRes.ok) {
         const data = await pillowsRes.json()
-        console.log('Pillows loaded:', data.products?.length || 0)
+        // Console log removed for performance
         setPillows(data.products || [])
       } else {
         const errorData = await pillowsRes.json().catch(() => ({}))
@@ -2098,7 +2099,7 @@ function ProductForm() {
       // Handle toppers
       if (toppersRes.ok) {
         const data = await toppersRes.json()
-        console.log('Toppers loaded:', data.products?.length || 0)
+        // Console log removed for performance
         setToppers(data.products || [])
       } else {
         const errorData = await toppersRes.json().catch(() => ({}))
@@ -2106,7 +2107,7 @@ function ProductForm() {
       }
       setLoadingToppers(false)
       
-      console.log('Finished fetching recommended products')
+      // Console log removed for performance
     } catch (error) {
       console.error('Error fetching recommended products:', error)
       setLoadingMattresses(false)
@@ -2122,7 +2123,7 @@ function ProductForm() {
       alert('You can only select up to 3 recommended products')
       return
     }
-    console.log('Adding recommended product:', product)
+    // Console log removed for performance
     setSelectedRecommendedProducts(prev => [...prev, product])
   }
 
@@ -2224,6 +2225,7 @@ function ProductForm() {
     setRating(4.5)
     setHeadline('Premium Sleep Experience')
     setLongDescription('Write a compelling description about comfort, materials and value.')
+    setWarrantyDeliveryLine('10-Year Warranty • Free Delivery • 100-Night Trial')
     setFirmnessScale('Medium')
     setSupportLevel('Medium')
     setPressureReliefLevel('Medium')
@@ -2322,7 +2324,17 @@ function ProductForm() {
       // 1) Upload any selected files to Supabase Storage and collect public URLs
       const uploadedUrls: string[] = []
       if (uploadedFiles.length > 0) {
-        console.log('[Admin Save] Uploading files to Supabase bucket:', process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images', uploadedFiles.map(f => ({ name: f.name, size: f.size, type: f.type })))
+        // Console log removed for performance))
+        // Collect upload results for summary alert
+        const uploadResults: Array<{
+          fileName: string
+          originalSize: number
+          optimizedSize: number
+          savingsPercent: string
+          success: boolean
+          error?: string
+        }> = []
+        
         for (let i = 0; i < uploadedFiles.length; i++) {
           const file = uploadedFiles[i]
           
@@ -2341,17 +2353,20 @@ function ProductForm() {
               const result = await response.json()
               uploadedUrls.push(result.url)
               
-              // Show size comparison alert
-              const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
-              const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
-              const savingsPercent = result.compressionRatio
+              // Collect result for summary
+              uploadResults.push({
+                fileName: file.name,
+                originalSize: file.size,
+                optimizedSize: result.optimizedSize * 1024, // Convert KB to bytes for comparison
+                savingsPercent: result.compressionRatio,
+                success: true
+              })
               
-              alert(`Image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
-              
-              console.log('[Admin Save] Optimized upload result:', result)
+              // Console log removed for performance
             } else {
               const error = await response.json()
               console.error('[Admin Save] Optimized upload error:', error)
+              
               // Fallback to regular upload if optimized upload fails
               const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
               const filePath = `products/${Date.now()}-${i}-${safeName}`
@@ -2361,13 +2376,31 @@ function ProductForm() {
                 .upload(filePath, file, { upsert: true, contentType: file.type })
               if (uploadError) {
                 console.error('[Admin Save] Fallback upload error:', uploadError, 'for', filePath)
+                uploadResults.push({
+                  fileName: file.name,
+                  originalSize: file.size,
+                  optimizedSize: file.size,
+                  savingsPercent: '0',
+                  success: false,
+                  error: 'Upload failed'
+                })
                 continue
               }
               const { data: publicData } = supabase
                 .storage
                 .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
                 .getPublicUrl(filePath)
-              if (publicData?.publicUrl) uploadedUrls.push(publicData.publicUrl)
+              if (publicData?.publicUrl) {
+                uploadedUrls.push(publicData.publicUrl)
+                uploadResults.push({
+                  fileName: file.name,
+                  originalSize: file.size,
+                  optimizedSize: file.size,
+                  savingsPercent: '0',
+                  success: false,
+                  error: 'Fallback upload (no optimization)'
+                })
+              }
             }
           } catch (error) {
             console.error('[Admin Save] Upload error:', error, 'for', file.name)
@@ -2380,53 +2413,159 @@ function ProductForm() {
               .upload(filePath, file, { upsert: true, contentType: file.type })
             if (uploadError) {
               console.error('[Admin Save] Fallback upload error:', uploadError, 'for', filePath)
+              uploadResults.push({
+                fileName: file.name,
+                originalSize: file.size,
+                optimizedSize: file.size,
+                savingsPercent: '0',
+                success: false,
+                error: 'Upload failed'
+              })
               continue
             }
             const { data: publicData } = supabase
               .storage
               .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
               .getPublicUrl(filePath)
-            if (publicData?.publicUrl) uploadedUrls.push(publicData.publicUrl)
+            if (publicData?.publicUrl) {
+              uploadedUrls.push(publicData.publicUrl)
+              uploadResults.push({
+                fileName: file.name,
+                originalSize: file.size,
+                optimizedSize: file.size,
+                savingsPercent: '0',
+                success: false,
+                error: 'Fallback upload (no optimization)'
+              })
+            }
           }
         }
-        console.log('[Admin Save] Uploaded public URLs:', uploadedUrls)
+        
+        // Show summary alert for all uploads
+        if (uploadResults.length > 0) {
+          const successfulUploads = uploadResults.filter(r => r.success)
+          const failedUploads = uploadResults.filter(r => !r.success)
+          
+          let alertMessage = `📸 Image Upload Summary\n\n`
+          
+          if (successfulUploads.length > 0) {
+            const totalOriginalSize = successfulUploads.reduce((sum, r) => sum + r.originalSize, 0)
+            const totalOptimizedSize = successfulUploads.reduce((sum, r) => sum + r.optimizedSize, 0)
+            const totalSavings = ((totalOriginalSize - totalOptimizedSize) / totalOriginalSize * 100).toFixed(1)
+            
+            alertMessage += `✅ Successfully Optimized: ${successfulUploads.length} images\n`
+            alertMessage += `📏 Total Original Size: ${(totalOriginalSize / 1024 / 1024).toFixed(2)} MB\n`
+            alertMessage += `🔄 Total Optimized Size: ${(totalOptimizedSize / 1024 / 1024).toFixed(2)} MB\n`
+            alertMessage += `💾 Total Savings: ${totalSavings}%\n\n`
+            
+            // Add individual file details
+            successfulUploads.forEach(result => {
+              const originalMB = (result.originalSize / 1024 / 1024).toFixed(2)
+              const optimizedMB = (result.optimizedSize / 1024 / 1024).toFixed(2)
+              alertMessage += `📁 ${result.fileName}: ${originalMB} MB → ${optimizedMB} MB (${result.savingsPercent}% saved)\n`
+            })
+          }
+          
+          if (failedUploads.length > 0) {
+            alertMessage += `\n❌ Failed/Unoptimized: ${failedUploads.length} images\n`
+            failedUploads.forEach(result => {
+              const sizeMB = (result.originalSize / 1024 / 1024).toFixed(2)
+              alertMessage += `📁 ${result.fileName}: ${sizeMB} MB (${result.error})\n`
+            })
+          }
+          
+          alertMessage += `\n🎯 Images converted to WebP format for better performance!`
+          
+          alert(alertMessage)
+        }
+        
+
+        
+        // Console log removed for performance
       }
 
-      // 2) Upload description paragraph files to storage and replace with public URLs
-      const descriptionPublicUrls: Array<string | null> = []
-      const updatedDescriptionParagraphs = [] as typeof descriptionParagraphs
-      for (let i = 0; i < descriptionParagraphs.length; i++) {
-        const para = descriptionParagraphs[i]
-        let imageUrl = para.image
-        if (para.uploadedFile) {
-          const file = para.uploadedFile
-          
-          try {
-            // Use optimized upload API for description images
-            const formData = new FormData()
-            formData.append('file', file)
-            formData.append('preset', 'medium') // Use medium preset for description images
+              // 2) Upload description paragraph files to storage and replace with public URLs
+        const descriptionPublicUrls: Array<string | null> = []
+        const updatedDescriptionParagraphs = [] as typeof descriptionParagraphs
+        const descriptionUploadResults: Array<{
+          fileName: string
+          originalSize: number
+          optimizedSize: number
+          savingsPercent: string
+          success: boolean
+          error?: string
+        }> = []
+        
+        for (let i = 0; i < descriptionParagraphs.length; i++) {
+          const para = descriptionParagraphs[i]
+          let imageUrl = para.image
+          if (para.uploadedFile) {
+            const file = para.uploadedFile
             
-            const response = await fetch('/api/upload-optimized', {
-              method: 'POST',
-              body: formData
-            })
-            
-            if (response.ok) {
-              const result = await response.json()
-              imageUrl = result.url
+            try {
+              // Use optimized upload API for description images
+              const formData = new FormData()
+              formData.append('file', file)
+              formData.append('preset', 'medium') // Use medium preset for description images
               
-              // Show size comparison alert for description images
-              const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
-              const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
-              const savingsPercent = result.compressionRatio
+              const response = await fetch('/api/upload-optimized', {
+                method: 'POST',
+                body: formData
+              })
               
-              alert(`Description image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
-              
-              console.log('[Admin Save] Description optimized upload result:', result)
-            } else {
-              const error = await response.json()
-              console.error('[Admin Save] Description optimized upload error:', error)
+              if (response.ok) {
+                const result = await response.json()
+                imageUrl = result.url
+                
+                // Collect result for summary
+                descriptionUploadResults.push({
+                  fileName: file.name,
+                  originalSize: file.size,
+                  optimizedSize: result.optimizedSize * 1024, // Convert KB to bytes for comparison
+                  savingsPercent: result.compressionRatio,
+                  success: true
+                })
+                
+                // Console log removed for performance
+              } else {
+                const error = await response.json()
+                console.error('[Admin Save] Description optimized upload error:', error)
+                // Fallback to regular upload
+                const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
+                const filePath = `descriptions/${Date.now()}-${i}-${safeName}`
+                const { error: descUploadError } = await supabase
+                  .storage
+                  .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+                  .upload(filePath, file, { upsert: true, contentType: file.type })
+                if (descUploadError) {
+                  console.error('[Admin Save] Description image upload error:', descUploadError, 'for', filePath)
+                  descriptionUploadResults.push({
+                    fileName: file.name,
+                    originalSize: file.size,
+                    optimizedSize: file.size,
+                    savingsPercent: '0',
+                    success: false,
+                    error: 'Upload failed'
+                  })
+                } else {
+                  const { data: publicData } = supabase
+                    .storage
+                    .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+                    .getPublicUrl(filePath)
+                  // Console log removed for performance
+                  imageUrl = publicData?.publicUrl || imageUrl
+                  descriptionUploadResults.push({
+                    fileName: file.name,
+                    originalSize: file.size,
+                    optimizedSize: file.size,
+                    savingsPercent: '0',
+                    success: false,
+                    error: 'Fallback upload (no optimization)'
+                  })
+                }
+              }
+            } catch (error) {
+              console.error('[Admin Save] Description upload error:', error, 'for', file.name)
               // Fallback to regular upload
               const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
               const filePath = `descriptions/${Date.now()}-${i}-${safeName}`
@@ -2436,53 +2575,81 @@ function ProductForm() {
                 .upload(filePath, file, { upsert: true, contentType: file.type })
               if (descUploadError) {
                 console.error('[Admin Save] Description image upload error:', descUploadError, 'for', filePath)
+                descriptionUploadResults.push({
+                  fileName: file.name,
+                  originalSize: file.size,
+                  optimizedSize: file.size,
+                  savingsPercent: '0',
+                  success: false,
+                  error: 'Upload failed'
+                })
               } else {
                 const { data: publicData } = supabase
                   .storage
                   .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
                   .getPublicUrl(filePath)
-                console.log('[Admin Save] Description public URL for', filePath, '=>', publicData?.publicUrl)
+                // Console log removed for performance
                 imageUrl = publicData?.publicUrl || imageUrl
+                descriptionUploadResults.push({
+                  fileName: file.name,
+                  originalSize: file.size,
+                  optimizedSize: file.size,
+                  savingsPercent: '0',
+                  success: false,
+                  error: 'Fallback upload (no optimization)'
+                })
               }
             }
-          } catch (error) {
-            console.error('[Admin Save] Description upload error:', error, 'for', file.name)
-            // Fallback to regular upload
-            const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
-            const filePath = `descriptions/${Date.now()}-${i}-${safeName}`
-            const { error: descUploadError } = await supabase
-              .storage
-              .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
-              .upload(filePath, file, { upsert: true, contentType: file.type })
-            if (descUploadError) {
-              console.error('[Admin Save] Description image upload error:', descUploadError, 'for', filePath)
-            } else {
-              const { data: publicData } = supabase
-                .storage
-                .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
-                .getPublicUrl(filePath)
-              console.log('[Admin Save] Description public URL for', filePath, '=>', publicData?.publicUrl)
-              imageUrl = publicData?.publicUrl || imageUrl
-            }
           }
+          descriptionPublicUrls.push(imageUrl || null)
+          updatedDescriptionParagraphs.push({ ...para, image: imageUrl || '', uploadedFile: null })
         }
-        descriptionPublicUrls.push(imageUrl || null)
-        updatedDescriptionParagraphs.push({ ...para, image: imageUrl || '', uploadedFile: null })
-      }
+        
+        // Show summary alert for description images if any were uploaded
+        if (descriptionUploadResults.length > 0) {
+          const successfulDescUploads = descriptionUploadResults.filter(r => r.success)
+          const failedDescUploads = descriptionUploadResults.filter(r => !r.success)
+          
+          let descAlertMessage = `📸 Description Images Upload Summary\n\n`
+          
+          if (successfulDescUploads.length > 0) {
+            const totalOriginalSize = successfulDescUploads.reduce((sum, r) => sum + r.originalSize, 0)
+            const totalOptimizedSize = successfulDescUploads.reduce((sum, r) => sum + r.optimizedSize, 0)
+            const totalSavings = ((totalOriginalSize - totalOptimizedSize) / totalOriginalSize * 100).toFixed(1)
+            
+            descAlertMessage += `✅ Successfully Optimized: ${successfulDescUploads.length} images\n`
+            descAlertMessage += `📏 Total Original Size: ${(totalOriginalSize / 1024 / 1024).toFixed(2)} MB\n`
+            descAlertMessage += `🔄 Total Optimized Size: ${(totalOptimizedSize / 1024 / 1024).toFixed(2)} MB\n`
+            descAlertMessage += `💾 Total Savings: ${totalSavings}%\n\n`
+            
+            // Add individual file details
+            successfulDescUploads.forEach(result => {
+              const originalMB = (result.originalSize / 1024 / 1024).toFixed(2)
+              const optimizedMB = (result.optimizedSize / 1024 / 1024).toFixed(2)
+              descAlertMessage += `📁 ${result.fileName}: ${originalMB} MB → ${optimizedMB} MB (${result.savingsPercent}% saved)\n`
+            })
+          }
+          
+          if (failedDescUploads.length > 0) {
+            descAlertMessage += `\n❌ Failed/Unoptimized: ${failedDescUploads.length} images\n`
+            failedDescUploads.forEach(result => {
+              const sizeMB = (result.originalSize / 1024 / 1024).toFixed(2)
+              descAlertMessage += `📁 ${result.fileName}: ${sizeMB} MB (${result.error})\n`
+            })
+          }
+          
+          descAlertMessage += `\n🎯 Images converted to WebP format for better performance!`
+          
+          alert(descAlertMessage)
+        }
 
 
 
               // 4) Build payload with URL images (typed URLs + uploaded URLs)
-      console.log('[Admin Save] Characteristics being sent:', {
-        firmnessScale,
-        supportLevel,
-        pressureReliefLevel,
-        airCirculationLevel,
-        durabilityLevel
-      })
+      // Characteristics being sent
       
       // Debug: Log what we're sending for reasons to love
-      console.log('[Admin Save] selectedReasonsToLove being sent:', selectedReasonsToLove)
+      // Console log removed for performance
       
       const payload = {
         category: selectedCategory,
@@ -2490,6 +2657,7 @@ function ProductForm() {
         rating,
         headline,
         longDescription,
+        warrantyDeliveryLine,
         firmnessScale,
         supportLevel,
         pressureReliefLevel,
@@ -2559,7 +2727,7 @@ function ProductForm() {
       }
 
       const result = await response.json()
-      console.log('[Admin Save] Product created result:', result)
+      // Console log removed for performance
       
       // Show single success message and automatically clear form
       alert('Product is saved')
@@ -2599,12 +2767,12 @@ function ProductForm() {
     if (selectedCategory === 'bunkbeds') {
       setLoadingBunkbedMattresses(true)
       try {
-        console.log('Fetching mattresses for bunkbed selection...')
+        // Console log removed for performance
         const response = await fetch('/api/products/recommendations?category=mattresses&limit=20')
         
         if (response.ok) {
           const data = await response.json()
-          console.log('Bunkbed mattresses loaded:', data.products?.length || 0)
+          // Console log removed for performance
           
           // Transform the data to match the expected format
           const transformedMattresses = data.products?.map((product: any) => ({
@@ -3019,14 +3187,14 @@ function ProductForm() {
                                     const result = await response.json()
                                     updateVariant(v.id, { variant_image: result.url })
                                     
-                                    // Show size comparison alert
+                                    // Show size comparison alert for variant image
                                     const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
                                     const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
                                     const savingsPercent = result.compressionRatio
                                     
                                     alert(`Variant image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
                                     
-                                    console.log('[Variant Upload] Optimized upload result:', result)
+                                    // Console log removed for performance
                                   } else {
                                     const error = await response.json()
                                     console.error('[Variant Upload] Optimized upload error:', error)
@@ -3043,7 +3211,7 @@ function ProductForm() {
                                     if (fallbackResponse.ok) {
                                       const { url } = await fallbackResponse.json()
                                       updateVariant(v.id, { variant_image: url })
-                                      alert('Image uploaded successfully (fallback mode)')
+                                      alert('Variant image uploaded successfully (fallback mode)')
                                     } else {
                                       const fallbackError = await fallbackResponse.json()
                                       alert(`Upload failed: ${fallbackError.error || 'Failed to upload image'}`)
@@ -3704,6 +3872,18 @@ function ProductForm() {
             <Label htmlFor="desc">Long description</Label>
             <Textarea id="desc" value={longDescription} onChange={e => setLongDescription(e.target.value)} rows={6} />
           </div>
+          <div className="md:col-span-2">
+            <Label htmlFor="warranty-delivery">Warranty & Delivery Information</Label>
+            <Input 
+              id="warranty-delivery" 
+              value={warrantyDeliveryLine} 
+              onChange={e => setWarrantyDeliveryLine(e.target.value)} 
+              placeholder="e.g., 10-Year Warranty • Free Delivery • 100-Night Trial"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Enter the warranty, delivery, and trial information separated by bullet points (•)
+            </p>
+          </div>
           {/* Firmness & Comfort Section - Only show for mattresses */}
           {selectedCategory === 'mattresses' && (
             <div className="md:col-span-2">
@@ -3722,7 +3902,7 @@ function ProductForm() {
                   ] as const).map((val) => (
                     <label key={val} className={`px-3 py-1 rounded border cursor-pointer text-sm ${firmnessScale===val ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
                       <input type="radio" name="firmness" className="mr-1" checked={firmnessScale===val} onChange={() => {
-                        console.log('[Admin] Setting firmnessScale to:', val);
+                        // Console log removed for performance
                         setFirmnessScale(val);
                       }} />{val}
                     </label>
@@ -4293,7 +4473,7 @@ function ProductForm() {
                     }
 
                     return filtered.map((product) => {
-                      console.log('Rendering product in free gift selector:', product)
+                      // Console log removed for performance
                       return (
                         <div 
                           key={product.id} 

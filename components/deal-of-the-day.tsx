@@ -20,7 +20,7 @@ export function DealOfTheDay() {
       if (content.deal_of_day?.productCards?.length > 0) {
         try {
           setLoading(true)
-          console.log('🔍 DealOfTheDay - Fetching products for product cards:', content.deal_of_day.productCards)
+          // Fetching products for product cards
           
           // Fetch product details for each product card
           const productPromises = content.deal_of_day.productCards.map(async (productCard: any) => {
@@ -50,14 +50,7 @@ export function DealOfTheDay() {
 
           const products = await Promise.all(productPromises)
           const validProducts = products.filter(Boolean)
-          console.log('🔍 DealOfTheDay - Final valid products:', validProducts.map(p => ({
-            id: p.id,
-            name: p.name,
-            currentPrice: p.currentPrice,
-            originalPrice: p.originalPrice,
-            customDescription: p.customDescription,
-            customPercentageOff: p.customPercentageOff
-          })))
+          // Final valid products loaded
           
           // Set the first product as the main deal
           if (validProducts.length > 0) {
@@ -75,7 +68,7 @@ export function DealOfTheDay() {
         // Fallback to old structure
         try {
           setLoading(true)
-          console.log('🔍 DealOfTheDay - Fetching products for IDs (fallback):', content.deal_of_day.productIds)
+          // Fetching products for IDs (fallback)
           
           const productPromises = content.deal_of_day.productIds.map(async (productId: string) => {
             try {

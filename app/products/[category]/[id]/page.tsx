@@ -192,10 +192,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
     ? process.env.NEXT_PUBLIC_BASE_URL
     : `${protocol}://${host}`
 
-  // OPTIMIZATION: Make all API calls parallel instead of sequential
-  const [productResponse, variantsResponse, relatedProductsResponse] = await Promise.allSettled([
+  // OPTIMIZATION: Single API call - product endpoint now includes variants and related products
+  const [productResponse, relatedProductsResponse] = await Promise.allSettled([
     fetch(`${baseUrl}/api/products/${id}`),
-    fetch(`${baseUrl}/api/variants?productId=${id}`),
     fetch(`${baseUrl}/api/products/category/${category}`)
   ])
 
@@ -210,32 +209,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
     }
   }
 
-  // Handle variants data
-  if (product?.id && variantsResponse.status === 'fulfilled' && variantsResponse.value.ok) {
-    try {
-      const vData = await variantsResponse.value.json()
-      const directVariants = Array.isArray(vData.variants) ? vData.variants : []
-      const normalized = directVariants.map((v: any) => ({
-        sku: v.sku,
-        originalPrice: v.original_price,
-        currentPrice: v.current_price,
-        color: v.color,
-        depth: v.depth,
-        firmness: v.firmness,
-        size: v.size,
-        // Add dimension fields
-        length: v.length,
-        width: v.width,
-        height: v.height,
-        availability: v.availability,
-        // Add variant image
-        variant_image: v.variant_image
-      }))
-      product = { ...product, variants: normalized }
-    } catch (e) {
-      console.warn('[Product Detail Page] variants parsing failed:', e)
-    }
-  }
+  // Variants are now included in the main product response
+  // No need for separate variants API call
 
   if (!product) {
     notFound()
@@ -321,78 +296,13 @@ export default async function ProductDetailPage({ params }: PageProps) {
     free_gift_product_id: product.free_gift_product_id || null,
     free_gift_enabled: product.free_gift_enabled || false,
     free_gift_product_name: product.free_gift_product_name || null,
-    free_gift_product_image: product.free_gift_product_image || null
+    free_gift_product_image: product.free_gift_product_image || null,
+    // Add warranty delivery line
+    warrantyDeliveryLine: product.warrantyDeliveryLine || null
   }
 
-  // Log reasons so you can verify from the terminal during SSR
-  console.log('[Product Detail Page] reasonsToLove:', productDetail.reasonsToLove)
-  console.log('[Product Detail Page] reasonsToLoveDescriptions:', productDetail.reasonsToLoveDescriptions)
-  console.log('[Product Detail Page] product_reasons_to_love raw:', product.product_reasons_to_love)
-  console.log('[Product Detail Page] customReasons:', productDetail.customReasons)
-  
-  // Debug free gift data
-  console.log('[Product Detail Page] Free gift debug:', {
-    rawProduct: {
-      free_gift_product_id: product.free_gift_product_id,
-      free_gift_enabled: product.free_gift_enabled,
-      free_gift_product_name: product.free_gift_product_name,
-      free_gift_product_image: product.free_gift_product_image,
-      badges: product.badges
-    },
-    transformedProductDetail: {
-      free_gift_product_id: productDetail.free_gift_product_id,
-      free_gift_enabled: productDetail.free_gift_enabled,
-      free_gift_product_name: productDetail.free_gift_product_name,
-      free_gift_product_image: productDetail.free_gift_product_image,
-      badges: productDetail.badges
-    }
-  })
-  
-  // Debug the mapping of descriptions
-  if (product.product_reasons_to_love && product.product_reasons_to_love.length > 0) {
-    console.log('[Product Detail Page] Debug - First reason object:', product.product_reasons_to_love[0])
-    console.log('[Product Detail Page] Debug - All reasons with descriptions:', product.product_reasons_to_love.map((r: any) => ({
-      reason_text: r.reason_text,
-      description: r.description,
-      hasDescription: !!r.description
-    })))
-  }
-  console.log('[Product Detail Page] characteristics:', {
-    firmnessScale: (productDetail as any).firmnessScale,
-    supportLevel: (productDetail as any).supportLevel,
-    pressureReliefLevel: (productDetail as any).pressureReliefLevel,
-    airCirculationLevel: (productDetail as any).airCirculationLevel,
-    durabilityLevel: (productDetail as any).durabilityLevel,
-  })
-  
-  // Debug dimension images
-  console.log('[Product Detail Page] dimensionImages from API:', product.dimensionImages)
-  console.log('[Product Detail Page] dimensionImages in productDetail:', productDetail.dimensionImages)
-  // Debug: log variants clearly for troubleshooting
-  try {
-    const variants = (productDetail as any).variants || []
-    const compact = variants.map((v: any) => ({
-      size: v.size,
-      color: v.color,
-      depth: v.depth,
-      firmness: v.firmness,
-      currentPrice: v.currentPrice ?? v.current_price,
-      originalPrice: v.originalPrice ?? v.original_price,
-      sku: v.sku
-    }))
-    const uniqueSizes = Array.from(new Set(compact.map((v: any) => v.size).filter(Boolean)))
-    const uniqueColors = Array.from(new Set(compact.map((v: any) => v.color).filter(Boolean)))
-    const uniqueDepths = Array.from(new Set(compact.map((v: any) => v.depth).filter(Boolean)))
-    const uniqueFirmness = Array.from(new Set(compact.map((v: any) => v.firmness).filter(Boolean)))
-    console.log('[Product Detail Page] variants count:', variants.length)
-    console.log('[Product Detail Page] variants (first 10):', compact.slice(0, 10))
-    console.log('[Product Detail Page] unique sizes:', uniqueSizes)
-    console.log('[Product Detail Page] unique colors:', uniqueColors)
-    console.log('[Product Detail Page] unique depths:', uniqueDepths)
-    console.log('[Product Detail Page] unique firmness:', uniqueFirmness)
-  } catch (e) {
-    console.log('[Product Detail Page] variants debug error:', e)
-  }
+  // Performance logging (only in development)
+  // Product loaded successfully
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">

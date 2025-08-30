@@ -26,7 +26,7 @@ export const imageCache = {
       await Promise.allSettled(
         validUrls.map(url => imageCache.preload(url))
       )
-      console.log(`🖼️ Preloaded ${validUrls.length} images`)
+      // Preloaded images for better performance
     } catch (error) {
       console.error('Error preloading images:', error)
     }

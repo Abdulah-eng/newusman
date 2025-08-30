@@ -25,6 +25,16 @@ export function ProductGrid({ category, filters, sortBy }: ProductGridProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Reset pagination when category changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [category])
+
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentPage])
+
   // Fetch products from database for the category
   useEffect(() => {
     const fetchProducts = async () => {

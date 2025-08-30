@@ -89,6 +89,7 @@ interface ProductFormData {
   product_questions: any[]
   warranty_info: any
   care_instructions: string
+  warranty_delivery_line: string
   meta_title: string
   meta_description: string
   meta_keywords: string[]
@@ -119,7 +120,7 @@ interface ProductFormData {
 
 export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
   // Debug: Log the product object to see its structure
-  console.log('ProductForm - product object:', product)
+      // ProductForm - product object loaded
   
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<any[]>([])
@@ -184,6 +185,7 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
     product_questions: product?.product_questions || [],
     warranty_info: product?.warranty_info || {},
     care_instructions: product?.care_instructions || '',
+    warranty_delivery_line: product?.warranty_delivery_line || '10-Year Warranty • Free Delivery • 100-Night Trial',
     meta_title: product?.meta_title || '',
     meta_description: product?.meta_description || '',
     meta_keywords: product?.meta_keywords || [],
@@ -290,31 +292,63 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
 
       if (field === 'main_image') {
         const file = files[0]
-        const formData = new FormData()
-        formData.append('file', file)
         
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          body: formData,
-        })
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}))
-          throw new Error(err.error || 'Upload failed')
-        }
-
-        const json = await res.json()
-        handleInputChange('main_image', json.url)
-      } else if (field === 'images') {
-        const uploadPromises = Array.from(files).map(async (file) => {
+        try {
+          // Use optimized upload API for main image
           const formData = new FormData()
           formData.append('file', file)
+          formData.append('preset', 'large') // Use large preset for main product image
+          
+          const response = await fetch('/api/upload-optimized', {
+            method: 'POST',
+            body: formData
+          })
+          
+          if (response.ok) {
+            const result = await response.json()
+            handleInputChange('main_image', result.url)
+            
+            // Show size comparison alert for main image
+            const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
+            const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
+            const savingsPercent = result.compressionRatio
+            
+            alert(`Main product image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
+            
+            // Main image optimized upload result
+          } else {
+            const error = await response.json()
+            console.error('[Product Form] Main image optimized upload error:', error)
+            
+            // Fallback to regular upload if optimized upload fails
+            const fallbackFormData = new FormData()
+            fallbackFormData.append('file', file)
+            
+            const res = await fetch('/api/upload', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${session.access_token}` },
+              body: fallbackFormData,
+            })
+
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}))
+              throw new Error(err.error || 'Upload failed')
+            }
+
+            const json = await res.json()
+            handleInputChange('main_image', json.url)
+            alert('Main image uploaded successfully (fallback mode)')
+          }
+        } catch (error) {
+          console.error('[Product Form] Main image upload error:', error)
+          // Final fallback to regular upload
+          const fallbackFormData = new FormData()
+          fallbackFormData.append('file', file)
           
           const res = await fetch('/api/upload', {
             method: 'POST',
             headers: { Authorization: `Bearer ${session.access_token}` },
-            body: formData,
+            body: fallbackFormData,
           })
 
           if (!res.ok) {
@@ -323,11 +357,150 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
           }
 
           const json = await res.json()
-          return json.url
+          handleInputChange('main_image', json.url)
+        }
+      } else if (field === 'images') {
+        // Collect upload results for summary alert
+        const uploadResults: Array<{
+          fileName: string
+          originalSize: number
+          optimizedSize: number
+          savingsPercent: string
+          success: boolean
+          error?: string
+        }> = []
+        
+        const uploadPromises = Array.from(files).map(async (file) => {
+          try {
+            // Use optimized upload API for additional images
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('preset', 'medium') // Use medium preset for additional images
+            
+            const response = await fetch('/api/upload-optimized', {
+              method: 'POST',
+              body: formData
+            })
+            
+            if (response.ok) {
+              const result = await response.json()
+              
+              // Collect result for summary
+              uploadResults.push({
+                fileName: file.name,
+                originalSize: file.size,
+                optimizedSize: result.optimizedSize * 1024, // Convert KB to bytes for comparison
+                savingsPercent: result.compressionRatio,
+                success: true
+              })
+              
+              // Additional image optimized upload result
+              return result.url
+            } else {
+              const error = await response.json()
+              console.error('[Product Form] Additional image optimized upload error:', error)
+              
+              // Fallback to regular upload
+              const fallbackFormData = new FormData()
+              fallbackFormData.append('file', file)
+              
+              const res = await fetch('/api/upload', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${session.access_token}` },
+                body: fallbackFormData,
+              })
+
+              if (!res.ok) {
+                const err = await res.json().catch(() => ({}))
+                throw new Error(err.error || 'Upload failed')
+              }
+
+              const json = await res.json()
+              
+              uploadResults.push({
+                fileName: file.name,
+                originalSize: file.size,
+                optimizedSize: file.size,
+                savingsPercent: '0',
+                success: false,
+                error: 'Fallback upload (no optimization)'
+              })
+              
+              return json.url
+            }
+          } catch (error) {
+            console.error('[Product Form] Additional image upload error:', error)
+            
+            // Final fallback to regular upload
+            const fallbackFormData = new FormData()
+            fallbackFormData.append('file', file)
+            
+            const res = await fetch('/api/upload', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${session.access_token}` },
+              body: fallbackFormData,
+            })
+
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}))
+              throw new Error(err.error || 'Upload failed')
+            }
+
+            const json = await res.json()
+            
+            uploadResults.push({
+              fileName: file.name,
+              originalSize: file.size,
+              optimizedSize: file.size,
+              savingsPercent: '0',
+              success: false,
+              error: 'Upload failed'
+            })
+            
+            return json.url
+          }
         })
 
         const uploadedUrls = await Promise.all(uploadPromises)
         handleInputChange('images', [...formData.images, ...uploadedUrls])
+        
+        // Show summary alert for additional images
+        if (uploadResults.length > 0) {
+          const successfulUploads = uploadResults.filter(r => r.success)
+          const failedUploads = uploadResults.filter(r => !r.success)
+          
+          let alertMessage = `📸 Additional Images Upload Summary\n\n`
+          
+          if (successfulUploads.length > 0) {
+            const totalOriginalSize = successfulUploads.reduce((sum, r) => sum + r.originalSize, 0)
+            const totalOptimizedSize = successfulUploads.reduce((sum, r) => sum + r.optimizedSize, 0)
+            const totalSavings = ((totalOriginalSize - totalOptimizedSize) / totalOriginalSize * 100).toFixed(1)
+            
+            alertMessage += `✅ Successfully Optimized: ${successfulUploads.length} images\n`
+            alertMessage += `📏 Total Original Size: ${(totalOriginalSize / 1024 / 1024).toFixed(2)} MB\n`
+            alertMessage += `🔄 Total Optimized Size: ${(totalOptimizedSize / 1024 / 1024).toFixed(2)} MB\n`
+            alertMessage += `💾 Total Savings: ${totalSavings}%\n\n`
+            
+            // Add individual file details
+            successfulUploads.forEach(result => {
+              const originalMB = (result.originalSize / 1024 / 1024).toFixed(2)
+              const optimizedMB = (result.optimizedSize / 1024 / 1024).toFixed(2)
+              alertMessage += `📁 ${result.fileName}: ${originalMB} MB → ${optimizedMB} MB (${result.savingsPercent}% saved)\n`
+            })
+          }
+          
+          if (failedUploads.length > 0) {
+            alertMessage += `\n❌ Failed/Unoptimized: ${failedUploads.length} images\n`
+            failedUploads.forEach(result => {
+              const sizeMB = (result.originalSize / 1024 / 1024).toFixed(2)
+              alertMessage += `📁 ${result.fileName}: ${sizeMB} MB (${result.error})\n`
+            })
+          }
+          
+          alertMessage += `\n🎯 Images converted to WebP format for better performance!`
+          
+          alert(alertMessage)
+        }
       }
     } catch (error: any) {
       console.error('Image upload error:', error)
@@ -345,60 +518,61 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
       if (formData.current_price <= 0) throw new Error('Current price must be greater than 0')
       if (!formData.main_image.trim()) throw new Error('Main image is required')
 
-      const productData = {
-        name: formData.name.trim(),
-        slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
-        brand_id: formData.brand_id,
-        category_id: formData.category_id,
-        original_price: formData.original_price || 0,
-        current_price: formData.current_price || 0,
-        monthly_price: formData.monthly_price || 0,
-        main_image: formData.main_image.trim(),
-        images: formData.images || [],
-        short_description: formData.short_description || '',
-        long_description: formData.long_description || '',
-        sizes: formData.sizes || [],
-        colors: formData.colors || [],
-        features: formData.features || [],
-        materials: formData.materials || [],
-        in_stock: Boolean(formData.in_stock),
-        stock_quantity: formData.stock_quantity || 0,
-        featured: Boolean(formData.featured),
-        on_sale: Boolean(formData.on_sale),
-        dispatch_time: formData.dispatch_time || '',
-        setup_service: Boolean(formData.setup_service),
-        setup_cost: formData.setup_cost || 0,
-        free_delivery: Boolean(formData.free_delivery),
-        has_variants: Boolean(formData.has_variants),
-        rating: formData.rating || 4.5,
-        review_count: formData.review_count || 0,
-        firmness: formData.firmness || '',
-        firmness_level: formData.firmness_level || 0,
-        comfort_level: formData.comfort_level || '',
-        dimensions: formData.dimensions || {},
-        reasons_to_buy: formData.reasons_to_buy || [],
-        promotional_offers: formData.promotional_offers || [],
-        product_questions: formData.product_questions || [],
-        warranty_info: formData.warranty_info || {},
-        care_instructions: formData.care_instructions || '',
-        meta_title: formData.meta_title || '',
-        meta_description: formData.meta_description || '',
-        meta_keywords: formData.meta_keywords || [],
-        description_sections: formData.description_sections || [],
-        feature_descriptions: formData.feature_descriptions || [],
-        feature_categories: formData.feature_categories || [],
-        feature_icons: formData.feature_icons || ['support', 'comfort', 'firmness'],
-        product_specs: formData.product_specs || [
-          { name: 'Support', value: 80, min: 0, max: 100, labels: ['Low', 'Medium', 'High'] },
-          { name: 'Pressure Relief', value: 65, min: 0, max: 100, labels: ['Basic', 'Medium', 'Advanced'] },
-          { name: 'Air Circulation', value: 80, min: 0, max: 100, labels: ['Good', 'Better', 'Best'] },
-          { name: 'Durability', value: 95, min: 0, max: 100, labels: ['Good', 'Better', 'Best'] }
-        ],
-        product_spec_icons: formData.product_spec_icons || ['support', 'pressure', 'air', 'durability', 'quality'],
-        badges: formData.badges || [],
-        free_gift_product_id: formData.free_gift_product_id,
-        free_gift_enabled: formData.free_gift_enabled
-      }
+             const productData = {
+         name: formData.name.trim(),
+         slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-'),
+         brand_id: formData.brand_id,
+         category_id: formData.category_id,
+         original_price: formData.original_price || 0,
+         current_price: formData.current_price || 0,
+         monthly_price: formData.monthly_price || 0,
+         main_image: formData.main_image.trim(),
+         images: formData.images || [],
+         short_description: formData.short_description || '',
+         long_description: formData.long_description || '',
+         sizes: formData.sizes || [],
+         colors: formData.colors || [],
+         features: formData.features || [],
+         materials: formData.materials || [],
+         in_stock: Boolean(formData.in_stock),
+         stock_quantity: formData.stock_quantity || 0,
+         featured: Boolean(formData.featured),
+         on_sale: Boolean(formData.on_sale),
+         dispatch_time: formData.dispatch_time || '',
+         setup_service: Boolean(formData.setup_service),
+         setup_cost: formData.setup_cost || 0,
+         free_delivery: Boolean(formData.free_delivery),
+         has_variants: Boolean(formData.has_variants),
+         rating: formData.rating || 4.5,
+         review_count: formData.review_count || 0,
+         firmness: formData.firmness || '',
+         firmness_level: formData.firmness_level || 0,
+         comfort_level: formData.comfort_level || '',
+         dimensions: formData.dimensions || {},
+         reasons_to_buy: formData.reasons_to_buy || [],
+         promotional_offers: formData.promotional_offers || [],
+         product_questions: formData.product_questions || [],
+         warranty_info: formData.warranty_info || {},
+         care_instructions: formData.care_instructions || '',
+         warranty_delivery_line: formData.warranty_delivery_line || '',
+         meta_title: formData.meta_title || '',
+         meta_description: formData.meta_description || '',
+         meta_keywords: formData.meta_keywords || [],
+         description_sections: formData.description_sections || [],
+         feature_descriptions: formData.feature_descriptions || [],
+         feature_categories: formData.feature_categories || [],
+         feature_icons: formData.feature_icons || ['support', 'comfort', 'firmness'],
+         product_specs: formData.product_specs || [
+           { name: 'Support', value: 80, min: 0, max: 100, labels: ['Low', 'Medium', 'High'] },
+           { name: 'Pressure Relief', value: 65, min: 0, max: 100, labels: ['Basic', 'Medium', 'Advanced'] },
+           { name: 'Air Circulation', value: 80, min: 0, max: 100, labels: ['Good', 'Better', 'Best'] },
+           { name: 'Durability', value: 95, min: 0, max: 100, labels: ['Good', 'Better', 'Best'] }
+         ],
+         product_spec_icons: formData.product_spec_icons || ['support', 'pressure', 'air', 'durability', 'quality'],
+         badges: formData.badges || [],
+         free_gift_product_id: formData.free_gift_product_id,
+         free_gift_enabled: formData.free_gift_enabled
+       }
 
       if (product?.id) {
         const { data, error } = await supabase
@@ -694,14 +868,30 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
                 )}
               </div>
 
-              {/* Short Description */}
-              <Textarea
-                value={formData.short_description}
-                onChange={(e) => handleInputChange('short_description', e.target.value)}
-                placeholder="Enter short description"
-                className="text-gray-600 border-none bg-transparent p-0 mb-6 resize-none focus:ring-2 focus:ring-orange-300 rounded px-2 py-1"
-                rows={2}
-              />
+                             {/* Short Description */}
+               <Textarea
+                 value={formData.short_description}
+                 onChange={(e) => handleInputChange('short_description', e.target.value)}
+                 placeholder="Enter short description"
+                 className="text-gray-600 border-none bg-transparent p-0 mb-6 resize-none focus:ring-2 focus:ring-orange-300 rounded px-2 py-1"
+                 rows={2}
+               />
+
+               {/* Warranty & Delivery Line */}
+               <div className="mb-6">
+                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                   Warranty & Delivery Information
+                 </label>
+                 <Input
+                   value={formData.warranty_delivery_line}
+                   onChange={(e) => handleInputChange('warranty_delivery_line', e.target.value)}
+                   placeholder="e.g., 10-Year Warranty • Free Delivery • 100-Night Trial"
+                   className="text-gray-600 border border-gray-300 focus:ring-2 focus:ring-orange-300 rounded px-3 py-2"
+                 />
+                 <p className="text-xs text-gray-500 mt-1">
+                   Enter the warranty, delivery, and trial information separated by bullet points (•)
+                 </p>
+               </div>
 
               {/* Color Selection */}
               <div className="mb-6">

@@ -5,6 +5,7 @@ import { CartProvider } from "@/lib/cart-context"
 import Header from "@/components/header"
 import { Footer } from "@/components/footer"
 import { CartNotificationWrapper } from "@/components/cart-notification-wrapper"
+import { LoadingIndicator } from "@/components/loading-indicator"
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -59,6 +60,7 @@ html {
       </head>
       <body className={`${inter.variable} ${poppins.variable} ${outfit.variable} ${playfair.variable}`}>
         <CartProvider>
+          <LoadingIndicator />
           <Header />
           {children}
           <Footer />

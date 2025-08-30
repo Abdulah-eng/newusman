@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category')
     const limit = parseInt(searchParams.get('limit') || '10')
 
-    console.log('Recommendations API called with category:', category, 'limit:', limit)
+    // Console log removed for performance
 
     // Use a more direct approach for better filtering
     let query = supabase
@@ -41,10 +41,10 @@ export async function GET(request: NextRequest) {
 
       if (categoryData?.id) {
         query = query.eq('category_id', categoryData.id)
-        console.log('Filtering by category ID:', categoryData.id, 'for slug:', category)
+        // Console log removed for performance
       }
     } else {
-      console.log('No category filter applied - showing all products')
+      // Console log removed for performance
     }
 
     query = query.limit(limit)
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch products', details: error }, { status: 500 })
     }
 
-    console.log('Found products:', products?.length || 0)
+    // Console log removed for performance
 
     // Transform the data to match the expected format
     const transformedProducts = await Promise.all(products?.map(async (product) => {
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
       }
     }) || [])
 
-    console.log('Transformed products:', transformedProducts.length)
+    // Console log removed for performance
 
     return NextResponse.json({ products: transformedProducts })
   } catch (error) {

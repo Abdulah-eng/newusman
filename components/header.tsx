@@ -19,6 +19,7 @@ export default function Header() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null)
   const [salesDropdownOpen, setSalesDropdownOpen] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
   // Check if we're on a category page
   const isOnCategoryPage = pathname && (
@@ -52,6 +53,11 @@ export default function Header() {
       }
     }
   }, [hoverTimeout])
+
+  // Set mounted state to prevent hydration mismatch
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   const handleCategoryLeave = () => {
     // Add a small delay before closing to allow moving to dropdown
@@ -202,7 +208,7 @@ export default function Header() {
                     onClick={() => window.location.href = '/cart'}
                   >
                     <ShoppingCart className="w-5 h-5 lg:w-6 lg:h-6" />
-                    {state.itemCount > 0 && (
+                    {isMounted && state.itemCount > 0 && (
                     <div className="absolute -top-2 -right-2 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
                         <span className="text-white text-xs font-bold">{state.itemCount}</span>
                     </div>
@@ -210,7 +216,7 @@ export default function Header() {
                   </div>
                   
                   {/* Cart Dropdown on Hover */}
-                  {state.itemCount > 0 && (
+                  {isMounted && state.itemCount > 0 && (
                     <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-2xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-[9999]">
                       {/* Dropdown Header */}
                       <div className="p-4 border-b border-gray-200">

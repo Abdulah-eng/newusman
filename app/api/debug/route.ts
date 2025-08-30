@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabaseClient'
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('Debug endpoint called')
+    // Console log removed for performance
     
     // Check if we can connect to Supabase
     const { data: testData, error: testError } = await supabase

@@ -131,9 +131,9 @@ export async function POST(req: NextRequest) {
       // Process image
       optimizedBuffer = await sharpInstance.toBuffer()
 
-      console.log(`Image optimized (${preset}): ${metadata.width}x${metadata.height} → ${targetWidth}x${targetHeight}`)
-      console.log(`Size reduction: ${(buffer.length / 1024).toFixed(1)}KB → ${(optimizedBuffer.length / 1024).toFixed(1)}KB`)
-      console.log(`Compression ratio: ${((1 - optimizedBuffer.length / buffer.length) * 100).toFixed(1)}%`)
+      // Console log removed for performance: ${metadata.width}x${metadata.height} → ${targetWidth}x${targetHeight}`)
+      // Console log removed for performance.toFixed(1)}KB → ${(optimizedBuffer.length / 1024).toFixed(1)}KB`)
+      // Console log removed for performance * 100).toFixed(1)}%`)
       
     } catch (sharpError) {
       console.error('Sharp processing error:', sharpError)

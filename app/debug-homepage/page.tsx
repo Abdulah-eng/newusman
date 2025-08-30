@@ -21,7 +21,7 @@ export default function DebugHomepage() {
         return
       }
 
-      console.log('🔍 Debug - Raw database content:', data)
+      // Console log removed for performance
       setDatabaseContent(data)
     } catch (error) {
       console.error('Error:', error)

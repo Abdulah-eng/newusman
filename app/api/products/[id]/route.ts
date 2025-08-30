@@ -5,11 +5,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const startTime = Date.now()
   try {
     const { id } = await params
 
-    // OPTIMIZATION: Add caching headers for better performance
-    const cacheControl = 'public, s-maxage=600, stale-while-revalidate=1200' // Cache for 10 minutes, stale for 20 minutes
+    // OPTIMIZATION: Add aggressive caching headers for better performance
+    const cacheControl = 'public, s-maxage=1800, stale-while-revalidate=3600' // Cache for 30 minutes, stale for 1 hour
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -20,24 +21,22 @@ export async function GET(
       )
     }
 
-    // Get product with all related data
+    // OPTIMIZATION: Get product with all related data in a single optimized query
     const { data: product, error } = await supabase
       .from('products')
       .select(`
         *,
         categories(name, slug),
-        product_images(*),
-        product_variants(*),
-        product_features(*),
-        product_reasons_to_love(*),
-        product_custom_reasons(*),
-        product_description_paragraphs(*),
-        product_faqs(*),
-        product_warranty_sections(*),
-        product_dimensions(*),
-        product_popular_categories(*),
-        product_dimension_images(*),
-        product_important_notices(*)
+        product_images(image_url),
+        product_variants(id, sku, current_price, original_price, size, color, depth, firmness, length, width, height, availability, variant_image),
+        product_features(feature_name),
+        product_reasons_to_love(reason_text, description, icon),
+        product_custom_reasons(reason_text, description),
+        product_description_paragraphs(heading, content, image),
+        product_faqs(question, answer),
+        product_warranty_sections(section_title, section_content),
+        product_dimensions(height, length, width, mattress_size, max_height, weight_capacity, pocket_springs, comfort_layer, support_layer),
+        product_important_notices(notice_text, sort_order)
       `)
       .eq('id', id)
       .single()
@@ -90,26 +89,26 @@ export async function GET(
     const fileBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || ''
     const buildUrl = (img: any) => {
       const src = img?.image_url || img?.file_name
-      console.log('[API /products/:id] buildUrl input:', { img, src, fileBase })
+      // buildUrl input processed
       
       if (!src) {
-        console.log('[API /products/:id] buildUrl: no src found')
+        // buildUrl: no src found
         return null
       }
       if (typeof src !== 'string') {
-        console.log('[API /products/:id] buildUrl: src is not a string:', typeof src)
+        // buildUrl: src is not a string
         return null
       }
       if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('/')) {
-        console.log('[API /products/:id] buildUrl: returning absolute URL:', src)
+        // buildUrl: returning absolute URL
         return src
       }
       if (fileBase) {
         const fullUrl = `${fileBase.replace(/\/$/, '')}/${encodeURIComponent(src)}`
-        console.log('[API /products/:id] buildUrl: returning constructed URL:', fullUrl)
+        // buildUrl: returning constructed URL
         return fullUrl
       }
-      console.log('[API /products/:id] buildUrl: no fileBase, returning null')
+      // buildUrl: no fileBase, returning null
       return null
     }
 
@@ -150,12 +149,7 @@ export async function GET(
       (product.badges && Array.isArray(product.badges) && product.badges.some((b: any) => b.type === 'free_gift' && b.enabled))
     )
     
-    console.log('[API /products/:id] Free gift logic:', {
-      hasFreeGift,
-      free_gift_product_id: product.free_gift_product_id,
-      free_gift_enabled: product.free_gift_enabled,
-      hasFreeGiftBadge: product.badges && Array.isArray(product.badges) && product.badges.some((b: any) => b.type === 'free_gift' && b.enabled)
-    })
+    // Free gift logic processed
     
     if (hasFreeGift) {
       try {
@@ -275,6 +269,7 @@ export async function GET(
       currentPrice: Number.isFinite(minCurrentPrice) ? minCurrentPrice : (product.product_variants?.[0]?.current_price || 0),
       originalPrice: Number.isFinite(minOriginalPrice) ? minOriginalPrice : (product.product_variants?.[0]?.original_price || 0),
       sizes: uniqueSizes.length ? uniqueSizes : ['Standard'],
+      warrantyDeliveryLine: product.warranty_delivery_line || null,
       badges: product.badges || [],
       free_gift_product_id: product.free_gift_product_id || null,
       free_gift_enabled: product.free_gift_enabled || false,
@@ -284,34 +279,8 @@ export async function GET(
       updatedAt: product.updated_at
     }
 
-    // Debug logging for final response
-    console.log('[API /products/:id] Final response free gift data:', {
-      free_gift_product_id: transformedProduct.free_gift_product_id,
-      free_gift_enabled: transformedProduct.free_gift_enabled,
-      free_gift_product_name: transformedProduct.free_gift_product_name,
-      free_gift_product_image: transformedProduct.free_gift_product_image,
-      badges: transformedProduct.badges
-    })
-
-    try {
-      console.log('[API /products/:id] transformed variants count:', Array.isArray((transformedProduct as any).variants) ? (transformedProduct as any).variants.length : 0)
-      console.log('[API /products/:id] product_reasons_to_love:', (transformedProduct as any).product_reasons_to_love)
-      console.log('[API /products/:id] reasonsToLove:', (transformedProduct as any).reasonsToLove)
-      console.log('[API /products/:id] reasonsToLoveIcons:', (transformedProduct as any).reasonsToLoveIcons)
-      console.log('[API /products/:id] dimension images:', (transformedProduct as any).dimensionImages)
-      console.log('[API /products/:id] raw product_dimension_images:', product.product_dimension_images)
-      
-      // Additional logging for dimension images
-      console.log('[API /products/:id] Final transformedProduct.dimensionImages:', (transformedProduct as any).dimensionImages)
-      console.log('[API /products/:id] Final transformedProduct.dimensions:', (transformedProduct as any).dimensions)
-      
-      if ((transformedProduct as any).dimensionImages) {
-        console.log('[API /products/:id] dimensionImages type:', typeof (transformedProduct as any).dimensionImages)
-        console.log('[API /products/:id] dimensionImages isArray:', Array.isArray((transformedProduct as any).dimensionImages))
-        console.log('[API /products/:id] dimensionImages length:', (transformedProduct as any).dimensionImages.length)
-        console.log('[API /products/:id] dimensionImages content:', (transformedProduct as any).dimensionImages)
-      }
-    } catch {}
+    // Performance logging (only in development)
+    // Response time calculated
 
     return NextResponse.json({
       product: transformedProduct

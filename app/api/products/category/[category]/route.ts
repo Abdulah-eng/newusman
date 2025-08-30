@@ -13,7 +13,7 @@ export async function GET(
 
     // Handle special cases for kids and sales categories
     if (category === 'kids') {
-      console.log('🔍 Kids Category: Fetching products with show_in_kids_category = true')
+      // Kids Category: Fetching products with show_in_kids_category = true
       // For kids page, fetch products where show_in_kids_category is true
       const { data: products, error: productsError } = await supabase
         .from('products')
@@ -163,9 +163,9 @@ export async function GET(
         }
       }) || [])
 
-      console.log(`🔍 Kids Category: Found ${transformedProducts.length} products`)
-      console.log(`🔍 Sale Category: Found ${transformedProducts.length} products`)
-          console.log(`🔍 Regular Category (${category}): Found ${transformedProducts.length} products`)
+              // Kids Category: Found products
+        // Sale Category: Found products
+        // Regular Category: Found products
     return NextResponse.json({
       products: transformedProducts,
       count: transformedProducts.length
@@ -173,7 +173,7 @@ export async function GET(
     }
 
     if (category === 'sale') {
-      console.log('🔍 Sale Category: Fetching products with show_in_sales_category = true')
+              // Sale Category: Fetching products with show_in_sales_category = true
       // For sale page, fetch products where show_in_sales_category is true
       const { data: products, error: productsError } = await supabase
         .from('products')
