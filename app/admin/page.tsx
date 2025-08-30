@@ -1809,14 +1809,10 @@ function ProductForm() {
     supportLayerHeading: 'Support Layer'
   })
 
-  // Dimension images state
-  const [dimensionImages, setDimensionImages] = useState<Array<{
+  // Important notices state
+  const [importantNotices, setImportantNotices] = useState<Array<{
     id: string
-    file: File | null
-    imageUrl: string
-    fileName: string
-    fileSize: number
-    fileType: string
+    noticeText: string
     sortOrder: number
   }>>([])
 
@@ -2017,38 +2013,28 @@ function ProductForm() {
     setDimensions(prev => ({ ...prev, [field]: value }))
   }
 
-  // Dimension images functions
-  const addDimensionImage = () => {
-    const newImage = {
+  // Important notices functions
+  const addImportantNotice = () => {
+    const newNotice = {
       id: crypto.randomUUID(),
-      file: null,
-      imageUrl: '',
-      fileName: '',
-      fileSize: 0,
-      fileType: '',
-      sortOrder: dimensionImages.length
+      noticeText: '',
+      sortOrder: importantNotices.length
     }
-    setDimensionImages(prev => [...prev, newImage])
+    setImportantNotices(prev => [...prev, newNotice])
   }
 
-  const updateDimensionImage = (id: string, updates: Partial<typeof dimensionImages[0]>) => {
-    setDimensionImages(prev => prev.map(img => 
-      img.id === id ? { ...img, ...updates } : img
+  const updateImportantNotice = (id: string, field: 'noticeText' | 'sortOrder', value: string | number) => {
+    setImportantNotices(prev => prev.map(notice =>
+      notice.id === id ? { ...notice, [field]: value } : notice
     ))
   }
 
-  const removeDimensionImage = (id: string) => {
-    setDimensionImages(prev => prev.filter(img => img.id !== id))
+  const removeImportantNotice = (id: string) => {
+    setImportantNotices(prev => prev.filter(notice => notice.id !== id))
   }
 
-  const handleDimensionImageUpload = (id: string, file: File) => {
-    updateDimensionImage(id, {
-      file,
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type
-    })
-  }
+  // Dimension images functions
+
 
   // Recommended products functions
   const fetchRecommendedProducts = async () => {
@@ -2278,7 +2264,8 @@ function ProductForm() {
       comfortLayerHeading: 'Comfort Layer',
       supportLayerHeading: 'Support Layer'
     })
-    setDimensionImages([])
+
+    setImportantNotices([])
     setSelectedBunkbedMattresses([])
     setSelectedPopularCategories([])
     setSelectedRecommendedProducts([])
@@ -2338,22 +2325,69 @@ function ProductForm() {
         console.log('[Admin Save] Uploading files to Supabase bucket:', process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images', uploadedFiles.map(f => ({ name: f.name, size: f.size, type: f.type })))
         for (let i = 0; i < uploadedFiles.length; i++) {
           const file = uploadedFiles[i]
-          const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
-          const filePath = `products/${Date.now()}-${i}-${safeName}`
-          const { error: uploadError } = await supabase
-            .storage
-            .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
-            .upload(filePath, file, { upsert: true, contentType: file.type })
-          if (uploadError) {
-            console.error('[Admin Save] Upload error:', uploadError, 'for', filePath)
-            continue
+          
+          try {
+            // Use optimized upload API instead of direct Supabase upload
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('preset', 'large') // Use large preset for product images
+            
+            const response = await fetch('/api/upload-optimized', {
+              method: 'POST',
+              body: formData
+            })
+            
+            if (response.ok) {
+              const result = await response.json()
+              uploadedUrls.push(result.url)
+              
+              // Show size comparison alert
+              const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
+              const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
+              const savingsPercent = result.compressionRatio
+              
+              alert(`Image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
+              
+              console.log('[Admin Save] Optimized upload result:', result)
+            } else {
+              const error = await response.json()
+              console.error('[Admin Save] Optimized upload error:', error)
+              // Fallback to regular upload if optimized upload fails
+              const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
+              const filePath = `products/${Date.now()}-${i}-${safeName}`
+              const { error: uploadError } = await supabase
+                .storage
+                .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+                .upload(filePath, file, { upsert: true, contentType: file.type })
+              if (uploadError) {
+                console.error('[Admin Save] Fallback upload error:', uploadError, 'for', filePath)
+                continue
+              }
+              const { data: publicData } = supabase
+                .storage
+                .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+                .getPublicUrl(filePath)
+              if (publicData?.publicUrl) uploadedUrls.push(publicData.publicUrl)
+            }
+          } catch (error) {
+            console.error('[Admin Save] Upload error:', error, 'for', file.name)
+            // Fallback to regular upload
+            const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
+            const filePath = `products/${Date.now()}-${i}-${safeName}`
+            const { error: uploadError } = await supabase
+              .storage
+              .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+              .upload(filePath, file, { upsert: true, contentType: file.type })
+            if (uploadError) {
+              console.error('[Admin Save] Fallback upload error:', uploadError, 'for', filePath)
+              continue
+            }
+            const { data: publicData } = supabase
+              .storage
+              .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+              .getPublicUrl(filePath)
+            if (publicData?.publicUrl) uploadedUrls.push(publicData.publicUrl)
           }
-          const { data: publicData } = supabase
-            .storage
-            .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
-            .getPublicUrl(filePath)
-          console.log('[Admin Save] Public URL for', filePath, '=>', publicData?.publicUrl)
-          if (publicData?.publicUrl) uploadedUrls.push(publicData.publicUrl)
         }
         console.log('[Admin Save] Uploaded public URLs:', uploadedUrls)
       }
@@ -2366,53 +2400,77 @@ function ProductForm() {
         let imageUrl = para.image
         if (para.uploadedFile) {
           const file = para.uploadedFile
-          const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
-          const filePath = `descriptions/${Date.now()}-${i}-${safeName}`
-          const { error: descUploadError } = await supabase
-            .storage
-            .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
-            .upload(filePath, file, { upsert: true, contentType: file.type })
-          if (descUploadError) {
-            console.error('[Admin Save] Description image upload error:', descUploadError, 'for', filePath)
-          } else {
-            const { data: publicData } = supabase
+          
+          try {
+            // Use optimized upload API for description images
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('preset', 'medium') // Use medium preset for description images
+            
+            const response = await fetch('/api/upload-optimized', {
+              method: 'POST',
+              body: formData
+            })
+            
+            if (response.ok) {
+              const result = await response.json()
+              imageUrl = result.url
+              
+              // Show size comparison alert for description images
+              const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
+              const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
+              const savingsPercent = result.compressionRatio
+              
+              alert(`Description image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
+              
+              console.log('[Admin Save] Description optimized upload result:', result)
+            } else {
+              const error = await response.json()
+              console.error('[Admin Save] Description optimized upload error:', error)
+              // Fallback to regular upload
+              const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
+              const filePath = `descriptions/${Date.now()}-${i}-${safeName}`
+              const { error: descUploadError } = await supabase
+                .storage
+                .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+                .upload(filePath, file, { upsert: true, contentType: file.type })
+              if (descUploadError) {
+                console.error('[Admin Save] Description image upload error:', descUploadError, 'for', filePath)
+              } else {
+                const { data: publicData } = supabase
+                  .storage
+                  .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+                  .getPublicUrl(filePath)
+                console.log('[Admin Save] Description public URL for', filePath, '=>', publicData?.publicUrl)
+                imageUrl = publicData?.publicUrl || imageUrl
+              }
+            }
+          } catch (error) {
+            console.error('[Admin Save] Description upload error:', error, 'for', file.name)
+            // Fallback to regular upload
+            const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
+            const filePath = `descriptions/${Date.now()}-${i}-${safeName}`
+            const { error: descUploadError } = await supabase
               .storage
               .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
-              .getPublicUrl(filePath)
-            console.log('[Admin Save] Description public URL for', filePath, '=>', publicData?.publicUrl)
-            imageUrl = publicData?.publicUrl || imageUrl
+              .upload(filePath, file, { upsert: true, contentType: file.type })
+            if (descUploadError) {
+              console.error('[Admin Save] Description image upload error:', descUploadError, 'for', filePath)
+            } else {
+              const { data: publicData } = supabase
+                .storage
+                .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+                .getPublicUrl(filePath)
+              console.log('[Admin Save] Description public URL for', filePath, '=>', publicData?.publicUrl)
+              imageUrl = publicData?.publicUrl || imageUrl
+            }
           }
         }
         descriptionPublicUrls.push(imageUrl || null)
         updatedDescriptionParagraphs.push({ ...para, image: imageUrl || '', uploadedFile: null })
       }
 
-      // 3) Upload dimension images to storage and collect public URLs
-      const updatedDimensionImages = [] as typeof dimensionImages
-      for (let i = 0; i < dimensionImages.length; i++) {
-        const img = dimensionImages[i]
-        let imageUrl = img.imageUrl
-        if (img.file) {
-          const file = img.file
-          const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
-          const filePath = `dimensions/${Date.now()}-${i}-${safeName}`
-          const { error: dimUploadError } = await supabase
-            .storage
-            .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
-            .upload(filePath, file, { upsert: true, contentType: file.type })
-          if (dimUploadError) {
-            console.error('[Admin Save] Dimension image upload error:', dimUploadError, 'for', filePath)
-          } else {
-            const { data: publicData } = supabase
-              .storage
-              .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
-              .getPublicUrl(filePath)
-            console.log('[Admin Save] Dimension public URL for', filePath, '=>', publicData?.publicUrl)
-            imageUrl = publicData?.publicUrl || imageUrl
-          }
-        }
-        updatedDimensionImages.push({ ...img, imageUrl: imageUrl || '', file: null })
-      }
+
 
               // 4) Build payload with URL images (typed URLs + uploaded URLs)
       console.log('[Admin Save] Characteristics being sent:', {
@@ -2465,7 +2523,11 @@ function ProductForm() {
           comfortLayerHeading: dimensions.comfortLayerHeading,
           supportLayerHeading: dimensions.supportLayerHeading
         },
-        dimensionImages: updatedDimensionImages,
+        importantNotices: importantNotices.map(notice => ({
+          noticeText: notice.noticeText,
+          sortOrder: notice.sortOrder
+        })),
+
         popularCategories: getPopularCategories().filter(cat => selectedPopularCategories.includes(cat.name)),
         recommendedProducts: selectedRecommendedProducts.map(product => ({
           recommendedProductId: product.id,
@@ -2946,18 +3008,46 @@ function ProductForm() {
                                 try {
                                   const formData = new FormData()
                                   formData.append('file', file)
+                                  formData.append('preset', 'medium') // Use medium preset for variant images
                                   
-                                  const response = await fetch('/api/upload', {
+                                  const response = await fetch('/api/upload-optimized', {
                                     method: 'POST',
                                     body: formData
                                   })
                                   
                                   if (response.ok) {
-                                    const { url } = await response.json()
-                                    updateVariant(v.id, { variant_image: url })
+                                    const result = await response.json()
+                                    updateVariant(v.id, { variant_image: result.url })
+                                    
+                                    // Show size comparison alert
+                                    const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
+                                    const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
+                                    const savingsPercent = result.compressionRatio
+                                    
+                                    alert(`Variant image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
+                                    
+                                    console.log('[Variant Upload] Optimized upload result:', result)
                                   } else {
                                     const error = await response.json()
-                                    alert(`Upload failed: ${error.error || 'Failed to upload image'}`)
+                                    console.error('[Variant Upload] Optimized upload error:', error)
+                                    
+                                    // Fallback to regular upload
+                                    const fallbackFormData = new FormData()
+                                    fallbackFormData.append('file', file)
+                                    
+                                    const fallbackResponse = await fetch('/api/upload', {
+                                      method: 'POST',
+                                      body: fallbackFormData
+                                    })
+                                    
+                                    if (fallbackResponse.ok) {
+                                      const { url } = await fallbackResponse.json()
+                                      updateVariant(v.id, { variant_image: url })
+                                      alert('Image uploaded successfully (fallback mode)')
+                                    } else {
+                                      const fallbackError = await fallbackResponse.json()
+                                      alert(`Upload failed: ${fallbackError.error || 'Failed to upload image'}`)
+                                    }
                                   }
                                 } catch (error) {
                                   console.error('Upload error:', error)
@@ -3276,66 +3366,9 @@ function ProductForm() {
       {/* Dimensions & Specifications */}
       <Card className="p-4">
         <h2 className="text-xl font-semibold mb-4">Dimensions & Specifications</h2>
-        <p className="text-sm text-gray-600 mb-4">Enter product dimensions and technical specifications. You can customize the headings and add multiple images.</p>
+        <p className="text-sm text-gray-600 mb-4">Enter product dimensions and technical specifications. You can customize the headings for each field.</p>
         
-        {/* Dimension Images Section */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Dimension Images</h3>
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="sm"
-              onClick={addDimensionImage}
-            >
-              Add Image
-            </Button>
-          </div>
-          
-          {dimensionImages.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-              {dimensionImages.map((image, index) => (
-                <div key={image.id} className="border rounded-lg p-4 bg-gray-50">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Image {index + 1}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeDimensionImage(image.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <Label className="text-xs text-gray-600 mb-1 block">Upload Image</Label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) handleDimensionImageUpload(image.id, file)
-                        }}
-                        className="w-full text-sm"
-                      />
-                    </div>
-                    
-                    {image.file && (
-                      <div className="text-xs text-gray-600">
-                        <p><strong>File:</strong> {image.fileName}</p>
-                        <p><strong>Size:</strong> {(image.fileSize / 1024).toFixed(1)} KB</p>
-                        <p><strong>Type:</strong> {image.fileType}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+
         
         {/* Dimensions Grid with Editable Headings */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -3472,6 +3505,70 @@ function ProductForm() {
             />
           </div>
         </div>
+      </Card>
+
+      {/* Important Notices */}
+      <Card className="p-4">
+        <h2 className="text-xl font-semibold mb-4">Important Notices</h2>
+        <p className="text-sm text-gray-600 mb-4">Add important notices that will appear in the Dimensions section of the product page. These notices will be displayed as bullet points below the technical specifications.</p>
+        
+        {/* Add Notice Button */}
+        <div className="mb-4">
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm"
+            onClick={addImportantNotice}
+          >
+            Add Notice
+          </Button>
+        </div>
+        
+        {/* Notices List */}
+        {importantNotices.length > 0 && (
+          <div className="space-y-3">
+            {importantNotices.map((notice, index) => (
+              <div key={notice.id} className="flex items-start gap-3 p-3 border rounded-lg bg-gray-50">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm font-medium text-gray-700">Notice {index + 1}</span>
+                    <Input 
+                      value={notice.noticeText} 
+                      onChange={e => updateImportantNotice(notice.id, 'noticeText', e.target.value)}
+                      placeholder="Enter important notice text..."
+                      className="flex-1"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-gray-600">Sort Order:</Label>
+                    <Input 
+                      type="number"
+                      value={notice.sortOrder} 
+                      onChange={e => updateImportantNotice(notice.id, 'sortOrder', parseInt(e.target.value) || 0)}
+                      className="w-20 text-xs"
+                    />
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeImportantNotice(notice.id)}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {importantNotices.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            <p>No important notices added yet.</p>
+            <p className="text-sm">Click "Add Notice" to create your first important notice.</p>
+          </div>
+        )}
       </Card>
 
       {/* Popular Categories */}

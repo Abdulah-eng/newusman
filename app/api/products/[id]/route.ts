@@ -36,7 +36,8 @@ export async function GET(
         product_warranty_sections(*),
         product_dimensions(*),
         product_popular_categories(*),
-        product_dimension_images(*)
+        product_dimension_images(*),
+        product_important_notices(*)
       `)
       .eq('id', id)
       .single()
@@ -254,6 +255,11 @@ export async function GET(
         comfort_layer_heading: product.product_dimensions.comfort_layer_heading,
         support_layer_heading: product.product_dimensions.support_layer_heading
       } : null,
+      // Important notices for the dimensions section
+      importantNotices: product.product_important_notices?.map((notice: any) => ({
+        noticeText: notice.notice_text,
+        sortOrder: notice.sort_order
+      })) || [],
       // Dimension images for the dimensions section
       dimensionImages: product.product_dimension_images?.map((img: any) => ({
         id: img.id,

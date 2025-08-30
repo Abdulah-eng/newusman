@@ -113,14 +113,9 @@ export interface ProductDetailHappyProps {
 
     customReasons?: string[]
 
-    // Dimension images
-
-    dimensionImages?: Array<{
-      id: string
-      imageUrl: string
-      fileName: string
-      fileSize: number
-      fileType: string
+    // Important notices
+    importantNotices?: Array<{
+      noticeText: string
       sortOrder: number
     }>
 
@@ -208,7 +203,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   }
 
   const router = useRouter()
-  const { dispatch, validateItem } = useCart()
+  const { dispatch } = useCart()
   const [selectedImage, setSelectedImage] = useState(product.images && product.images.length ? product.images[0] : product.image)
   const [modalImageIndex, setModalImageIndex] = useState(0)
   const [selectedColor, setSelectedColor] = useState("")
@@ -219,6 +214,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   const [sizeModalOpen, setSizeModalOpen] = useState(false)
   const [colorModalOpen, setColorModalOpen] = useState(false)
   const [lastSelection, setLastSelection] = useState<string | null>(null)
+  const [isSequentialFlow, setIsSequentialFlow] = useState(false)
 
   // Smart variant selection state
   const [isAutoSelectionMode, setIsAutoSelectionMode] = useState(false)
@@ -233,121 +229,155 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       setSelectedSize(value)
       setSizeModalOpen(false)
       
-      // Check if all required selections are complete
-      setTimeout(() => {
-        const { hasSizes, hasColors } = getAvailableVariantOptions()
-        
-        // If we have both size and color options, check if both are selected
-        if (hasSizes && hasColors) {
-          if (value && selectedColor) {
-            // Both size and color are selected, add to cart directly
-            setTimeout(() => {
-              // Directly add to cart without validation to avoid reopening modals
-              dispatch({
-                type: 'ADD_ITEM',
-                payload: {
-                  id: String(product.id),
-                  name: product.name,
-                  brand: product.brand,
-                  image: selectedImage || product.image,
-                  currentPrice: product.currentPrice,
-                  originalPrice: product.originalPrice,
-                  size: value,
-                  color: selectedColor
-                }
-              })
-              setBasketSidebarOpen(true)
-              setIsAutoSelectionMode(false)
-            }, 100)
-          } else if (!selectedColor) {
-            // Color is missing, open color modal
+      // Only continue sequential flow if we're in Add to Basket mode
+      if (isSequentialFlow) {
+        setTimeout(() => {
+          const { hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
+          
+          // Check color next
+          if (hasColors && !selectedColor) {
             setColorModalOpen(true)
+            return
           }
-        } else if (hasColors && !selectedColor) {
-          // Only color is required and not selected
-          setColorModalOpen(true)
-        } else {
-          // No more selections needed, add to cart directly
-          setTimeout(() => {
-            // Directly add to cart without validation to avoid reopening modals
-            dispatch({
-              type: 'ADD_ITEM',
-              payload: {
-                id: String(product.id),
-                name: product.name,
-                brand: product.brand,
-                image: selectedImage || product.image,
-                currentPrice: product.currentPrice,
-                originalPrice: product.originalPrice,
-                size: value,
-                color: selectedColor
-              }
+          
+          // Check other variants
+          if (hasDepths && !(product as any).selectedDepth) {
+            console.log('Depth selection required but not implemented yet')
+            return
+          }
+          
+          if (hasFirmness && !(product as any).selectedFirmness) {
+            console.log('Firmness selection required but not implemented yet')
+            return
+          }
+          
+          // All variants selected, add to cart directly
+          setIsSequentialFlow(false) // Reset the flag
+          
+          // Add to cart logic here (copy from addToCart function)
+          const currentVariantPrice = (() => {
+            const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
+            if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
+              return product.currentPrice || 0
+            }
+            
+            const matchingVariant = (product as any).variants.find((variant: any) => {
+              const sizeMatch = hasSizes ? variant.size === selectedSize : true
+              const colorMatch = !selectedColor || variant.color === selectedColor
+              return sizeMatch && colorMatch
             })
-            setBasketSidebarOpen(true)
-          setIsAutoSelectionMode(false)
-          }, 100)
-        }
-      }, 150) // Increased delay to ensure size modal is fully closed and lastSelection is set
+            
+            return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
+          })()
+          
+          const hasFreeGift = (product as any).free_gift_product_id && (
+            (product as any).free_gift_enabled || 
+            (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+          )
+          
+          const payload: any = {
+            id: String(product.id),
+            name: product.name,
+            brand: product.brand,
+            image: selectedImage || product.image,
+            currentPrice: currentVariantPrice,
+            originalPrice: product.originalPrice,
+            size: selectedSizeData?.name || 'Standard',
+            color: selectedColor
+          }
+          
+          if (hasFreeGift) {
+            const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
+            Object.assign(payload, {
+              freeGiftProductId: (product as any).free_gift_product_id,
+              freeGiftProductName: giftProductName,
+              freeGiftProductImage: (product as any).free_gift_product_image || ''
+            })
+          }
+          
+          dispatch({
+            type: 'ADD_ITEM',
+            payload
+          })
+          
+          setBasketSidebarOpen(true)
+        }, 100)
+      }
+      // If not in sequential flow, just close the popup (individual variant selection)
       
     } else if (type === 'color') {
       setSelectedColor(value)
       setColorModalOpen(false)
       
-      // Check if all required selections are complete
-      setTimeout(() => {
-        const { hasSizes, hasColors } = getAvailableVariantOptions()
-        
-        // If we have both size and color options, check if both are selected
-        if (hasSizes && hasColors) {
-          if (selectedSize && value) {
-            // Both size and color are selected, add to cart directly
-            setTimeout(() => {
-              // Directly add to cart without validation to avoid reopening modals
-              dispatch({
-                type: 'ADD_ITEM',
-                payload: {
-                  id: String(product.id),
-                  name: product.name,
-                  brand: product.brand,
-                  image: selectedImage || product.image,
-                  currentPrice: product.currentPrice,
-                  originalPrice: product.originalPrice,
-                  size: selectedSize || 'Standard',
-                  color: value
-                }
-              })
-              setBasketSidebarOpen(true)
-        setIsAutoSelectionMode(false)
-            }, 100)
-          } else if (!selectedSize) {
-            // Size is missing, open size modal
-            setSizeModalOpen(true)
+      // Only continue sequential flow if we're in Add to Basket mode
+      if (isSequentialFlow) {
+        setTimeout(() => {
+          const { hasDepths, hasFirmness } = getAvailableVariantOptions()
+          
+          // Check other variants
+          if (hasDepths && !(product as any).selectedDepth) {
+            console.log('Depth selection required but not implemented yet')
+            return
           }
-        } else if (hasSizes && !selectedSize) {
-          // Only size is required and not selected
-          setSizeModalOpen(true)
-    } else {
-          // No more selections needed, add to cart directly
-          setTimeout(() => {
-            // Directly add to cart without validation to avoid reopening modals
-            dispatch({
-              type: 'ADD_ITEM',
-              payload: {
-                id: String(product.id),
-                name: product.name,
-                brand: product.brand,
-                image: selectedImage || product.image,
-                currentPrice: product.currentPrice,
-                originalPrice: product.originalPrice,
-                size: selectedSize || 'Standard',
-                color: value
-              }
+          
+          if (hasFirmness && !(product as any).selectedFirmness) {
+            console.log('Firmness selection required but not implemented yet')
+            return
+          }
+          
+          // All variants selected, add to cart directly
+          setIsSequentialFlow(false) // Reset the flag
+          
+          // Add to cart logic here (copy from addToCart function)
+          const currentVariantPrice = (() => {
+            const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
+            if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
+              return product.currentPrice || 0
+            }
+            
+            const matchingVariant = (product as any).variants.find((variant: any) => {
+              const sizeMatch = hasSizes ? variant.size === selectedSize : true
+              const colorMatch = !selectedColor || variant.color === selectedColor
+              return sizeMatch && colorMatch
             })
-            setBasketSidebarOpen(true)
-            setIsAutoSelectionMode(false)
-          }, 100)
-        }
-      }, 200) // Increased delay to ensure color modal is fully closed and selectedColor state is updated
+            
+            return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
+          })()
+          
+          const hasFreeGift = (product as any).free_gift_product_id && (
+            (product as any).free_gift_enabled || 
+            (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+          )
+          
+          const payload: any = {
+            id: String(product.id),
+            name: product.name,
+            brand: product.brand,
+            image: selectedImage || product.image,
+            currentPrice: currentVariantPrice,
+            originalPrice: product.originalPrice,
+            size: selectedSizeData?.name || 'Standard',
+            color: selectedColor
+          }
+          
+          if (hasFreeGift) {
+            const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
+            Object.assign(payload, {
+              freeGiftProductId: (product as any).free_gift_product_id,
+              freeGiftProductName: giftProductName,
+              freeGiftProductImage: (product as any).free_gift_product_image || ''
+            })
+          }
+          
+          dispatch({
+            type: 'ADD_ITEM',
+            payload
+          })
+          
+          setBasketSidebarOpen(true)
+        }, 100)
+      }
+      // If not in sequential flow, just close the popup (individual variant selection)
     }
   }
 
@@ -652,40 +682,42 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       return
     }
 
-    // Validate size and color selection
-    const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
-    const hasColors = Array.isArray((product as any).variants) && (product as any).variants.some((v: any) => Boolean(v.color))
+    // Set sequential flow flag when Add to Basket button is clicked
+    setIsSequentialFlow(true)
 
-    const validation = validateItem(
-      {
-        id: String(product.id),
-        name: product.name,
-        brand: product.brand,
-        image: selectedImage || product.image,
-        currentPrice: currentVariantPrice,
-        originalPrice: product.originalPrice,
-        size: selectedSizeData?.name,
-        color: selectedColor
-      },
-      selectedSizeData?.name,
-      selectedColor,
-      { requireSize: hasSizes, requireColor: hasColors }
-    )
+    // Check for missing variants and open popups one by one in sequence
+    const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
 
-    if (!validation.isValid) {
-      // Start smart selection flow instead of showing individual modals
-      // Try to determine which selection to start with based on what's missing
-      // Also check if we just closed a modal to prevent reopening
-      if (hasSizes && !selectedSize && lastSelection !== 'size') {
-        startSmartSelectionWithPriority('size')
-      } else if (hasColors && !selectedColor && lastSelection !== 'color') {
-        startSmartSelectionWithPriority('color')
-      } else {
-      startSmartSelection()
-      }
-
+    // Start with size check (if size variants exist)
+    if (hasSizes && !selectedSize) {
+      // Size is required but not selected, open size modal
+      setSizeModalOpen(true)
       return
     }
+
+    // After size is selected (or if no size required), check color
+    if (hasColors && !selectedColor) {
+      // Color is required but not selected, open color modal
+      setColorModalOpen(true)
+      return
+    }
+
+    // Check for other variant types if they exist
+    if (hasDepths && !(product as any).selectedDepth) {
+      // Depth is required but not selected, would need to implement depth modal
+      // For now, just return to prevent adding to cart
+      console.log('Depth selection required but not implemented yet')
+      return
+    }
+
+    if (hasFirmness && !(product as any).selectedFirmness) {
+      // Firmness is required but not selected, would need to implement firmness modal
+      // For now, just return to prevent adding to cart
+      console.log('Firmness selection required but not implemented yet')
+      return
+    }
+
+    // All required variants are selected, proceed to add to cart
 
     // Add to cart logic here
     
@@ -831,15 +863,54 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     const nextSelection = getNextRequiredSelection()
     if (nextSelection) {
       openNextRequiredModal()
-    } else {
-      // No selections needed, add to cart directly
-      addToCart()
     }
+    // Don't automatically add to cart - only when user clicks "Add to Basket"
   }, [getNextRequiredSelection, openNextRequiredModal])
+
+
+
+  // Function to start sequential variant selection flow for Add to Basket
+  const startSequentialVariantSelection = useCallback(() => {
+    setIsSequentialFlow(true) // Mark that we're in sequential flow mode
+    
+    const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
+    
+    // Start with size check (if size variants exist)
+    if (hasSizes && !selectedSize) {
+      // Size is required but not selected, open size modal
+      setSizeModalOpen(true)
+      return
+    }
+    
+    // After size is selected (or if no size required), check color
+    if (hasColors && !selectedColor) {
+      // Color is required but not selected, open color modal
+      setColorModalOpen(true)
+      return
+    }
+    
+    // Check for other variant types if they exist
+    if (hasDepths && !(product as any).selectedDepth) {
+      // Depth is required but not selected, would need to implement depth modal
+      console.log('Depth selection required but not implemented yet')
+      return
+    }
+    
+    if (hasFirmness && !(product as any).selectedFirmness) {
+      // Firmness is required but not selected, would need to implement depth modal
+      console.log('Firmness selection required but not implemented yet')
+      return
+    }
+    
+    // All required variants are selected, proceed to add to cart
+    setIsSequentialFlow(false) // Reset the flag
+    addToCart()
+  }, [getAvailableVariantOptions, selectedSize, selectedColor, product, addToCart])
 
   // Enhanced smart selection that can start with either size or color
   const startSmartSelectionWithPriority = useCallback((priorityType?: 'size' | 'color') => {
     setIsAutoSelectionMode(true)
+    setIsSequentialFlow(false) // Reset sequential flow flag for individual variant selection
     
     if (priorityType === 'size' && !selectedSize && lastSelection !== 'size') {
       // Start with size selection
@@ -2887,70 +2958,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                         
 
-                        {/* Dimension Images Section - Full width, large images */}
-                        {(() => {
-                          
-                          return product.dimensionImages && product.dimensionImages.length > 0 ? (
-                          <div className="mb-8">
 
-                              <h4 className="text-xl font-semibold text-gray-900 mb-6">Product Dimension Images</h4>
-                            <div className="space-y-6">
-
-                              {product.dimensionImages
-
-                                .sort((a, b) => a.sortOrder - b.sortOrder)
-
-                                .map((img, index) => (
-
-                                  <div key={img.id || index} className="relative group">
-
-                                    <div className="w-full h-80 lg:h-96 xl:h-[28rem] rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-lg">
-
-                                      <img
-
-                                        src={img.imageUrl}
-
-                                        alt={`Product dimension ${index + 1}`}
-
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-
-                                        onError={(e) => {
-
-                                          const target = e.target as HTMLImageElement;
-
-                                          target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400' fill='%23f3f4f6'%3E%3Crect width='400' height='400' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='16' fill='%236b7280'%3EDimension Image%3C/text%3E%3C/svg%3E";
-
-                                        }}
-
-                                      />
-
-                                    </div>
-
-                                  </div>
-
-                                ))}
-
-                            </div>
-
-                          </div>
-
-                        ) : (
-
-                          <div className="mb-8">
-
-                              <h4 className="text-xl font-semibold text-gray-900 mb-4">Product Dimension Images</h4>
-                            <div className="text-center py-8 text-gray-500">
-
-                              <p>No dimension images available</p>
-
-                              <p className="text-sm">Dimension images will appear here when added from the admin panel</p>
-
-                            </div>
-
-                          </div>
-
-                          )
-                        })()}
                         
 
 
@@ -2966,7 +2974,25 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                             <div>
 
-                              <h4 className="text-xl font-semibold text-gray-900 mb-4">Overall Dimensions</h4>
+                              <h4 className="text-xl font-semibold text-gray-900 mb-4">
+                                {(() => {
+                                  const category = product.category || 'mattresses'
+                                  switch (category) {
+                                    case 'beds': return 'Bed Dimensions'
+                                    case 'sofas': return 'Sofa Dimensions'
+                                    case 'pillows': return 'Pillow Dimensions'
+                                    case 'toppers': return 'Topper Dimensions'
+                                    case 'bunkbeds': return 'Bunkbed Dimensions'
+                                    case 'adjustable-bases': return 'Base Dimensions'
+                                    case 'bed-frames': return 'Frame Dimensions'
+                                    case 'box-springs': return 'Box Spring Dimensions'
+                                    case 'bedding': return 'Bedding Dimensions'
+                                    case 'kids': return 'Product Dimensions'
+                                    case 'sale': return 'Product Dimensions'
+                                    default: return 'Overall Dimensions'
+                                  }
+                                })()}
+                              </h4>
 
                               <div className="space-y-3">
 
@@ -3002,13 +3028,47 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                             <div>
 
-                              <h4 className="text-xl font-semibold text-gray-900 mb-4">Mattress Specifications</h4>
+                              <h4 className="text-xl font-semibold text-gray-900 mb-4">
+                                {(() => {
+                                  const category = product.category || 'mattresses'
+                                  switch (category) {
+                                    case 'beds': return 'Bed Specifications'
+                                    case 'sofas': return 'Sofa Specifications'
+                                    case 'pillows': return 'Pillow Specifications'
+                                    case 'toppers': return 'Topper Specifications'
+                                    case 'bunkbeds': return 'Bunkbed Specifications'
+                                    case 'adjustable-bases': return 'Adjustable Base Specifications'
+                                    case 'bed-frames': return 'Bed Frame Specifications'
+                                    case 'box-springs': return 'Box Spring Specifications'
+                                    case 'bedding': return 'Bedding Specifications'
+                                    case 'kids': return 'Kids Product Specifications'
+                                    case 'sale': return 'Product Specifications'
+                                    default: return 'Mattress Specifications'
+                                  }
+                                })()}
+                              </h4>
 
                               <div className="space-y-3">
 
                                 <div className="flex items-center justify-between py-2 border-b border-gray-200">
 
-                                  <span className="font-medium text-gray-700">{product.dimensions?.mattress_size_heading || 'Mattress Size'}</span>
+                                  <span className="font-medium text-gray-700">{product.dimensions?.mattress_size_heading || (() => {
+                                    const category = product.category || 'mattresses'
+                                    switch (category) {
+                                      case 'beds': return 'Bed Size'
+                                      case 'sofas': return 'Sofa Size'
+                                      case 'pillows': return 'Pillow Size'
+                                      case 'toppers': return 'Topper Size'
+                                      case 'bunkbeds': return 'Bunkbed Size'
+                                      case 'adjustable-bases': return 'Base Size'
+                                      case 'bed-frames': return 'Frame Size'
+                                      case 'box-springs': return 'Box Spring Size'
+                                      case 'bedding': return 'Bedding Size'
+                                      case 'kids': return 'Product Size'
+                                      case 'sale': return 'Product Size'
+                                      default: return 'Mattress Size'
+                                    }
+                                  })()}</span>
                                   <span className="text-gray-900 font-semibold">{product.dimensions?.mattress_size || '135cm x L 190cm cm'}</span>
 
                                 </div>
@@ -3035,7 +3095,25 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                             <div>
 
-                              <h4 className="text-xl font-semibold text-gray-900 mb-4">Construction Details</h4>
+                              <h4 className="text-xl font-semibold text-gray-900 mb-4">
+                                {(() => {
+                                  const category = product.category || 'mattresses'
+                                  switch (category) {
+                                    case 'beds': return 'Frame Details'
+                                    case 'sofas': return 'Construction Details'
+                                    case 'pillows': return 'Material Details'
+                                    case 'toppers': return 'Layer Details'
+                                    case 'bunkbeds': return 'Construction Details'
+                                    case 'adjustable-bases': return 'Base Details'
+                                    case 'bed-frames': return 'Frame Details'
+                                    case 'box-springs': return 'Spring Details'
+                                    case 'bedding': return 'Material Details'
+                                    case 'kids': return 'Product Details'
+                                    case 'sale': return 'Product Details'
+                                    default: return 'Construction Details'
+                                  }
+                                })()}
+                              </h4>
 
                               <div className="space-y-3">
 
@@ -3332,25 +3410,38 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                         
 
-                        {/* Additional Notes */}
-
-                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-
-                          <h4 className="text-lg font-semibold text-gray-900 mb-3">Important Notes</h4>
-
-                          <div className="space-y-2 text-sm text-gray-700">
-
-                            <p>• Mattress dimensions are standard sizes as listed above</p>
-
-                            <p>• Maximum mattress height should not exceed 25 cm for optimal fit</p>
-
-                            <p>• Weight capacity is distributed across the entire mattress surface</p>
-
-                            <p>• Pocket spring count may vary slightly due to manufacturing tolerances</p>
-
+                        {/* Important Notices */}
+                        {product.importantNotices && product.importantNotices.length > 0 && (
+                          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                              {(() => {
+                                const category = product.category || 'mattresses'
+                                switch (category) {
+                                  case 'beds': return 'Important Bed Notes'
+                                  case 'sofas': return 'Important Sofa Notes'
+                                  case 'pillows': return 'Important Pillow Notes'
+                                  case 'toppers': return 'Important Topper Notes'
+                                  case 'bunkbeds': return 'Important Bunkbed Notes'
+                                  case 'adjustable-bases': return 'Important Base Notes'
+                                  case 'bed-frames': return 'Important Frame Notes'
+                                  case 'box-springs': return 'Important Box Spring Notes'
+                                  case 'bedding': return 'Important Bedding Notes'
+                                  case 'kids': return 'Important Product Notes'
+                                  case 'sale': return 'Important Product Notes'
+                                  default: return 'Important Notes'
+                                }
+                              })()}
+                            </h4>
+                            <div className="space-y-2 text-sm text-gray-700">
+                              {product.importantNotices
+                                .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                                .map((notice, index) => (
+                                  <p key={index}>• {notice.noticeText}</p>
+                                ))
+                              }
+                            </div>
                           </div>
-
-                        </div>
+                        )}
 
                       </div>
 
@@ -3742,7 +3833,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
           {/* Merged Product Info & Size Card */}
 
-          <div className="rounded-xl p-4 bg-white shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer relative z-0">
+          <div className="rounded-xl p-4 bg-white shadow-lg relative z-0">
 
             {/* Product Title */}
 

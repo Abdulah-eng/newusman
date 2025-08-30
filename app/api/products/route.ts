@@ -613,6 +613,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Insert important notices
+    if (body.importantNotices && body.importantNotices.length > 0) {
+      const importantNoticeData = body.importantNotices.map((notice: any, index: number) => ({
+        product_id: productId,
+        notice_text: notice.noticeText || '',
+        sort_order: notice.sortOrder || index
+      }))
+
+      const { error: importantNoticeError } = await supabase
+        .from('product_important_notices')
+        .insert(importantNoticeData)
+
+      if (importantNoticeError) {
+        console.error('Important notice insertion error:', importantNoticeError)
+      }
+    }
+
     // Insert dimension images
     if (body.dimensionImages && body.dimensionImages.length > 0) {
       const dimensionImageData = body.dimensionImages.map((img: any, index: number) => ({
