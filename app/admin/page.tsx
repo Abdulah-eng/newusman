@@ -56,6 +56,7 @@ import {
   Waves,
   RefreshCw 
 } from 'lucide-react'
+import { getIconComponent } from '../../lib/icon-mapping'
 
 type VariantRow = {
   id: string
@@ -1613,13 +1614,10 @@ const getReasonsForCategory = (category: string) => ensureUnique(CATEGORY_REASON
 // Get hardcoded feature cards for a category
 const getFeatureCardsForCategory = (category: string) => HARDCODED_FEATURE_CARDS[category as keyof typeof HARDCODED_FEATURE_CARDS] || HARDCODED_FEATURE_CARDS.mattresses
 
-// Import centralized icon mapping
-import { getIconComponent } from '../../lib/icon-mapping'
-
 // Get icon component based on icon name (now uses centralized mapping)
 const getIconComponentAdmin = (iconName: string) => {
   const iconFn = getIconComponent(iconName, 'md')
-  return typeof iconFn === 'function' ? iconFn : (() => <Check className="w-6 h-6" />)
+  return typeof iconFn === 'function' ? iconFn : (() => React.createElement(Check, { className: "w-6 h-6" }))
 }
 
 export default function AdminPage() {
