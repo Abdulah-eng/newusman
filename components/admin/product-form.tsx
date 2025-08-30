@@ -35,6 +35,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { supabase } from '@/lib/supabaseClient'
 import { Badge } from "@/components/ui/badge"
 import { VariantManagement } from './variant-management'
+import { ProductSelectionModal } from './product-selection-modal'
 
 interface ProductFormProps {
   product?: any
@@ -108,6 +109,12 @@ interface ProductFormData {
     labels: string[];
   }[];
   product_spec_icons?: string[];
+  badges?: {
+    type: 'sale' | 'new_in' | 'free_gift';
+    enabled: boolean;
+  }[];
+  free_gift_product_id?: string;
+  free_gift_enabled?: boolean;
 }
 
 export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
@@ -190,7 +197,10 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
       { name: 'Air Circulation', value: 80, min: 0, max: 100, labels: ['Good', 'Better', 'Best'] },
       { name: 'Durability', value: 95, min: 0, max: 100, labels: ['Good', 'Better', 'Best'] }
     ],
-    product_spec_icons: product?.product_spec_icons || ['support', 'pressure', 'air', 'durability', 'quality']
+    product_spec_icons: product?.product_spec_icons || ['support', 'pressure', 'air', 'durability', 'quality'],
+    badges: product?.badges || [],
+    free_gift_product_id: product?.free_gift_product_id,
+    free_gift_enabled: product?.free_gift_enabled
   })
 
   const [newFeature, setNewFeature] = useState('')
@@ -198,6 +208,8 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
   const [newColor, setNewColor] = useState('')
   const [newSize, setNewSize] = useState('')
   const [newMaterial, setNewMaterial] = useState('')
+  const [selectedGiftProduct, setSelectedGiftProduct] = useState<any>(null)
+  const [showProductSelectionModal, setShowProductSelectionModal] = useState(false)
 
   useEffect(() => {
     fetchCategories()
@@ -210,6 +222,18 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
     }
     if (formData.sizes.length > 0) {
       setSelectedSize(formData.sizes[0])
+    }
+  }, [])
+
+  // Ensure badges are properly initialized
+  useEffect(() => {
+    if (!formData.badges || formData.badges.length === 0) {
+      const defaultBadges: Array<{ type: 'sale' | 'new_in' | 'free_gift'; enabled: boolean }> = [
+        { type: 'sale', enabled: false },
+        { type: 'new_in', enabled: false },
+        { type: 'free_gift', enabled: false }
+      ]
+      handleInputChange('badges', defaultBadges)
     }
   }, [])
 
@@ -246,16 +270,11 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
   }
 
   const handleArrayField = (field: keyof ProductFormData, value: string, action: 'add' | 'remove') => {
+    const currentArray = formData[field] as string[]
     if (action === 'add' && value.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        [field]: [...(prev[field] as string[]), value.trim()]
-      }))
+      handleInputChange(field, [...currentArray, value.trim()])
     } else if (action === 'remove') {
-      setFormData(prev => ({
-        ...prev,
-        [field]: (prev[field] as string[]).filter((item: string) => item !== value)
-      }))
+      handleInputChange(field, currentArray.filter(item => item !== value))
     }
   }
 
@@ -375,7 +394,10 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
           { name: 'Air Circulation', value: 80, min: 0, max: 100, labels: ['Good', 'Better', 'Best'] },
           { name: 'Durability', value: 95, min: 0, max: 100, labels: ['Good', 'Better', 'Best'] }
         ],
-        product_spec_icons: formData.product_spec_icons || ['support', 'pressure', 'air', 'durability', 'quality']
+        product_spec_icons: formData.product_spec_icons || ['support', 'pressure', 'air', 'durability', 'quality'],
+        badges: formData.badges || [],
+        free_gift_product_id: formData.free_gift_product_id,
+        free_gift_enabled: formData.free_gift_enabled
       }
 
       if (product?.id) {
@@ -420,6 +442,37 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
         className={`h-4 w-4 ${i < Math.floor(rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
       />
     ))
+  }
+
+  const handleBadgeToggle = (badgeType: 'sale' | 'new_in' | 'free_gift', enabled: boolean) => {
+    const currentBadges = formData.badges || []
+    const existingBadgeIndex = currentBadges.findIndex(b => b.type === badgeType)
+    
+    if (existingBadgeIndex >= 0) {
+      const updatedBadges = [...currentBadges]
+      updatedBadges[existingBadgeIndex] = { ...updatedBadges[existingBadgeIndex], enabled }
+      handleInputChange('badges', updatedBadges)
+    } else {
+      handleInputChange('badges', [...currentBadges, { type: badgeType, enabled }])
+    }
+
+    // If disabling free gift, clear the gift product
+    if (badgeType === 'free_gift' && !enabled) {
+      handleInputChange('free_gift_product_id', '')
+      handleInputChange('free_gift_enabled', false)
+      setSelectedGiftProduct(null)
+    }
+  }
+
+  const handleGiftProductSelect = (product: any) => {
+    setSelectedGiftProduct(product)
+    handleInputChange('free_gift_product_id', product.id)
+    handleInputChange('free_gift_enabled', true)
+  }
+
+  const getBadgeStatus = (badgeType: 'sale' | 'new_in' | 'free_gift') => {
+    const badge = formData.badges?.find(b => b.type === badgeType)
+    return badge?.enabled || false
   }
 
   return (
@@ -563,6 +616,8 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
                   <span className="text-sm text-gray-600">On Sale</span>
                 </label>
               </div>
+
+
 
               {/* Product Name */}
               <Input
@@ -874,6 +929,112 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
                     </Button>
                   </div>
                 </div>
+              </div>
+
+            </div>
+
+            {/* Product Badges Section */}
+            <div className="bg-white rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Product Badges</h3>
+              <div className="space-y-3">
+                {/* Sale Badge */}
+                <label className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={getBadgeStatus('sale')}
+                      onChange={(e) => handleBadgeToggle('sale', e.target.checked)}
+                      className="mr-3 h-5 w-5 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                    />
+                    <span className="text-base font-medium text-gray-700">Sale Badge</span>
+                    <Badge className="ml-3 bg-orange-500 text-white text-sm">Sale</Badge>
+                  </div>
+                  <span className="text-sm text-gray-500">Shows when product is on sale</span>
+                </label>
+
+                {/* New In Badge */}
+                <label className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={getBadgeStatus('new_in')}
+                      onChange={(e) => handleBadgeToggle('new_in', e.target.checked)}
+                      className="mr-3 h-5 w-5 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                    />
+                    <span className="text-base font-medium text-gray-700">New In Badge</span>
+                    <Badge className="ml-3 bg-orange-600 text-white text-sm">New In</Badge>
+                  </div>
+                  <span className="text-sm text-gray-500">Shows for new products</span>
+                </label>
+
+                {/* Free Gift Badge */}
+                <label className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={getBadgeStatus('free_gift')}
+                      onChange={(e) => handleBadgeToggle('free_gift', e.target.checked)}
+                      className="mr-3 h-5 w-5 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                    />
+                    <span className="text-base font-medium text-gray-700">Free Gift Badge</span>
+                    <Badge className="ml-3 bg-blue-900 text-white text-sm">Free Gift</Badge>
+                  </div>
+                  <span className="text-sm text-gray-500">Shows when product comes with free gift</span>
+                </label>
+
+                {/* Free Gift Product Selection */}
+                {getBadgeStatus('free_gift') && (
+                  <div className="mt-3 p-3 bg-white rounded border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">Free Gift Product</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => setShowProductSelectionModal(true)}
+                        className="bg-orange-600 hover:bg-orange-700"
+                      >
+                        Select Product
+                      </Button>
+                    </div>
+                    
+                    {selectedGiftProduct ? (
+                      <div className="flex items-center space-x-3 p-2 bg-green-50 rounded border">
+                        <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
+                          {selectedGiftProduct.main_image ? (
+                            <img
+                              src={selectedGiftProduct.main_image}
+                              alt={selectedGiftProduct.name}
+                              className="w-full h-full object-cover rounded"
+                            />
+                          ) : (
+                            <Package className="h-5 w-5 text-gray-400" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">{selectedGiftProduct.name}</p>
+                          {selectedGiftProduct.current_price && (
+                            <p className="text-xs text-gray-600">£{selectedGiftProduct.current_price.toFixed(2)}</p>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedGiftProduct(null)
+                            handleInputChange('free_gift_product_id', '')
+                            handleInputChange('free_gift_enabled', false)
+                          }}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">No gift product selected</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1999,6 +2160,16 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
           </div>
         </div>
       </div>
+
+      {/* Product Selection Modal */}
+      <ProductSelectionModal
+        isOpen={showProductSelectionModal}
+        onClose={() => setShowProductSelectionModal(false)}
+        onSelect={handleGiftProductSelect}
+        title="Select Free Gift Product"
+        description="Choose which product will be given as a free gift when this product is added to cart"
+        excludeProductId={product?.id}
+      />
     </div>
   )
 }

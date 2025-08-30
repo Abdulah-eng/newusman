@@ -5,8 +5,10 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 import { AdminNav } from '@/components/admin/admin-nav'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -24,7 +26,6 @@ import {
   Heart, 
   Shield, 
   Feather, 
-  Badge, 
   PackageOpen, 
   Moon, 
   Crown, 
@@ -1612,60 +1613,13 @@ const getReasonsForCategory = (category: string) => ensureUnique(CATEGORY_REASON
 // Get hardcoded feature cards for a category
 const getFeatureCardsForCategory = (category: string) => HARDCODED_FEATURE_CARDS[category as keyof typeof HARDCODED_FEATURE_CARDS] || HARDCODED_FEATURE_CARDS.mattresses
 
-// Get icon component based on icon name
-const getIconComponent = (iconName: string) => {
-  const iconMap: { [key: string]: any } = {
-    'springs': () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-6 h-6">
-      <rect x="2" y="8" width="20" height="8" rx="1" ry="1"/>
-      <path d="M4 10h2M8 10h2M12 10h2M16 10h2M20 10h2"/>
-      <rect x="2" y="12" width="20" height="4" rx="1" ry="1"/>
-      <path d="M4 14h2M8 14h2M12 14h2M16 14h2M20 14h2"/>
-    </svg>,
-    'brain': () => <Brain className="w-6 h-6" />,
-    'sliders': () => <SlidersHorizontal className="w-6 h-6" />,
-    'grid': () => <Grid className="w-6 h-6" />,
-    'rotate': () => <RotateCcw className="w-6 h-6" />,
-    'layers': () => <Layers className="w-6 h-6" />,
-    'droplet': () => <Droplets className="w-6 h-6" />,
-    'leaf': () => <Leaf className="w-6 h-6" />,
-    'arrow-left-right': () => <ArrowLeftRight className="w-6 h-6" />,
-    'snowflake': () => <Snowflake className="w-6 h-6" />,
-    'gem': () => <Gem className="w-6 h-6" />,
-    'heart': () => <Heart className="w-6 h-6" />,
-    'shield': () => <Shield className="w-6 h-6" />,
-    'feather': () => <Feather className="w-6 h-6" />,
-    'badge': () => <Badge className="w-6 h-6" />,
-    'package-open': () => <PackageOpen className="w-6 h-6" />,
-    'moon': () => <Moon className="w-6 h-6" />,
-    'crown': () => <Crown className="w-6 h-6" />,
-    'tree': () => <Trees className="w-6 h-6" />,
-    'zap': () => <Zap className="w-6 h-6" />,
-    'package': () => <Package className="w-6 h-6" />,
-    'sliders-horizontal': () => <SlidersHorizontal className="w-6 h-6" />,
-    'wrench': () => <Wrench className="w-6 h-6" />,
-    'palette': () => <Palette className="w-6 h-6" />,
-    'minimize': () => <Minimize className="w-6 h-6" />,
-    'award': () => <Award className="w-6 h-6" />,
-    'truck': () => <Truck className="w-6 h-6" />,
-    'star': () => <Star className="w-6 h-6" />,
-    'clock': () => <Clock className="w-6 h-6" />,
-    'corner': () => <CornerDownLeft className="w-6 h-6" />,
-    'trending-up': () => <TrendingUp className="w-6 h-6" />,
-    'eye': () => <Eye className="w-6 h-6" />,
-    'check': () => <Check className="w-6 h-6" />,
-    'baby': () => <Baby className="w-6 h-6" />,
-    'users': () => <Users className="w-6 h-6" />,
-    'mountain': () => <Mountain className="w-6 h-6" />,
-    'thermometer': () => <Thermometer className="w-6 h-6" />,
-    'volume-2': () => <Volume2 className="w-6 h-6" />,
-    'lightbulb': () => <Lightbulb className="w-6 h-6" />,
-    'sun': () => <Sun className="w-6 h-6" />,
-    'recycle': () => <RefreshCw className="w-6 h-6" />,
-    'umbrella': () => <Umbrella className="w-6 h-6" />,
-    'scroll': () => <ScrollText className="w-6 h-6" />,
-    'waves': () => <Waves className="w-6 h-6" />
-  }
-  return iconMap[iconName] || (() => <Check className="w-6 h-6" />)
+// Import centralized icon mapping
+import { getIconComponent } from '../../lib/icon-mapping'
+
+// Get icon component based on icon name (now uses centralized mapping)
+const getIconComponentAdmin = (iconName: string) => {
+  const iconFn = getIconComponent(iconName, 'md')
+  return typeof iconFn === 'function' ? iconFn : (() => <Check className="w-6 h-6" />)
 }
 
 export default function AdminPage() {
@@ -1803,7 +1757,7 @@ function ProductForm() {
   const [attributesConfirmed, setAttributesConfirmed] = useState<boolean>(false)
 
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([])
-  const [selectedReasonsToLove, setSelectedReasonsToLove] = useState<Array<{reason: string, description: string}>>([])
+  const [selectedReasonsToLove, setSelectedReasonsToLove] = useState<Array<{reason: string, description: string, smalltext?: string, icon?: string}>>([])
   const [reasonsToBuy, setReasonsToBuy] = useState<string[]>([])
   const [newReason, setNewReason] = useState<string>("")
 
@@ -1887,6 +1841,14 @@ function ProductForm() {
   const [beds, setBeds] = useState<any[]>([])
   const [sofas, setSofas] = useState<any[]>([])
   const [pillows, setPillows] = useState<any[]>([])
+
+  // Badges state
+  const [badges, setBadges] = useState<Array<{ type: 'sale' | 'new_in' | 'free_gift'; enabled: boolean }>>([
+    { type: 'sale', enabled: false },
+    { type: 'new_in', enabled: false },
+    { type: 'free_gift', enabled: false }
+  ])
+  const [selectedGiftProduct, setSelectedGiftProduct] = useState<any>(null)
   const [toppers, setToppers] = useState<any[]>([])
   const [loadingMattresses, setLoadingMattresses] = useState(true)
   const [loadingBeds, setLoadingBeds] = useState(true)
@@ -1900,18 +1862,33 @@ function ProductForm() {
   const [selectedCategoryForSelector, setSelectedCategoryForSelector] = useState<string>('')
   const [searchTerm, setSearchTerm] = useState('')
 
+  // Free gift product selector modal state
+  const [freeGiftSelectorOpen, setFreeGiftSelectorOpen] = useState(false)
+  const [selectedCategoryForGiftSelector, setSelectedCategoryForGiftSelector] = useState<string>('mattresses')
+  const [giftSearchTerm, setGiftSearchTerm] = useState('')
+
+  // Image selector modal state
+  const [imageSelectorOpen, setImageSelectorOpen] = useState(false)
+  const [selectedVariantForImage, setSelectedVariantForImage] = useState<string>('')
+
   // Fetch recommended products on component mount
   useEffect(() => {
     fetchRecommendedProducts()
   }, [])
 
-  const addReasonToLove = (reason: string, description: string = '') => {
-    setSelectedReasonsToLove(prev => [...prev, { reason, description }])
+  const addReasonToLove = (reason: string, description: string = '', smalltext: string = '', icon: string = '') => {
+    setSelectedReasonsToLove(prev => [...prev, { reason, description, smalltext, icon }])
   }
 
   const updateReasonToLoveDescription = (index: number, description: string) => {
     setSelectedReasonsToLove(prev => prev.map((item, i) => 
       i === index ? { ...item, description } : item
+    ))
+  }
+
+  const updateReasonToLoveSmalltext = (index: number, smalltext: string) => {
+    setSelectedReasonsToLove(prev => prev.map((item, i) => 
+      i === index ? { ...item, smalltext } : item
     ))
   }
 
@@ -1979,6 +1956,34 @@ function ProductForm() {
     setDescriptionParagraphs(prev => prev.map((para, i) => 
       i === index ? { ...para, [field]: value } : para
     ))
+  }
+
+  // Badge helper functions
+  const handleBadgeToggle = (badgeType: 'sale' | 'new_in' | 'free_gift', enabled: boolean) => {
+    const currentBadges = badges || []
+    const existingBadgeIndex = currentBadges.findIndex(b => b.type === badgeType)
+    
+    if (existingBadgeIndex >= 0) {
+      const updatedBadges = [...currentBadges]
+      updatedBadges[existingBadgeIndex] = { ...updatedBadges[existingBadgeIndex], enabled }
+      setBadges(updatedBadges)
+    } else {
+      setBadges([...currentBadges, { type: badgeType, enabled }])
+    }
+
+    // If disabling free gift, clear the gift product
+    if (badgeType === 'free_gift' && !enabled) {
+      setSelectedGiftProduct(null)
+    }
+  }
+
+  const handleGiftProductSelect = (product: any) => {
+    setSelectedGiftProduct(product)
+  }
+
+  const getBadgeStatus = (badgeType: 'sale' | 'new_in' | 'free_gift') => {
+    const badge = badges?.find(b => b.type === badgeType)
+    return badge?.enabled || false
   }
 
   const handleDescriptionFileUpload = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
@@ -2065,6 +2070,7 @@ function ProductForm() {
       if (mattressesRes.ok) {
         const data = await mattressesRes.json()
         console.log('Mattresses loaded:', data.products?.length || 0)
+        console.log('Sample mattress data:', data.products?.[0])
         setMattresses(data.products || [])
       } else {
         const errorData = await mattressesRes.json().catch(() => ({}))
@@ -2140,6 +2146,10 @@ function ProductForm() {
     setSelectedRecommendedProducts(prev => prev.filter(p => p.id !== productId))
   }
 
+
+
+
+
   // Product selector modal functions
   const openProductSelector = (category: string) => {
     setSelectedCategoryForSelector(category)
@@ -2151,6 +2161,19 @@ function ProductForm() {
     setProductSelectorOpen(false)
     setSelectedCategoryForSelector('')
     setSearchTerm('')
+  }
+
+  // Free gift product selector modal functions
+  const openFreeGiftSelector = (category: string) => {
+    setSelectedCategoryForGiftSelector(category)
+    setGiftSearchTerm('')
+    setFreeGiftSelectorOpen(true)
+  }
+
+  const closeFreeGiftSelector = () => {
+    setFreeGiftSelectorOpen(false)
+    setSelectedCategoryForGiftSelector('')
+    setGiftSearchTerm('')
   }
 
   const getProductsForCategory = (category: string) => {
@@ -2174,6 +2197,24 @@ function ProductForm() {
       case 'toppers': return loadingToppers;
       case 'bunkbeds': return loadingMattresses;
       default: return false;
+    }
+  }
+
+  // Image selector modal functions
+  const openImageSelector = (variantId: string) => {
+    setSelectedVariantForImage(variantId)
+    setImageSelectorOpen(true)
+  }
+
+  const closeImageSelector = () => {
+    setImageSelectorOpen(false)
+    setSelectedVariantForImage('')
+  }
+
+  const selectImageForVariant = (imageUrl: string) => {
+    if (selectedVariantForImage) {
+      updateVariant(selectedVariantForImage, { variant_image: imageUrl })
+      closeImageSelector()
     }
   }
 
@@ -2243,6 +2284,19 @@ function ProductForm() {
     setSelectedBunkbedMattresses([])
     setSelectedPopularCategories([])
     setSelectedRecommendedProducts([])
+    
+    // Reset badges
+    setBadges([
+      { type: 'sale', enabled: false },
+      { type: 'new_in', enabled: false },
+      { type: 'free_gift', enabled: false }
+    ])
+    setSelectedGiftProduct(null)
+    
+    // Reset free gift selector state
+    setFreeGiftSelectorOpen(false)
+    setSelectedCategoryForGiftSelector('mattresses')
+    setGiftSearchTerm('')
     
     // Reset the resetting state
     setIsResetting(false)
@@ -2425,7 +2479,9 @@ function ProductForm() {
           useDepth,
           useSize,
           useFirmness,
-        }
+        },
+        badges: badges,
+        selectedGiftProduct: selectedGiftProduct
       }
 
       const response = await fetch('/api/products', {
@@ -2459,6 +2515,8 @@ function ProductForm() {
 
   // Category selection
   const [selectedCategory, setSelectedCategory] = useState('mattresses')
+  
+
   
   const categories = [
     { value: 'mattresses', label: 'Mattresses' },
@@ -2859,53 +2917,65 @@ function ProductForm() {
                           </div>
                         )}
                         
-                        {/* Upload Button */}
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="file"
-                            id={`variantImageUpload-${v.id}`}
-                            accept="image/*"
-                            className="hidden"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0]
-                              if (!file) return
-                              
-                              try {
-                                const formData = new FormData()
-                                formData.append('file', file)
-                                
-                                const response = await fetch('/api/upload', {
-                                  method: 'POST',
-                                  body: formData
-                                })
-                                
-                                if (response.ok) {
-                                  const { url } = await response.json()
-                                  updateVariant(v.id, { variant_image: url })
-                                } else {
-                                  const error = await response.json()
-                                  alert(`Upload failed: ${error.error || 'Failed to upload image'}`)
-                                }
-                              } catch (error) {
-                                console.error('Upload error:', error)
-                                alert('Failed to upload image')
-                              }
-                            }}
-                          />
-                          <label
-                            htmlFor={`variantImageUpload-${v.id}`}
-                            className="cursor-pointer inline-flex items-center px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-                          >
-                            📷 Upload
-                          </label>
+                        {/* Image Selection Options */}
+                        <div className="space-y-2">
+                          {/* Button to open image selector */}
+                          {(images.length > 0 || uploadedFiles.length > 0) && (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openImageSelector(v.id)}
+                                className="text-xs"
+                              >
+                                🖼️ Select Image
+                              </Button>
+                            </div>
+                          )}
                           
-                          {/* URL Input as fallback */}
-                          <Input
-                            value={v.variant_image || ''}
-                            onChange={(e) => updateVariant(v.id, { variant_image: e.target.value })}
-                            placeholder="Or enter URL"
-                            className="flex-1 text-xs"
-                          />
+                          {/* Upload Button */}
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="file"
+                              id={`variantImageUpload-${v.id}`}
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0]
+                                if (!file) return
+                                
+                                try {
+                                  const formData = new FormData()
+                                  formData.append('file', file)
+                                  
+                                  const response = await fetch('/api/upload', {
+                                    method: 'POST',
+                                    body: formData
+                                  })
+                                  
+                                  if (response.ok) {
+                                    const { url } = await response.json()
+                                    updateVariant(v.id, { variant_image: url })
+                                  } else {
+                                    const error = await response.json()
+                                    alert(`Upload failed: ${error.error || 'Failed to upload image'}`)
+                                  }
+                                } catch (error) {
+                                  console.error('Upload error:', error)
+                                  alert('Failed to upload image')
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor={`variantImageUpload-${v.id}`}
+                              className="cursor-pointer inline-flex items-center px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                            >
+                              📷 Upload New
+                            </label>
+                            
+
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -2914,9 +2984,9 @@ function ProductForm() {
                 ))}
                 {variants.length === 0 && (
                   <tr>
-                    <td colSpan={1 + (useColor ? 1 : 0) + (useDepth ? 1 : 0) + (useFirmness ? 1 : 0) + (useSize ? 1 : 0) + 5} className="p-4 text-gray-500">
-                      No variants yet. Click "Add blank row" to start.
-                    </td>
+                                          <td colSpan={1 + (useColor ? 1 : 0) + (useDepth ? 1 : 0) + (useFirmness ? 1 : 0) + (useSize ? 1 : 0) + 5} className="p-4 text-gray-500">
+                        No variants yet. Click "Add blank row" to start.
+                      </td>
                   </tr>
                 )}
               </tbody>
@@ -2948,7 +3018,7 @@ function ProductForm() {
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
              {getFeatureCardsForCategory(selectedCategory).map((feature) => {
                const isSelected = selectedReasonsToLove.some(item => item.reason === feature.title)
-               const IconComponent = getIconComponent(feature.icon)
+               const IconComponent = getIconComponentAdmin(feature.icon)
                
                return (
                  <div
@@ -2967,7 +3037,7 @@ function ProductForm() {
                        }
                      } else {
                        // Add if not selected
-                       addReasonToLove(feature.title, feature.description)
+                       addReasonToLove(feature.title, feature.description, '', feature.icon)
                      }
                    }}
                  >
@@ -3007,6 +3077,18 @@ function ProductForm() {
                      rows={2}
                      className="w-full"
                    />
+                   <div className="mt-3">
+                     <Label className="text-sm font-medium mb-2 block">Small Text (displayed below icon)</Label>
+                     <Input
+                       placeholder="Enter small descriptive text..."
+                       value={item.smalltext || ''}
+                       onChange={(e) => updateReasonToLoveSmalltext(index, e.target.value)}
+                     className="w-full"
+                   />
+                     <p className="text-xs text-gray-500 mt-1">
+                       This text will appear below the icon in the feature card on the product page.
+                     </p>
+                   </div>
                    <p className="text-xs text-gray-500 mt-1">
                      Leave empty to use the default description, or customize it for this specific product.
                    </p>
@@ -3593,7 +3675,110 @@ function ProductForm() {
             </div>
           </div>
           )}
-        </div>
+              </div>
+
+              {/* Product Badges Section */}
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-4">Product Badges</h3>
+                <div className="space-y-3">
+                  {/* Sale Badge */}
+                  <label className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={getBadgeStatus('sale')}
+                        onChange={(e) => handleBadgeToggle('sale', e.target.checked)}
+                        className="mr-3 h-5 w-5 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                      />
+                      <span className="text-base font-medium text-gray-700">Sale Badge</span>
+                      <Badge className="ml-3 bg-orange-500 text-white text-sm">Sale</Badge>
+                    </div>
+                    <span className="text-sm text-gray-500">Shows when product is on sale</span>
+                  </label>
+
+                  {/* New In Badge */}
+                  <label className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={getBadgeStatus('new_in')}
+                        onChange={(e) => handleBadgeToggle('new_in', e.target.checked)}
+                        className="mr-3 h-5 w-5 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                      />
+                      <span className="text-base font-medium text-gray-700">New In Badge</span>
+                      <Badge className="ml-3 bg-orange-600 text-white text-sm">New In</Badge>
+                    </div>
+                    <span className="text-sm text-gray-500">Shows for new products</span>
+                  </label>
+
+                  {/* Free Gift Badge */}
+                  <label className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={getBadgeStatus('free_gift')}
+                        onChange={(e) => handleBadgeToggle('free_gift', e.target.checked)}
+                        className="mr-3 h-5 w-5 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                      />
+                      <span className="text-base font-medium text-gray-700">Free Gift Badge</span>
+                      <Badge className="ml-3 bg-blue-900 text-white text-sm">Free Gift</Badge>
+                    </div>
+                    <span className="text-sm text-gray-500">Shows when product comes with free gift</span>
+                  </label>
+
+                  {/* Free Gift Product Selection */}
+                  {getBadgeStatus('free_gift') && (
+                    <div className="mt-3 p-3 bg-white rounded border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700">Free Gift Product</span>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => openFreeGiftSelector('mattresses')}
+                          className="bg-orange-600 hover:bg-orange-700"
+                        >
+                          Select Product
+                        </Button>
+                      </div>
+                      
+                      {selectedGiftProduct ? (
+                        <div className="flex items-center space-x-3 p-2 bg-green-50 rounded border">
+                          <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
+                            {selectedGiftProduct.image ? (
+                              <img
+                                src={selectedGiftProduct.image}
+                                alt={selectedGiftProduct.name}
+                                className="w-full h-full object-cover rounded"
+                              />
+                            ) : (
+                              <div className="w-5 h-5 text-gray-400">📦</div>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{selectedGiftProduct.name}</p>
+                            {selectedGiftProduct.currentPrice && (
+                              <p className="text-xs text-gray-600">£{selectedGiftProduct.currentPrice.toFixed(2)}</p>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedGiftProduct(null)
+                            }}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            ✕
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">No gift product selected</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
 
                  <div className="mt-4 flex gap-2">
            <Button onClick={handleSave} disabled={isSaving}>
@@ -3616,8 +3801,10 @@ function ProductForm() {
                'Reset Form'
              )}
            </Button>
-         </div>
+            </div>
       </Card>
+
+
 
       {/* Product Selector Modal */}
       {productSelectorOpen && (
@@ -3654,7 +3841,7 @@ function ProductForm() {
             {/* Search Bar */}
             <div className="px-6 py-4 bg-white border-b border-gray-200">
               <div className="flex items-center gap-3">
-                <Input
+                <Input 
                   placeholder="Search products..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -3720,6 +3907,20 @@ function ProductForm() {
                             }
                           }}
                         >
+                          <div className="aspect-square mb-3 bg-gray-100 rounded-lg overflow-hidden">
+                            {product.image ? (
+                              <img
+                                src={product.image}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                📦
+                              </div>
+                            )}
+                          </div>
+                          
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
                               <h3 className="font-semibold text-gray-900 text-sm mb-1">{product.name}</h3>
@@ -3772,6 +3973,270 @@ function ProductForm() {
           </div>
         </div>
       )}
+
+      {/* Image Selector Modal */}
+      {imageSelectorOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-green-800 via-green-700 to-green-900 text-white p-6 rounded-t-2xl relative overflow-hidden flex-shrink-0">
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 0%, transparent 50%)`
+                }}></div>
+              </div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-green-200 bg-clip-text text-transparent">
+                      Select Variant Image
+                    </h2>
+                  </div>
+                  <button
+                    onClick={closeImageSelector}
+                    className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 border border-white/20"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p className="text-white/90 text-base">
+                  Choose an image for your variant from the available product images
+                </p>
+              </div>
+            </div>
+
+            {/* Images Grid */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {/* Product Images (URLs) */}
+                {images.map((url, idx) => (
+                  <div 
+                    key={`url-${idx}`}
+                    className="group cursor-pointer border-2 border-gray-200 rounded-lg overflow-hidden hover:border-green-400 hover:shadow-lg transition-all duration-200"
+                    onClick={() => selectImageForVariant(url)}
+                  >
+                    <div className="aspect-square relative">
+                      <img
+                        src={url}
+                        alt={`Product Image ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <div className="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center">
+                            ✓
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-2 text-center">
+                      <p className="text-xs text-gray-600 font-medium">Product Image {idx + 1}</p>
+                      <p className="text-xs text-gray-400">(URL)</p>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Uploaded Files */}
+                  {uploadedFiles.map((file, idx) => (
+                  <div 
+                    key={`file-${idx}`}
+                    className="group cursor-pointer border-2 border-gray-200 rounded-lg overflow-hidden hover:border-green-400 hover:shadow-lg transition-all duration-200"
+                    onClick={() => selectImageForVariant(URL.createObjectURL(file))}
+                  >
+                    <div className="aspect-square relative">
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={`Product Image ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <div className="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center">
+                            ✓
+                      </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-2 text-center">
+                      <p className="text-xs text-gray-600 font-medium">Product Image {idx + 1}</p>
+                      <p className="text-xs text-gray-400">({file.name})</p>
+                    </div>
+                  </div>
+                ))}
+
+                {/* No images message */}
+                {images.length === 0 && uploadedFiles.length === 0 && (
+                  <div className="col-span-full text-center py-8">
+                    <div className="text-gray-400 mb-4">
+                      <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-500 text-lg font-medium">No images available</p>
+                    <p className="text-gray-400 text-sm">Upload product images first to use them as variant images</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-2xl">
+              <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                  <strong>Available:</strong> {images.length + uploadedFiles.length} images
+              </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={closeImageSelector}>
+                    Cancel
+                  </Button>
+                  <Button onClick={closeImageSelector} className="bg-green-600 hover:bg-green-700">
+                    Close
+                  </Button>
+            </div>
+          </div>
+        </div>
+         </div>
+        </div>
+      )}
+
+      {/* Free Gift Product Selector Modal */}
+      {freeGiftSelectorOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-orange-800 via-orange-700 to-orange-900 text-white p-6 rounded-t-2xl relative overflow-hidden flex-shrink-0">
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 0%, transparent 50%)`
+                }}></div>
+              </div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-orange-200 bg-clip-text text-transparent">
+                      Select Free Gift Product
+                    </h2>
+                  </div>
+                  <button
+                    onClick={closeFreeGiftSelector}
+                    className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 border border-white/20"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p className="text-white/90 text-base">
+                  Choose a product to give as a free gift with this product
+                </p>
+              </div>
+            </div>
+
+            {/* Category Tabs */}
+            <div className="px-6 py-4 bg-white border-b border-gray-200">
+              <div className="flex gap-2 overflow-x-auto">
+                {categories.map((category) => (
+                  <button
+                    key={category.value}
+                    onClick={() => setSelectedCategoryForGiftSelector(category.value)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+                      selectedCategoryForGiftSelector === category.value
+                        ? 'bg-orange-100 text-orange-700 border-2 border-orange-300'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {category.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="px-6 py-4 bg-white border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <Input 
+                  placeholder="Search products..."
+                  value={giftSearchTerm}
+                  onChange={(e) => setGiftSearchTerm(e.target.value)}
+                  className="flex-1"
+                />
+                <span className="text-sm text-gray-500">
+                  {(() => {
+                    const products = getProductsForCategory(selectedCategoryForGiftSelector || 'mattresses')
+                    const filtered = products.filter(p => 
+                      p.name.toLowerCase().includes(giftSearchTerm.toLowerCase())
+                    )
+                    return `${filtered.length} of ${products.length} products`
+                  })()}
+                </span>
+              </div>
+            </div>
+
+            {/* Products Grid */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {getLoadingStateForCategory(selectedCategoryForGiftSelector || 'mattresses') ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading products...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(() => {
+                    const products = getProductsForCategory(selectedCategoryForGiftSelector || 'mattresses')
+                    const filtered = products.filter(p => 
+                      p.name.toLowerCase().includes(giftSearchTerm.toLowerCase())
+                    )
+                    
+                    if (filtered.length === 0) {
+                      return (
+                        <div className="col-span-full text-center py-8">
+                          <p className="text-gray-500">
+                            {giftSearchTerm ? 'No products match your search' : 'No products found in this category'}
+                          </p>
+                        </div>
+                      )
+                    }
+
+                    return filtered.map((product) => {
+                      console.log('Rendering product in free gift selector:', product)
+                      return (
+                        <div 
+                          key={product.id} 
+                          className="p-4 border-2 border-gray-200 rounded-lg cursor-pointer transition-all duration-200 bg-white hover:border-orange-400 hover:shadow-md"
+                          onClick={() => {
+                            handleGiftProductSelect(product)
+                            closeFreeGiftSelector()
+                          }}
+                        >
+                          <div className="aspect-square mb-3 bg-gray-100 rounded-lg overflow-hidden">
+                            {product.image ? (
+                              <img
+                                src={product.image}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                📦
+                              </div>
+                            )}
+                          </div>
+                          <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">{product.name}</h3>
+                          {product.currentPrice && (
+                            <p className="text-sm text-gray-600">£{product.currentPrice.toFixed(2)}</p>
+                          )}
+                        </div>
+                      )
+                    })
+                  })()}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </div>
   )
 }

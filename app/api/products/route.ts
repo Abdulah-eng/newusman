@@ -19,7 +19,10 @@ export async function GET(request: NextRequest) {
         categories(name, slug),
         product_images(*),
         product_variants(*),
-        product_features(*)
+        product_features(*),
+        badges,
+        free_gift_product_id,
+        free_gift_enabled
       `)
     
     if (random === 'true') {
@@ -38,7 +41,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Transform the data to include calculated prices and features
-    const transformedProducts = products?.map(product => {
+    const transformedProducts = await Promise.all(products?.map(async (product) => {
       // Calculate min prices from variants
       const variants = product.product_variants || []
       const minCurrentPrice = variants.length > 0 ? 
@@ -59,6 +62,32 @@ export async function GET(request: NextRequest) {
         return null
       }
       
+      // Fetch gift product details if this product has a free gift
+      let giftProductDetails = null
+      if (product.free_gift_product_id && product.free_gift_enabled) {
+        try {
+          const { data: giftProduct } = await supabase
+            .from('products')
+            .select(`
+              id,
+              name,
+              product_images(image_url)
+            `)
+            .eq('id', product.free_gift_product_id)
+            .single()
+          
+          if (giftProduct) {
+            giftProductDetails = {
+              id: giftProduct.id,
+              name: giftProduct.name,
+              image: giftProduct.product_images?.[0]?.image_url || ''
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching gift product details:', error)
+        }
+      }
+      
       return {
         id: product.id,
         name: product.name,
@@ -73,9 +102,14 @@ export async function GET(request: NextRequest) {
         features: product.product_features?.map((feature: any) => feature.feature_name) || [],
         currentPrice: Number.isFinite(minCurrentPrice) ? minCurrentPrice : 0,
         originalPrice: Number.isFinite(minOriginalPrice) ? minOriginalPrice : 0,
-        variants: variants
+        variants: variants,
+        badges: product.badges || [],
+        free_gift_product_id: product.free_gift_product_id || null,
+        free_gift_enabled: product.free_gift_enabled || false,
+        free_gift_product_name: giftProductDetails?.name || null,
+        free_gift_product_image: giftProductDetails?.image || null
       }
-    }) || []
+    }) || [])
     
     return NextResponse.json({ products: transformedProducts })
     
@@ -409,7 +443,9 @@ export async function POST(request: NextRequest) {
       const rowsWithDesc = selectedReasonsToLove.map((item: any) => ({
         product_id: productId,
         reason_text: item.reason || item,
-        description: item.description || describeLove(item.reason || item)
+        description: item.description || describeLove(item.reason || item),
+        smalltext: item.smalltext || null,
+        icon: item.icon || null
       }))
 
       // Debug: log what we are about to save for reasons_to_love
@@ -633,6 +669,50 @@ export async function POST(request: NextRequest) {
         console.error('Recommended product insertion error:', recommendedProductError)
       } else {
         console.log('Successfully inserted recommended products:', recommendedProductData)
+      }
+    }
+
+    // Update product with badges and free gift information
+    if (body.badges || body.selectedGiftProduct) {
+      const updateData: any = {}
+      
+      // Handle badges
+      if (body.badges && Array.isArray(body.badges)) {
+        updateData.badges = body.badges
+      }
+      
+      // Handle free gift
+      if (body.selectedGiftProduct && body.selectedGiftProduct.id) {
+        updateData.free_gift_product_id = body.selectedGiftProduct.id
+        updateData.free_gift_enabled = true
+        
+        // Also insert into free_gifts table for relationship tracking
+        const { error: freeGiftError } = await supabase
+          .from('free_gifts')
+          .insert({
+            product_id: productId,
+            gift_product_id: body.selectedGiftProduct.id
+          })
+        
+        if (freeGiftError) {
+          console.error('Free gift relationship insertion error:', freeGiftError)
+        } else {
+          console.log('Successfully inserted free gift relationship')
+        }
+      }
+      
+      // Update the product with badge and free gift data
+      if (Object.keys(updateData).length > 0) {
+        const { error: updateError } = await supabase
+          .from('products')
+          .update(updateData)
+          .eq('id', productId)
+        
+        if (updateError) {
+          console.error('Product update with badges/free gift error:', updateError)
+        } else {
+          console.log('Successfully updated product with badges and free gift data')
+        }
       }
     }
 

@@ -4,6 +4,7 @@ import './globals.css'
 import { CartProvider } from "@/lib/cart-context"
 import Header from "@/components/header"
 import { Footer } from "@/components/footer"
+import { CartNotificationWrapper } from "@/components/cart-notification-wrapper"
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -61,6 +62,7 @@ html {
           <Header />
           {children}
           <Footer />
+          <CartNotificationWrapper />
         </CartProvider>
       </body>
     </html>

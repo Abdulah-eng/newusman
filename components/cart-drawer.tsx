@@ -64,7 +64,7 @@ export function CartDrawer() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.id, item.quantity - 1, item.size, item.color)}
                         className="h-6 w-6 p-0"
                       >
                         <Minus className="h-3 w-3" />
@@ -73,7 +73,7 @@ export function CartDrawer() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.id, item.quantity + 1, item.size, item.color)}
                         className="h-6 w-6 p-0"
                       >
                         <Plus className="h-3 w-3" />
@@ -81,7 +81,7 @@ export function CartDrawer() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeItem({ id: item.id, size: item.size, color: item.color })}
                         className="h-6 w-6 p-0 text-red-600 hover:text-red-700 ml-2"
                       >
                         <Trash2 className="h-3 w-3" />

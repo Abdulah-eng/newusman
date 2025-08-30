@@ -9,7 +9,7 @@ export async function GET(
     const { id } = await params
 
     // OPTIMIZATION: Add caching headers for better performance
-    const cacheControl = 'public, s-maxage=300, stale-while-revalidate=600' // Cache for 5 minutes, stale for 10 minutes
+    const cacheControl = 'public, s-maxage=600, stale-while-revalidate=1200' // Cache for 10 minutes, stale for 20 minutes
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -48,6 +48,16 @@ export async function GET(
         { status: 404 }
       )
     }
+
+    // Debug logging for free gift and badges
+    console.log('[API /products/:id] Free gift debug:', {
+      id: product.id,
+      name: product.name,
+      free_gift_product_id: product.free_gift_product_id,
+      free_gift_enabled: product.free_gift_enabled,
+      badges: product.badges,
+      hasFreeGiftBadge: product.badges && Array.isArray(product.badges) && product.badges.some((b: any) => b.type === 'free_gift' && b.enabled)
+    })
 
     // Debug logging for dimension images
     console.log('[API /products/:id] Raw product data:', {
@@ -132,6 +142,44 @@ export async function GET(
       )
     )
 
+    // Fetch gift product details if this product has a free gift
+    let giftProductDetails = null
+    const hasFreeGift = product.free_gift_product_id && (
+      product.free_gift_enabled || 
+      (product.badges && Array.isArray(product.badges) && product.badges.some((b: any) => b.type === 'free_gift' && b.enabled))
+    )
+    
+    console.log('[API /products/:id] Free gift logic:', {
+      hasFreeGift,
+      free_gift_product_id: product.free_gift_product_id,
+      free_gift_enabled: product.free_gift_enabled,
+      hasFreeGiftBadge: product.badges && Array.isArray(product.badges) && product.badges.some((b: any) => b.type === 'free_gift' && b.enabled)
+    })
+    
+    if (hasFreeGift) {
+      try {
+        const { data: giftProduct } = await supabase
+          .from('products')
+          .select(`
+            id,
+            name,
+            product_images(image_url)
+          `)
+          .eq('id', product.free_gift_product_id)
+          .single()
+        
+        if (giftProduct) {
+          giftProductDetails = {
+            id: giftProduct.id,
+            name: giftProduct.name,
+            image: giftProduct.product_images?.[0]?.image_url || ''
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching gift product details:', error)
+      }
+    }
+
     // Transform the data to match the expected frontend format
     const transformedProduct = {
       id: product.id,
@@ -171,6 +219,8 @@ export async function GET(
       })) || [],
       features: product.product_features?.map((feature: any) => feature.feature_name) || [],
       reasonsToLove: product.product_reasons_to_love?.map((reason: any) => reason.reason_text) || [],
+      reasonsToLoveSmalltext: product.product_reasons_to_love?.map((reason: any) => reason.smalltext) || [],
+      reasonsToLoveIcons: product.product_reasons_to_love?.map((reason: any) => reason.icon) || [],
       product_reasons_to_love: product.product_reasons_to_love || [],
       customReasons: product.product_custom_reasons?.map((reason: any) => reason.reason_text) || [],
       descriptionParagraphs: product.product_description_paragraphs?.map((para: any) => ({
@@ -219,14 +269,29 @@ export async function GET(
       currentPrice: Number.isFinite(minCurrentPrice) ? minCurrentPrice : (product.product_variants?.[0]?.current_price || 0),
       originalPrice: Number.isFinite(minOriginalPrice) ? minOriginalPrice : (product.product_variants?.[0]?.original_price || 0),
       sizes: uniqueSizes.length ? uniqueSizes : ['Standard'],
+      badges: product.badges || [],
+      free_gift_product_id: product.free_gift_product_id || null,
+      free_gift_enabled: product.free_gift_enabled || false,
+      free_gift_product_name: giftProductDetails?.name || null,
+      free_gift_product_image: giftProductDetails?.image || null,
       createdAt: product.created_at,
       updatedAt: product.updated_at
     }
+
+    // Debug logging for final response
+    console.log('[API /products/:id] Final response free gift data:', {
+      free_gift_product_id: transformedProduct.free_gift_product_id,
+      free_gift_enabled: transformedProduct.free_gift_enabled,
+      free_gift_product_name: transformedProduct.free_gift_product_name,
+      free_gift_product_image: transformedProduct.free_gift_product_image,
+      badges: transformedProduct.badges
+    })
 
     try {
       console.log('[API /products/:id] transformed variants count:', Array.isArray((transformedProduct as any).variants) ? (transformedProduct as any).variants.length : 0)
       console.log('[API /products/:id] product_reasons_to_love:', (transformedProduct as any).product_reasons_to_love)
       console.log('[API /products/:id] reasonsToLove:', (transformedProduct as any).reasonsToLove)
+      console.log('[API /products/:id] reasonsToLoveIcons:', (transformedProduct as any).reasonsToLoveIcons)
       console.log('[API /products/:id] dimension images:', (transformedProduct as any).dimensionImages)
       console.log('[API /products/:id] raw product_dimension_images:', product.product_dimension_images)
       

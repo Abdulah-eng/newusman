@@ -56,7 +56,7 @@ export default function CartPage() {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm border">
               {state.items.map((item) => (
-                <div key={item.id} className="flex items-center p-6 border-b last:border-b-0">
+                <div key={`${item.id}-${item.size || 'default'}-${item.color || 'default'}`} className="flex items-center p-6 border-b last:border-b-0">
                   <div className="w-20 h-20 bg-gray-100 rounded-lg mr-4"></div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900">{item.name}</h3>
@@ -68,7 +68,7 @@ export default function CartPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => updateQuantity(item.id, (item.quantity || 1) - 1)}
+                        onClick={() => updateQuantity(item.id, (item.quantity || 1) - 1, item.size, item.color)}
                         className="px-2"
                       >
                         -
@@ -77,7 +77,7 @@ export default function CartPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => updateQuantity(item.id, (item.quantity || 1) + 1)}
+                        onClick={() => updateQuantity(item.id, (item.quantity || 1) + 1, item.size, item.color)}
                         className="px-2"
                       >
                         +
@@ -96,7 +96,7 @@ export default function CartPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => removeItem({ id: item.id, size: item.size, color: item.color })}
                       className="text-red-600 hover:text-red-700"
                     >
                       <Trash2 className="h-4 w-4" />

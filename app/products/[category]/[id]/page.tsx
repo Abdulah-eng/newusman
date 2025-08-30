@@ -285,6 +285,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     // Restore marketing reasons arrays for "Features you'll love"
     reasonsToLove: (product.product_reasons_to_love?.map((r: any) => r.reason_text) || product.reasonsToLove || product.reasons_to_love || []),
     reasonsToLoveDescriptions: (product.product_reasons_to_love?.map((r: any) => r.description).filter(Boolean) || product.feature_descriptions || []),
+    reasonsToLoveSmalltext: product.reasonsToLoveSmalltext || [],
     reasonsToLoveIcons: (product.product_reasons_to_love?.map((r: any) => r.icon) || product.feature_icons || []),
     customReasons: product.customReasons || product.custom_reasons || [],
     customReasonsDescriptions: (product.custom_reasons || product.customReasons || []).map((r: any) => r?.description).filter(Boolean),
@@ -300,7 +301,13 @@ export default async function ProductDetailPage({ params }: PageProps) {
     // Add the description paragraphs from database
     descriptionParagraphs: product.descriptionParagraphs || [],
     // Add dimension images for the dimensions section
-    dimensionImages: product.dimensionImages || []
+    dimensionImages: product.dimensionImages || [],
+    // Add free gift fields
+    badges: product.badges || [],
+    free_gift_product_id: product.free_gift_product_id || null,
+    free_gift_enabled: product.free_gift_enabled || false,
+    free_gift_product_name: product.free_gift_product_name || null,
+    free_gift_product_image: product.free_gift_product_image || null
   }
 
   // Log reasons so you can verify from the terminal during SSR
@@ -308,6 +315,24 @@ export default async function ProductDetailPage({ params }: PageProps) {
   console.log('[Product Detail Page] reasonsToLoveDescriptions:', productDetail.reasonsToLoveDescriptions)
   console.log('[Product Detail Page] product_reasons_to_love raw:', product.product_reasons_to_love)
   console.log('[Product Detail Page] customReasons:', productDetail.customReasons)
+  
+  // Debug free gift data
+  console.log('[Product Detail Page] Free gift debug:', {
+    rawProduct: {
+      free_gift_product_id: product.free_gift_product_id,
+      free_gift_enabled: product.free_gift_enabled,
+      free_gift_product_name: product.free_gift_product_name,
+      free_gift_product_image: product.free_gift_product_image,
+      badges: product.badges
+    },
+    transformedProductDetail: {
+      free_gift_product_id: productDetail.free_gift_product_id,
+      free_gift_enabled: productDetail.free_gift_enabled,
+      free_gift_product_name: productDetail.free_gift_product_name,
+      free_gift_product_image: productDetail.free_gift_product_image,
+      badges: productDetail.badges
+    }
+  })
   
   // Debug the mapping of descriptions
   if (product.product_reasons_to_love && product.product_reasons_to_love.length > 0) {
@@ -381,7 +406,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {(product.reasons_to_buy || []).map((reason: string, idx: number) => (
                 <li key={`reason-${idx}`} className="flex items-start gap-2 text-blue-900/80">
-                  <Check className="h-5 w-5 text-green-600 mt-0.5" />
+                  <Check className="h-4 w-4 text-green-600 mt-0.5" />
                   <span className="font-medium">{reason}</span>
                 </li>
               ))}

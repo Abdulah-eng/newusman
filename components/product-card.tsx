@@ -7,6 +7,7 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/lib/cart-context"
+import { getFeatureIcon } from "@/lib/icon-mapping"
 import { useState } from "react"
 
 interface Product {
@@ -83,6 +84,17 @@ interface Product {
   popularCategories?: string[]
   createdAt?: string
   updatedAt?: string
+  badges?: Array<{
+    type: string;
+    enabled: boolean;
+    product_id?: string;
+    product_name?: string;
+    product_image?: string;
+  }>;
+  free_gift_product_id?: string;
+  free_gift_product_name?: string;
+  free_gift_product_image?: string;
+  free_gift_enabled?: boolean;
 }
 
 interface ProductCardProps {
@@ -317,9 +329,46 @@ export function ProductCard({ product }: ProductCardProps) {
     
     // Use reasons to love if features not available
     if (safeProduct.reasonsToLove && safeProduct.reasonsToLove.length > 0) {
+      const getFeatureIcon = (label: string) => {
+        const text = (label || '').toLowerCase()
+        if (text.includes('memory') || text.includes('foam')) return () => <Brain className="h-4 w-4" />
+        if (text.includes('pocket') || text.includes('spring')) return () => (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+            <rect x="2" y="8" width="20" height="8" rx="1" ry="1"/>
+            <path d="M4 10h2M8 10h2M12 10h2M16 10h2M20 10h2"/>
+            <rect x="2" y="12" width="20" height="4" rx="1" ry="1"/>
+            <path d="M4 14h2M8 14h2M12 14h2M16 10h2M20 10h2"/>
+          </svg>
+        )
+        if (text.includes('cool') || text.includes('breath') || text.includes('air')) return () => <Waves className="h-4 w-4" />
+        if (text.includes('gel') || text.includes('temperature')) return () => <Snowflake className="h-4 w-4" />
+        if (text.includes('edge')) return () => <Shield className="h-4 w-4" />
+        if (text.includes('firm')) return () => <SlidersHorizontal className="h-4 w-4" />
+        if (text.includes('anti') || text.includes('bacterial') || text.includes('microbial')) return () => <ShieldCheck className="h-4 w-4" />
+        if (text.includes('eco') || text.includes('organic') || text.includes('sustain')) return () => <Leaf className="h-4 w-4" />
+        if (text.includes('waterproof') || text.includes('cover')) return () => <Umbrella className="h-4 w-4" />
+        if (text.includes('warranty')) return () => <Shield className="h-4 w-4" />
+        // Additional mappings aligned with "Features you'll love"
+        if (text.includes('adjustable') && (text.includes('height') || text.includes('base'))) return () => <SlidersHorizontal className="h-4 w-4" />
+        if (text.includes('easy') && text.includes('assembly')) return () => <Wrench className="h-4 w-4" />
+        if (text.includes('upholster') || text.includes('headboard')) return () => <Package className="h-4 w-4" />
+        if (text.includes('wood')) return () => <Trees className="h-4 w-4" />
+        if (text.includes('metal') || text.includes('frame')) return () => <Shield className="h-4 w-4" />
+        if (text.includes('construction') || text.includes('built')) return () => <Wrench className="h-4 w-4" />
+        if (text.includes('design') || text.includes('style')) return () => <Palette className="h-4 w-4" />
+        if (text.includes('support') || text.includes('orth')) return () => <Heart className="h-4 w-4" />
+        if (text.includes('hypo') || text.includes('allergen')) return () => <Feather className="h-4 w-4" />
+        if (text.includes('washable') || text.includes('removable')) return () => <PackageOpen className="h-4 w-4" />
+        if (text.includes('value') || text.includes('price') || text.includes('save')) return () => <DollarSign className="h-4 w-4" />
+        if (text.includes('durable') || text.includes('long')) return () => <Zap className="h-4 w-4" />
+        if (text.includes('luxury') || text.includes('premium')) return () => <Gem className="h-4 w-4" />
+        if (text.includes('delivery') || text.includes('shipping')) return () => <Truck className="h-4 w-4" />
+        return () => <Star className="h-4 w-4" />
+      }
+      
       return safeProduct.reasonsToLove.slice(0, 6).map(reason => ({
         label: reason,
-        Icon: () => <Heart className="h-4 w-4" />
+        Icon: getFeatureIcon(reason)
       }))
     }
     
@@ -339,17 +388,61 @@ export function ProductCard({ product }: ProductCardProps) {
       ? Math.min(...safeProduct.variants.map(v => v.currentPrice))
       : safeProduct.currentPrice || safeProduct.price || 0
     
+    // Check if this product has a free gift - simplified detection
+    const hasFreeGift = safeProduct.free_gift_product_id && (
+      safeProduct.free_gift_enabled || 
+      safeProduct.badges?.some(b => b.type === 'free_gift' && b.enabled)
+    )
+    
+    // Debug logging
+    console.log('Product being added to cart:', {
+      id: safeProduct.id,
+      name: safeProduct.name,
+      badges: safeProduct.badges,
+      free_gift_product_id: safeProduct.free_gift_product_id,
+      free_gift_enabled: safeProduct.free_gift_enabled,
+      free_gift_product_name: safeProduct.free_gift_product_name,
+      free_gift_product_image: safeProduct.free_gift_product_image,
+      hasFreeGift
+    })
+    
+    const payload = {
+      id: safeProduct.id,
+      name: safeProduct.name,
+      brand: safeProduct.brand || 'Premium Brand',
+      image: safeProduct.images?.[0] || safeProduct.image || '',
+      currentPrice: cheapestPrice,
+      originalPrice: safeProduct.originalPrice || safeProduct.price || cheapestPrice,
+      size: safeProduct.selectedSize || 'Queen'
+    }
+    
+    // Add free gift details if available
+    if (hasFreeGift) {
+      // Use the gift product name from the fields or default
+      const giftProductName = safeProduct.free_gift_product_name || 'Free Gift'
+      
+      Object.assign(payload, {
+        freeGiftProductId: safeProduct.free_gift_product_id,
+        freeGiftProductName: giftProductName,
+        freeGiftProductImage: safeProduct.free_gift_product_image || ''
+      })
+      console.log('Free gift will be added:', {
+        freeGiftProductId: safeProduct.free_gift_product_id,
+        freeGiftProductName: giftProductName,
+        freeGiftProductImage: safeProduct.free_gift_product_image || '',
+        source: 'product_card'
+      })
+    } else {
+      console.log('No free gift details available - reasons:', {
+        hasFreeGiftProductId: !!safeProduct.free_gift_product_id,
+        free_gift_enabled: safeProduct.free_gift_enabled,
+        hasFreeGiftBadge: safeProduct.badges?.some(b => b.type === 'free_gift' && b.enabled)
+      })
+    }
+    
     dispatch({
       type: 'ADD_ITEM',
-      payload: {
-        id: safeProduct.id,
-        name: safeProduct.name,
-        brand: safeProduct.brand || 'Premium Brand',
-        image: safeProduct.images?.[0] || safeProduct.image || '',
-        currentPrice: cheapestPrice,
-        originalPrice: safeProduct.originalPrice || safeProduct.price || cheapestPrice,
-        size: safeProduct.selectedSize || 'Queen'
-      }
+      payload
     })
   }
 
@@ -369,10 +462,36 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
             
             {/* Free Gift Badge - Top Left */}
-            <div className="absolute top-3 left-3 z-10">
-              <Badge className="bg-blue-900 text-white border-0 px-3 py-1 text-sm font-medium">
-                Free Gift
-              </Badge>
+            {safeProduct.badges?.some(b => b.type === 'free_gift' && b.enabled) && (
+              <div className="absolute top-3 left-3 z-10">
+                <Badge className="bg-blue-900 text-white border-0 px-3 py-1 text-sm font-medium">
+                  Free Gift
+                </Badge>
+              </div>
+            )}
+
+            {/* Sale and New In Badges - Top Right */}
+            <div className="absolute top-3 right-3 z-20 flex flex-col gap-2 items-end">
+              {/* Product Badge from data */}
+              {safeProduct.badge && (
+                <Badge className="bg-gray-600 hover:bg-gray-700 text-white border-0 px-3 py-1.5 text-sm font-semibold transition-all duration-200 cursor-pointer transform hover:scale-105 shadow-lg min-w-[60px] text-center">
+                  {safeProduct.badge}
+                </Badge>
+              )}
+              
+              {/* Sale Badge - from database badges */}
+              {safeProduct.badges?.some(b => b.type === 'sale' && b.enabled) && (
+                <Badge className="bg-orange-500 hover:bg-orange-600 text-white border-0 px-3 py-1.5 text-sm font-semibold transition-all duration-200 cursor-pointer transform hover:scale-105 shadow-lg min-w-[60px] text-center">
+                  Sale
+                </Badge>
+              )}
+              
+              {/* New In Badge - from database badges */}
+              {safeProduct.badges?.some(b => b.type === 'new_in' && b.enabled) && (
+                <Badge className="bg-orange-600 hover:bg-orange-700 text-white border-0 px-3 py-1.5 text-sm font-semibold transition-all duration-200 cursor-pointer transform hover:scale-105 shadow-lg min-w-[60px] text-center">
+                  New In
+                </Badge>
+              )}
             </div>
           </div>
 
@@ -380,6 +499,8 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="mb-1 h-14 flex flex-col justify-start pt-1">
             <h3 className="text-xl font-bold text-gray-900 leading-tight line-clamp-2 overflow-hidden text-ellipsis">{safeProduct.name}</h3>
           </div>
+
+
 
           {/* Rating and Reviews */}
           <div className="flex items-center gap-2 mb-1">

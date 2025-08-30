@@ -1,103 +1,55 @@
 "use client"
 
-
-
-import { useState, useEffect, useRef, useMemo, useCallback } from "react"
-
+import { useState, useEffect, useRef, useMemo, useCallback, memo, lazy, Suspense } from "react"
 import { useRouter } from "next/navigation"
-
 import { Button } from "@/components/ui/button"
-
 import { Card, CardContent } from "@/components/ui/card"
-
 import { Badge } from "@/components/ui/badge"
-
-import { Check, Star, Heart, MessageCircle, Shield, ChevronDown, ChevronUp, ShoppingCart, Truck, Clock, Leaf, Recycle, Feather, Snowflake, Sprout, Brain, PackageOpen, Mountain, Droplet, Umbrella, Scroll, ArrowLeftRight, SlidersHorizontal, Grid, Gem, Layers, Waves, Moon, Crown, RefreshCw, Minimize, Wrench, Palette, DollarSign, Baby, Award, ShieldCheck, Package, Ruler, Users, Zap, Home, Trees, Square, Maximize, ArrowUp, Radio, VolumeX, Bed, Settings, Circle } from "lucide-react"
-
+import { Check, Star, Heart, MessageCircle, Shield, ChevronDown, ChevronUp, ShoppingCart, Truck, Clock, Leaf, Recycle, Feather, Snowflake, Sprout, Brain, PackageOpen, Mountain, Droplet, Umbrella, Scroll, ArrowLeftRight, SlidersHorizontal, Grid, Gem, Layers, Waves, Moon, Crown, RefreshCw, Minimize, Wrench, Palette, DollarSign, Baby, Award, ShieldCheck, Package, Ruler, Users, Zap, Home, Trees, Square, Maximize, ArrowUp, Radio, VolumeX, Bed, Settings, Circle, Thermometer, Sun } from "lucide-react"
 import Image from "next/image"
 
-
-
-
-
 import { useCart } from "@/lib/cart-context"
-
-
+import { getFeatureIcon } from "@/lib/icon-mapping"
 
 import { BasketSidebar } from "@/components/basket-sidebar"
-
 import { SizeSelectionModal } from "@/components/size-selection-modal"
-
 import { ColorSelectionModal } from "@/components/color-selection-modal"
 
 
 
 export interface ProductDetailHappyProps {
-
   product: {
-
     id: number
-
     name: string
-
     brand: string
-
     brandColor: string
-
     badge: string
-
     badgeColor: string
-
     image: string
-
     images?: string[]
-
     rating: number
-
     reviewCount: number
-
     features: string[]
-
     originalPrice: number
-
     currentPrice: number
-
     savings: number
-
     freeDelivery: string
-
     sizes: string[]
-
     selectedSize?: string
-
     category?: string
-
     type?: string
-
     colors?: string[]
-
     materials?: string[]
-
     dimensions?: {
-
       height: string
-
       length: string
-
       width: string
-
       mattress_size: string
-
       max_height: string
-
       weight_capacity: string
-
       pocket_springs: string
-
       comfort_layer: string
-
       support_layer: string
-
       // New editable heading fields
       mattress_size_heading?: string
       maximum_height_heading?: string
@@ -164,184 +116,107 @@ export interface ProductDetailHappyProps {
     // Dimension images
 
     dimensionImages?: Array<{
-
       id: string
-
       imageUrl: string
-
       fileName: string
-
       fileSize: number
-
       fileType: string
-
       sortOrder: number
-
     }>
+
+    // Free gift fields
+
+    badges?: Array<{
+      type: string;
+      enabled: boolean;
+      product_id?: string;
+      product_name?: string;
+      product_image?: string;
+    }>;
+
+    free_gift_product_id?: string;
+    free_gift_product_name?: string;
+    free_gift_product_image?: string;
 
   }
 
 }
 
-
-
-export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
-
-
-
-
+export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) => {
   // Helper function to convert string characteristics to numeric values for sliders
-
   const getCharacteristicValue = (value: string | number | undefined, type: 'support' | 'pressure' | 'air' | 'durability' | 'firmness'): number => {
-
     if (typeof value === 'number') {
-
       return value
-
     }
-
     
-
     if (typeof value === 'string') {
-
       const lowerValue = value.toLowerCase()
-
       
-
       switch (type) {
-
         case 'support':
-
         case 'durability':
-
           if (lowerValue === 'low') return 3
-
           if (lowerValue === 'medium') return 6
-
           if (lowerValue === 'high') return 9
-
           break
-
         case 'pressure':
-
           if (lowerValue === 'low' || lowerValue === 'basic') return 3
-
           if (lowerValue === 'medium') return 6
-
           if (lowerValue === 'high' || lowerValue === 'advanced') return 9
-
           break
-
         case 'air':
-
           if (lowerValue === 'low' || lowerValue === 'good') return 3
-
           if (lowerValue === 'medium' || lowerValue === 'better') return 6
-
           if (lowerValue === 'high' || lowerValue === 'best') return 9
-
           break
-
         case 'firmness':
-
           if (lowerValue === 'soft') return 2
-
           if (lowerValue === 'soft-medium' || lowerValue === 'softMedium') return 4
-
           if (lowerValue === 'medium') return 6
-
           if (lowerValue === 'medium-firm' || lowerValue === 'mediumFirm') return 7
-
           if (lowerValue === 'firm') return 8
-
           if (lowerValue === 'extra-firm' || lowerValue === 'extraFirm') return 9
-
           break
-
       }
-
     }
-
     
-
     // Default values
-
     const defaultValue = (() => {
-
       switch (type) {
-
         case 'support': return 6
-
         case 'pressure': return 6
-
         case 'air': return 6
-
         case 'durability': return 9
-
         case 'firmness': return 6
-
         default: return 6
-
       }
-
     })()
-
     
-
     return defaultValue
-
   }
-
-
 
   // Safety check for product data
-
   if (!product || !product.name) {
-
     return (
-
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-
         <div className="text-center">
-
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500 mx-auto mb-4"></div>
-
           <p className="text-gray-600">Loading product details...</p>
-
         </div>
-
       </div>
-
     )
-
   }
 
-
-
-
-
-
-
   const router = useRouter()
-
   const { dispatch, validateItem } = useCart()
-
   const [selectedImage, setSelectedImage] = useState(product.images && product.images.length ? product.images[0] : product.image)
-
   const [modalImageIndex, setModalImageIndex] = useState(0)
-
   const [selectedColor, setSelectedColor] = useState("")
-
   const [quantity, setQuantity] = useState(1)
-
   const [imageModalOpen, setImageModalOpen] = useState(false)
 
-
-
   const [basketSidebarOpen, setBasketSidebarOpen] = useState(false)
-
   const [sizeModalOpen, setSizeModalOpen] = useState(false)
-
   const [colorModalOpen, setColorModalOpen] = useState(false)
   const [lastSelection, setLastSelection] = useState<string | null>(null)
 
@@ -349,8 +224,6 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
   const [isAutoSelectionMode, setIsAutoSelectionMode] = useState(false)
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({ description: true })
-
-
 
   const handleVariantSelection = (type: string, value: string) => {
     // Track the last selection to prevent immediate reopening
@@ -478,15 +351,10 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
     }
   }
 
-
-
-
-
   // Build a list of "Features you'll love" for reuse in the Product Features section
-
   const buildProductFeatures = () => {
-    // Map DB feature labels to meaningful icons (EXACTLY same as product card)
-    const getFeatureIcon = (label: string) => {
+    // Use centralized icon mapping for consistent icons across all components
+    const getFeatureIconLocal = (label: string) => {
       const text = (label || '').toLowerCase()
       
       if (text.includes('memory') || text.includes('foam')) return () => <Brain className="h-4 w-4" />
@@ -531,66 +399,14 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
       return () => <Star className="h-4 w-4" />
     }
 
-
-
     // PRIORITY 1: Use database-provided features (same as product cards)
-
     if (product.features && product.features.length > 0) {
-
       return product.features.slice(0, 6).map(label => ({ 
-
         label, 
-
-        Icon: getFeatureIcon(label) 
-
+        Icon: getFeatureIconLocal(label) 
       }))
-
     }
-
     
-
-
-
-    
-
-
-
-
-
-    
-
-
-
-    
-
-
-
-    
-
-
-
-    
-
-
-
-    
-
-
-
-    
-
-
-
-    
-
-
-
-    
-
-
-
-    
-
     // Fallback to category-specific features if no database features (EXACTLY same as product card)
     if (product.category === 'mattresses') {
       return [
@@ -741,105 +557,122 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
       { label: 'Fast Delivery', Icon: () => <Truck className="h-4 w-4" /> },
       { label: 'Warranty', Icon: () => <Shield className="h-4 w-4" /> }
     ]
-
   }
-
-
 
   const productFeatures = useMemo(() => buildProductFeatures(), [product.features, product.category])
 
-
-
-
-
-
-
-
-
-
+  // Check if product has only one variant
+  const hasOnlyOneVariant = (product as any).variants && (product as any).variants.length === 1
+  const singleVariant = hasOnlyOneVariant ? (product as any).variants[0] : null
 
   const addToCart = () => {
-
     // Get current variant price based on selected options
-
     const currentVariantPrice = (() => {
-
       const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
-
       if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
-
         return product.currentPrice || 0
-
       }
-
       
-
       // Find variant that matches selected size and color
-
       const matchingVariant = (product as any).variants.find((variant: any) => {
-
         const sizeMatch = hasSizes ? variant.size === selectedSize : true
-
         const colorMatch = !selectedColor || variant.color === selectedColor
-
         return sizeMatch && colorMatch
-
       })
-
       
-
       return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
-
     })()
 
+    // Check if this product has a free gift - simplified detection
+    const hasFreeGift = (product as any).free_gift_product_id && (
+      (product as any).free_gift_enabled || 
+      (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+    )
+    // Debug logging
+    console.log('Product being added to cart from detail page:', {
+      id: product.id,
+      name: product.name,
+      badges: (product as any).badges,
+      free_gift_product_id: (product as any).free_gift_product_id,
+      free_gift_enabled: (product as any).free_gift_enabled,
+      free_gift_product_name: (product as any).free_gift_product_name,
+      free_gift_product_image: (product as any).free_gift_product_image,
+      hasFreeGift,
+      badgesType: typeof (product as any).badges,
+      badgesIsArray: Array.isArray((product as any).badges),
+      badgesContent: (product as any).badges
+    })
 
+    // For single variant products, skip validation and go straight to cart
+    if (hasOnlyOneVariant && singleVariant) {
+      // Prepare payload with free gift details if available
+      const payload: any = {
+        id: String(product.id),
+        name: product.name,
+        brand: product.brand,
+        image: selectedImage || product.image,
+        currentPrice: singleVariant.currentPrice || singleVariant.originalPrice || product.currentPrice || 0,
+        originalPrice: singleVariant.originalPrice || product.originalPrice,
+        size: singleVariant.size || 'Standard',
+        color: singleVariant.color || 'Standard'
+      }
+
+      // Add free gift details if available
+      if (hasFreeGift) {
+        // Use the gift product name from the fields or default
+        const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
+        
+        Object.assign(payload, {
+          freeGiftProductId: (product as any).free_gift_product_id,
+          freeGiftProductName: giftProductName,
+          freeGiftProductImage: (product as any).free_gift_product_image || ''
+        })
+        console.log('Free gift will be added:', {
+          freeGiftProductId: (product as any).free_gift_product_id,
+          freeGiftProductName: giftProductName,
+          freeGiftProductImage: (product as any).free_gift_product_image || '',
+          source: 'product_detail_page'
+        })
+      } else {
+        console.log('No free gift details available - reasons:', {
+          hasFreeGiftProductId: !!(product as any).free_gift_product_id,
+          free_gift_enabled: (product as any).free_gift_enabled,
+          hasFreeGiftBadge: (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+        })
+      }
+
+      // Add the single variant directly to cart
+      dispatch({
+        type: 'ADD_ITEM',
+        payload
+      })
+      
+      // Open the basket sidebar
+      setBasketSidebarOpen(true)
+      return
+    }
 
     // Validate size and color selection
-
     const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
-
     const hasColors = Array.isArray((product as any).variants) && (product as any).variants.some((v: any) => Boolean(v.color))
 
-
-
     const validation = validateItem(
-
       {
-
         id: String(product.id),
-
         name: product.name,
-
         brand: product.brand,
-
         image: selectedImage || product.image,
-
         currentPrice: currentVariantPrice,
-
         originalPrice: product.originalPrice,
-
         size: selectedSizeData?.name,
-
         color: selectedColor
-
       },
-
       selectedSizeData?.name,
-
       selectedColor,
-
       { requireSize: hasSizes, requireColor: hasColors }
-
     )
 
-
-
-
-
     if (!validation.isValid) {
-
-
-
       // Start smart selection flow instead of showing individual modals
       // Try to determine which selection to start with based on what's missing
       // Also check if we just closed a modal to prevent reopening
@@ -852,173 +685,112 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
       }
 
       return
-
     }
-
-
-
-
 
     // Add to cart logic here
-
     
-
-    // Actually add the item to cart using cart context
-
-    dispatch({
-
-      type: 'ADD_ITEM',
-
-      payload: {
-
-        id: String(product.id),
-
-        name: product.name,
-
-        brand: product.brand,
-
-        image: selectedImage || product.image,
-
-        currentPrice: currentVariantPrice,
-
-        originalPrice: product.originalPrice,
-
-        size: selectedSizeData?.name || 'Standard',
-
-        color: selectedColor
-
-      }
-
-    })
-
-    
-
-    // Open the basket sidebar instead of the old modal
-
-    setBasketSidebarOpen(true)
-
-  }
-
-
-
-  const [isButtonSticky, setIsButtonSticky] = useState(false)
-
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
-
-
-  const buttonRef = useRef<HTMLDivElement>(null)
-
-  
-
-
-
-
-  // Dynamic size data from variants (data-driven)
-
-  const sizeData = useMemo(() => {
-
-    if (Array.isArray((product as any).variants) && (product as any).variants.length > 0) {
-
-      // Only consider entries that actually have a size defined
-
-      const sized = ((product as any).variants as Array<any>).filter(v => Boolean(v.size))
-
-      if (sized.length > 0) {
-
-        // Group by size and take the lowest price per size
-
-        const sizeToLowestPrice = new Map<string, { wasPrice: number; currentPrice: number }>()
-
-        sized.forEach(v => {
-
-          const sizeKey = (v.size as string).toString()
-
-          const current = Number(v.currentPrice ?? v.current_price ?? 0)
-
-          const original = Number(v.originalPrice ?? v.original_price ?? current)
-
-          const prev = sizeToLowestPrice.get(sizeKey)
-
-          if (!prev) {
-
-            sizeToLowestPrice.set(sizeKey, { wasPrice: original, currentPrice: current })
-
-          } else {
-
-            sizeToLowestPrice.set(sizeKey, {
-
-              wasPrice: Math.min(prev.wasPrice, original),
-
-              currentPrice: Math.min(prev.currentPrice, current)
-
-            })
-
-          }
-
-        })
-
-        const entries = Array.from(sizeToLowestPrice.entries()).map(([name, price]) => {
-
-          // Find a variant with this size to get dimensions
-
-          const variantWithSize = sized.find(v => v.size === name)
-
-          return {
-
-          name,
-
-          dimensions: `${name} dimensions`,
-
-          availability: (product as any).inStock ? 'In Stock' : 'Dispatched within 45 Days',
-
-          inStock: Boolean((product as any).inStock),
-
-          wasPrice: price.wasPrice || 0,
-
-            currentPrice: price.currentPrice || 0,
-
-            // Add dimension fields from variant
-
-            length: variantWithSize?.length || null,
-
-            width: variantWithSize?.width || null,
-
-            height: variantWithSize?.height || null
-
-          }
-
-        })
-
-        if (entries.length > 0) return entries
-
-      }
-
+    // Prepare payload with free gift details if available
+    const payload: any = {
+      id: String(product.id),
+      name: product.name,
+      brand: product.brand,
+      image: selectedImage || product.image,
+      currentPrice: currentVariantPrice,
+      originalPrice: product.originalPrice,
+      size: selectedSizeData?.name || 'Standard',
+      color: selectedColor
     }
 
+    // Add free gift details if available
+    if (hasFreeGift) {
+      // Use the gift product name from the fields or default
+      const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
+      
+      Object.assign(payload, {
+        freeGiftProductId: (product as any).free_gift_product_id,
+        freeGiftProductName: giftProductName,
+        freeGiftProductImage: (product as any).free_gift_product_image || ''
+      })
+      console.log('Free gift will be added:', {
+        freeGiftProductId: (product as any).free_gift_product_id,
+        freeGiftProductName: giftProductName,
+        freeGiftProductImage: (product as any).free_gift_product_image || '',
+        source: 'product_detail_page'
+      })
+    } else {
+      console.log('No free gift details available - reasons:', {
+        hasFreeGiftProductId: !!(product as any).free_gift_product_id,
+        free_gift_enabled: (product as any).free_gift_enabled,
+        hasFreeGiftBadge: (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+      })
+    }
+
+    // Actually add the item to cart using cart context
+    dispatch({
+      type: 'ADD_ITEM',
+      payload
+    })
+
+    // Open the basket sidebar instead of the old modal
+    setBasketSidebarOpen(true)
+  }
+
+  const [isButtonSticky, setIsButtonSticky] = useState(false)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
+  const buttonRef = useRef<HTMLDivElement>(null)
+  
+  // Dynamic size data from variants (data-driven)
+  const sizeData = useMemo(() => {
+    if (Array.isArray((product as any).variants) && (product as any).variants.length > 0) {
+      // Only consider entries that actually have a size defined
+      const sized = ((product as any).variants as Array<any>).filter(v => Boolean(v.size))
+      if (sized.length > 0) {
+        // Group by size and take the lowest price per size
+        const sizeToLowestPrice = new Map<string, { wasPrice: number; currentPrice: number }>()
+        sized.forEach(v => {
+          const sizeKey = (v.size as string).toString()
+          const current = Number(v.currentPrice ?? v.current_price ?? 0)
+          const original = Number(v.originalPrice ?? v.original_price ?? current)
+          const prev = sizeToLowestPrice.get(sizeKey)
+          if (!prev) {
+            sizeToLowestPrice.set(sizeKey, { wasPrice: original, currentPrice: current })
+          } else {
+            sizeToLowestPrice.set(sizeKey, {
+              wasPrice: Math.min(prev.wasPrice, original),
+              currentPrice: Math.min(prev.currentPrice, current)
+            })
+          }
+        })
+        const entries = Array.from(sizeToLowestPrice.entries()).map(([name, price]) => {
+          // Find a variant with this size to get dimensions
+          const variantWithSize = sized.find(v => v.size === name)
+          return {
+          name,
+          dimensions: `${name} dimensions`,
+          availability: (product as any).inStock ? 'In Stock' : 'Dispatched within 45 Days',
+          inStock: Boolean((product as any).inStock),
+          wasPrice: price.wasPrice || 0,
+            currentPrice: price.currentPrice || 0,
+            // Add dimension fields from variant
+            length: variantWithSize?.length || null,
+            width: variantWithSize?.width || null,
+            height: variantWithSize?.height || null
+          }
+        })
+        if (entries.length > 0) return entries
+      }
+    }
     // If no sizes exist, return an empty list to indicate size is not applicable
-
     return []
-
   }, [(product as any).variants, (product as any).inStock])
-
   
-
   // Ensure we have valid prices
-
   const originalPrice = product.originalPrice || product.currentPrice || 0
-
   const currentPrice = product.currentPrice || product.originalPrice || 0
-
   const hasValidPrices = originalPrice > 0 && currentPrice > 0
-
   
-
-
-
-  
-
   const [selectedSize, setSelectedSize] = useState<string>("")
-
   // Smart variant selection logic
   const getAvailableVariantOptions = useCallback(() => {
     const variants = (product as any).variants || []
@@ -1090,340 +862,155 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
   }, [selectedSize, selectedColor, lastSelection, getAvailableVariantOptions, startSmartSelection])
 
   // Get the selected size data with fallback
-
   const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
 
-
-
   // Safe monthly price calculation - use product prices when no size is selected
-
   const monthlyPrice = selectedSizeData?.currentPrice ? Math.floor(selectedSizeData.currentPrice / 12) : Math.floor((product.currentPrice || currentPrice) / 12)
 
-
-
-  const gallery = product.images && product.images.length > 0 ? product.images : [product.image]
-
-
-
-
-
-
+  const gallery = useMemo(() => 
+  product.images && product.images.length > 0 ? product.images : [product.image], 
+  [product.images, product.image]
+)
 
   // Carousel navigation functions
-
   const goToNextImage = () => {
-
     const currentIndex = gallery.findIndex(img => img === selectedImage);
-
     const newIndex = (currentIndex + 1) % gallery.length;
-
     setSelectedImage(gallery[newIndex]);
-
     setCurrentImageIndex(newIndex);
-
   };
-
-
 
   const goToPreviousImage = () => {
-
     const currentIndex = gallery.findIndex(img => img === selectedImage);
-
     const newIndex = currentIndex <= 0 ? gallery.length - 1 : currentIndex - 1;
-
     setSelectedImage(gallery[newIndex]);
-
     setCurrentImageIndex(newIndex);
-
   };
 
-
-
   // Update current index when selected image changes
-
   useEffect(() => {
-
     const index = gallery.findIndex(img => img === selectedImage);
-
     setCurrentImageIndex(index >= 0 ? index : 0);
-
   }, [selectedImage, gallery]);
 
-
-
-
-
-
-
   // Scroll effect for sticky button - enabled for both mobile and desktop
-
   useEffect(() => {
-
     const handleScroll = () => {
-
       if (buttonRef.current) {
-
         const rect = buttonRef.current.getBoundingClientRect()
-
         // Button becomes sticky when it's about to go out of view (with a small buffer)
-
         const isPastButton = rect.bottom < window.innerHeight - 20
-
         setIsButtonSticky(isPastButton)
-
       }
-
     }
-
-
 
     const handleResize = () => {
-
       // Reset sticky state when resizing
-
       setIsButtonSticky(false);
-
     }
-
-
 
     window.addEventListener('scroll', handleScroll)
-
     window.addEventListener('resize', handleResize)
-
     
-
     return () => {
-
       window.removeEventListener('scroll', handleScroll)
-
       window.removeEventListener('resize', handleResize)
-
     }
-
   }, [])
 
-
-
-
-
-
-
   const toggleSection = (section: string) => {
-
     setExpandedSections(prev => ({
-
       ...prev,
-
       [section]: !prev[section]
-
     }))
-
   }
 
-
-
-
-
-
-
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-
-
-
   return (
-
     <>
-
       <style jsx>{`
-
         .safe-area-bottom {
-
           padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
-
         }
-
         @media (max-width: 640px) {
-
           .safe-area-bottom {
-
             padding-left: max(1rem, env(safe-area-inset-left));
-
             padding-right: max(1rem, env(safe-area-inset-right));
-
           }
-
         }
-
         .mobile-sticky-button {
-
           max-width: 100vw;
-
           width: 100vw;
-
           left: 0;
-
           right: 0;
-
         }
-
       `}</style>
-
       <div className="bg-white border border-gray-100 rounded-xl p-3 sm:p-4 lg:p-4 pb-20 sm:pb-24 lg:pb-4">
-
       
-
-
-
-      
-
-
-
-      
-
       {/* Mobile: Product Details First */}
-
       <div className="lg:hidden mb-8 bg-white border-b border-gray-200">
-
         {/* Product Details Section for Mobile */}
-
         <div className="space-y-4">
-
           {/* Merged Product Info & Size Card */}
-
           <div className="rounded-xl p-4 sm:p-6 bg-white shadow-lg border border-gray-100">
-
             {/* Product Title */}
-
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 break-words">{product.name}</h1>
 
-              
-
               {/* White Box with Reviews, Stars, and Savings - Always Visible */}
-
               <div className="bg-white border-0 rounded-lg p-3 mb-4 max-w-full overflow-hidden shadow-sm">
-
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
-
                     <div className="flex items-center gap-2 min-w-0">
-
                       <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-
                         <svg className="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-
                         </svg>
-
                       </div>
-
                                               <span className="text-sm sm:text-lg text-gray-800 break-words">
-
                           {selectedSizeData && selectedSizeData.wasPrice && selectedSizeData.currentPrice && selectedSizeData.wasPrice > selectedSizeData.currentPrice ? (
-
                             `Save £${(selectedSizeData.wasPrice - selectedSizeData.currentPrice).toFixed(2)}`
-
                           ) : selectedSizeData ? (
-
                             `£${selectedSizeData.currentPrice.toFixed(2)}`
-
                           ) : (
-
                             `£${product.currentPrice.toFixed(2)}`
-
                           )}
-
                       </span>
-
                     </div>
-
                     <div className="flex items-center gap-2 flex-shrink-0">
-
                       <div className="flex items-center">
-
                         {[...Array(5)].map((_, i) => (
-
                           <Star key={i} className={`h-4 w-4 sm:h-5 sm:w-5 ${i < (product.rating || 4) ? "text-orange-500 fill-current" : "text-gray-300"}`} />
-
                         ))}
-
                       </div>
-
                       <span className="text-sm sm:text-base font-semibold text-gray-800">{product.reviewCount || 0}</span>
-
                     </div>
-
                   </div>
-
                 </div>
-
               
-
             {/* Size and Pricing Section */}
-
             {/* Product Info Card - Shows pricing when size is selected, otherwise shows base product pricing */}
-
             {selectedSizeData ? (
-
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
-
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0">
-
                 {/* Left Side: Size Name and Pricing */}
-
                 <div className="flex-1 min-w-0">
-
                   {/* Size Name */}
-
                   <div className="font-black text-lg sm:text-xl lg:text-2xl text-black mb-3 break-words">{selectedSizeData.name}</div>
-
                   
-
                   {/* Pricing - Now under the size name */}
-
                   <div className="space-y-1">
-
                     <div className="text-sm text-gray-500 line-through">Was £{selectedSizeData.wasPrice > 0 ? selectedSizeData.wasPrice.toFixed(2) : '0.00'}</div>
-
                     <div className="text-2xl font-black text-orange-600">£{selectedSizeData.currentPrice > 0 ? selectedSizeData.currentPrice.toFixed(2) : '0.00'}</div>
-
                   </div>
-
                 </div>
-
                 
-
                 {/* Right Side: Dimensions and Availability */}
-
                 <div className="text-left sm:text-right sm:ml-4 min-w-0">
-
                   {/* Dimensions */}
-
                   <div className="font-semibold text-base sm:text-lg lg:text-xl text-gray-800 mb-3 break-words">{selectedSizeData.dimensions}</div>
-
                   
-
                   {/* Variant Dimensions */}
-
                   {(selectedSizeData.length || selectedSizeData.width || selectedSizeData.height) && (
-
                     <div className="mb-4">
-
                       <div className="text-sm text-gray-600 font-medium mb-2">Variant Dimensions:</div>
-
                       
                       {/* Simple LxWxH Display */}
                       <div className="mb-3">
@@ -1441,109 +1028,63 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
                     </div>
 
                   )}
-
                   
-
                   {/* Availability Status */}
-
                   <div className="flex items-center gap-2">
-
                     {selectedSizeData.inStock ? (
-
                       <div className="flex items-center gap-1 text-green-600">
-
                         <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-
                         </svg>
-
                         <span className="text-sm font-medium break-words">{selectedSizeData.availability}</span>
-
                       </div>
-
                     ) : (
-
                       <div className="flex items-center gap-1 text-orange-600">
-
                         <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-
                         </svg>
-
                         <span className="text-sm font-medium break-words">{selectedSizeData.availability}</span>
-
                       </div>
-
                     )}
-
                     </div>
-
                   </div>
-
                 </div>
-
               </div>
-
             ) : (
-
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
-
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0">
-
                   {/* Left Side: Base Product Pricing */}
-
                   <div className="flex-1 min-w-0">
-
                     <div className="text-lg font-semibold text-gray-600 mb-2">Starting Price</div>
-
                     <div className="space-y-1">
-
                       {(() => {
-
                         const vars = ((product as any).variants || []) as Array<any>
-
                         const lowestPrice = vars.length > 0 
-
                           ? Math.min(...vars.map((v: any) => Number(v.currentPrice || v.originalPrice || 0)))
-
                           : product.currentPrice || 0
-
                         const originalPrice = product.originalPrice || 0
-
                         
-
                         return (
-
                           <>
-
                             {originalPrice > lowestPrice && (
-
                               <div className="text-sm text-gray-500 line-through">Was £{originalPrice.toFixed(2)}</div>
-
                             )}
-
                             <div className="text-2xl font-black text-orange-600">£{lowestPrice.toFixed(2)}</div>
-
                           </>
-
                         )
-
                       })()}
-
                     </div>
-
                   </div>
-
                   
-
                   {/* Right Side: Size Selection Prompt and Base Dimensions */}
                   <div className="text-left sm:text-right sm:ml-4 min-w-0">
 
-                    <div className="text-lg font-semibold text-gray-600 mb-2">Select a size to see pricing</div>
-
-                    <div className="text-sm text-gray-500">Choose from available sizes below</div>
+                    {!hasOnlyOneVariant && (
+                      <>
+                        <div className="text-lg font-semibold text-gray-600 mb-2">Select a size to see pricing</div>
+                        <div className="text-sm text-gray-500">Choose from available sizes below</div>
+                      </>
+                    )}
 
                     
                     {/* Base Product Dimensions - Simple LxWxH */}
@@ -1566,9 +1107,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
             </div>
 
             )}
-
               
-
               {/* Product Features - Display features saved from Mattresses features section */}
               {productFeatures.length > 0 && (
                 <div className="space-y-3">
@@ -1586,13 +1125,14 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
                 </div>
               )}
 
+
+
             </div>
 
 
 
-            {/* Choose Size - Clickable Option - White Button */}
-
-            {Array.isArray(sizeData) && sizeData.length > 0 && (
+            {/* Choose Size - Clickable Option - White Button - Only show for multi-variant products */}
+            {!hasOnlyOneVariant && Array.isArray(sizeData) && sizeData.length > 0 && (
 
             <div className="border-0 rounded-lg p-4 bg-white mb-2 cursor-pointer" onClick={() => startSmartSelectionWithPriority('size')}>
 
@@ -1614,6 +1154,26 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
             </div>
 
+            )}
+
+            {/* Single Variant Info - Show for single variant products - DISABLED */}
+            {false && hasOnlyOneVariant && singleVariant && (
+              <div className="border-0 rounded-lg p-4 bg-blue-50 mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 text-blue-600">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  </div>
+                  <span className="text-blue-700 font-semibold text-lg">
+                    Single Variant Product
+                  </span>
+                </div>
+                <div className="mt-2 text-sm text-blue-600">
+                  {singleVariant.size && <span className="mr-4">Size: {singleVariant.size}</span>}
+                  {singleVariant.color && <span>Color: {singleVariant.color}</span>}
+                </div>
+              </div>
             )}
 
 
@@ -1665,7 +1225,9 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                   <div className="flex items-center">
 
-                    <span className="font-bold text-xl tracking-wide">Add to Basket</span>
+                    <span className="font-bold text-xl tracking-wide">
+                      {hasOnlyOneVariant ? 'Add to Basket' : 'Choose Options & Add to Basket'}
+                    </span>
 
                   </div>
 
@@ -1905,6 +1467,15 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
                   </div>
                 </>
               )}
+
+              {/* Free Gift Badge - Top Left */}
+              {product.badges?.some(b => b.type === 'free_gift' && b.enabled) && (
+                <div className="absolute top-4 left-4 z-30">
+                  <Badge className="bg-blue-600 hover:bg-blue-700 text-white border-0 px-3 py-1.5 text-sm font-semibold transition-all duration-200 cursor-pointer transform hover:scale-105 shadow-lg">
+                    🎁 Free Gift
+                  </Badge>
+                </div>
+              )}
             </div>
 
             
@@ -2095,9 +1666,9 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                     <div key={index} className="flex items-start gap-3">
 
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
 
-                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
 
@@ -2129,9 +1700,9 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                     <div className="flex items-start gap-3">
 
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
 
-                        <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
 
@@ -2145,9 +1716,9 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                     <div className="flex items-start gap-3">
 
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
 
-                        <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
 
@@ -2161,9 +1732,9 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                     <div className="flex items-start gap-3">
 
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
 
-                        <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
 
@@ -2177,9 +1748,9 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                     <div className="flex items-start gap-3">
 
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
 
-                        <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
 
@@ -2193,9 +1764,9 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                     <div className="flex items-start gap-3">
 
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
 
-                        <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
 
@@ -2209,9 +1780,9 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                     <div className="flex items-start gap-3">
 
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
 
-                        <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
 
@@ -2267,8 +1838,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                   {(product.reasonsToLove || []).map((label: string, idx: number) => {
 
-                    // Function to get icon based on selected icon type or fallback to smart detection
-
+                    // Use centralized icon mapping for consistent icons
                     const getIconComponent = (iconType?: string) => {
 
                       // If we have a specific icon type from admin, use it
@@ -2281,6 +1851,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                         switch (iconTypeLower) {
 
+                          // Basic icons
                           case 'support': return () => <Heart className="h-8 w-8 sm:h-10 sm:w-10" />
 
                           case 'comfort': return () => <Bed className="h-8 w-8 sm:h-10 sm:w-10" />
@@ -2291,6 +1862,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                           case 'durability': return () => <Zap className="h-8 w-8 sm:h-10 sm:w-10" />
 
+                          // Material icons
                           case 'wood': return () => <Trees className="h-8 w-8 sm:h-10 sm:w-10" />
 
                           case 'metal': return () => <Shield className="h-8 w-8 sm:h-10 sm:w-10" />
@@ -2301,9 +1873,144 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                           case 'design': return () => <Palette className="h-8 w-8 sm:h-10 sm:w-10" />
 
-                          default: 
+                          // Feature-specific icons
+                          case 'memory-foam': return () => <Brain className="h-8 w-8 sm:h-10 sm:w-10" />
 
-                    
+                          case 'pocket-springs': return () => (
+
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-8 w-8 sm:h-10 sm:w-10">
+
+                              <rect x="2" y="8" width="20" height="8" rx="1" ry="1"/>
+
+                              <path d="M4 10h2M8 10h2M12 10h2M16 10h2M20 10h2"/>
+
+                              <rect x="2" y="12" width="20" height="4" rx="1" ry="1"/>
+
+                              <path d="M4 14h2M8 14h2M12 14h2M16 14h2M20 14h2"/>
+
+                            </svg>
+
+                          )
+
+                          case 'cooling': return () => <Snowflake className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'edge-support': return () => <Shield className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'orthopedic': return () => <Heart className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'anti-bacterial': return () => <ShieldCheck className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'hypoallergenic': return () => <Feather className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'eco-friendly': return () => <Leaf className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'warranty': return () => <Award className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'delivery': return () => <Truck className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'removable-cover': return () => <PackageOpen className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'value': return () => <DollarSign className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'luxury': return () => <Gem className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          // Admin panel icon names (exact matches)
+                          case 'springs': return () => <Package className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'brain': return () => <Brain className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'sliders': return () => <SlidersHorizontal className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'grid': return () => <Grid className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'rotate': return () => <RefreshCw className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'layers': return () => <Layers className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'droplet': return () => <Droplet className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'arrow-left-right': return () => <ArrowLeftRight className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'waves': return () => <Waves className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'moon': return () => <Moon className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'star': return () => <Star className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'clock': return () => <Clock className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'volume-2': return () => <VolumeX className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'thermometer': return () => <Thermometer className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'corner': return () => <Square className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'sun': return () => <Sun className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'umbrella': return () => <Umbrella className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'scroll': return () => <Scroll className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'crown': return () => <Crown className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'settings': return () => <Settings className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'circle': return () => <Circle className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'users': return () => <Users className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'home': return () => <Home className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'baby': return () => <Baby className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'radio': return () => <Radio className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'maximize': return () => <Maximize className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'minimize': return () => <Minimize className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'ruler': return () => <Ruler className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'package': return () => <Package className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'shield-check': return () => <ShieldCheck className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'sprout': return () => <Sprout className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'mountain': return () => <Mountain className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          // Additional icon mappings from admin panel
+                          case 'leaf': return () => <Leaf className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'gem': return () => <Gem className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'heart': return () => <Heart className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'shield': return () => <Shield className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'badge': return () => <Award className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'feather': return () => <Feather className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'truck': return () => <Truck className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'package-open': return () => <PackageOpen className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'sliders-horizontal': return () => <SlidersHorizontal className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'wrench': return () => <Wrench className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'palette': return () => <Palette className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'award': return () => <Award className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'trees': return () => <Trees className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'zap': return () => <Zap className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          case 'lightbulb': return () => <Zap className="h-8 w-8 sm:h-10 sm:w-10" />
+
+                          default: 
 
                             break
 
@@ -2390,6 +2097,10 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
                         <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 text-orange-500 flex items-center justify-center">
                           {typeof IconComp === 'function' ? <IconComp /> : null}
                         </div>
+                        {/* Small text below icon */}
+                        {(product as any).reasonsToLoveSmalltext?.[idx] && (
+                          <p className="text-xs text-gray-500 mb-2 leading-relaxed">{(product as any).reasonsToLoveSmalltext[idx]}</p>
+                        )}
                         <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 break-words">{label}</h3>
                         {(product as any).reasonsToLoveDescriptions?.[idx] && (
                           <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{(product as any).reasonsToLoveDescriptions[idx]}</p>
@@ -2490,6 +2201,10 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
                         <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 text-orange-500 flex items-center justify-center">
                           {typeof feature.Icon === 'function' ? <feature.Icon /> : null}
                   </div>
+                        {/* Small text below icon for fallback features */}
+                        {(product as any).reasonsToLoveSmalltext?.[idx] && (
+                          <p className="text-xs text-gray-500 mb-2 leading-relaxed">{(product as any).reasonsToLoveSmalltext[idx]}</p>
+                        )}
                         <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 break-words">{feature.label}</h3>
                         <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                           {getFallbackDescription(feature.label)}
@@ -4033,6 +3748,8 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">{product.name}</h1>
 
+
+
               
 
               {/* White Box with Reviews, Stars, and Savings - Always Visible */}
@@ -4221,7 +3938,9 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                   <div className="flex-1">
 
-                    <div className="text-lg font-semibold text-gray-600 mb-2">Base Product Price</div>
+                    <div className="text-lg font-semibold text-gray-600 mb-2">
+                      {hasOnlyOneVariant ? 'Price' : 'Base Product Price'}
+                    </div>
 
                     <div className="space-y-1">
 
@@ -4242,9 +3961,12 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
                   {/* Right Side: Size Selection Prompt and Base Dimensions */}
                   <div className="text-right ml-4">
 
-                    <div className="text-lg font-semibold text-gray-600 mb-2">Select a size to see pricing</div>
-
-                    <div className="text-sm text-gray-500">Choose from available sizes below</div>
+                    {!hasOnlyOneVariant && (
+                      <>
+                        <div className="text-lg font-semibold text-gray-600 mb-2">Select a size to see pricing</div>
+                        <div className="text-sm text-gray-500">Choose from available sizes below</div>
+                      </>
+                    )}
 
                     
                     {/* Base Product Dimensions - Simple LxWxH */}
@@ -4291,9 +4013,8 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
 
 
-            {/* Choose Size - Clickable Option - White Button */}
-
-            {Array.isArray(sizeData) && sizeData.length > 0 && (
+            {/* Choose Size - Clickable Option - White Button - Only show for multi-variant products */}
+            {!hasOnlyOneVariant && Array.isArray(sizeData) && sizeData.length > 0 && (
 
             <div className="border-0 rounded-lg p-4 bg-white mb-2 cursor-pointer" onClick={() => startSmartSelectionWithPriority('size')}>
 
@@ -4317,9 +4038,8 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
             )}
 
-
-
-            {/* Color & Other Options Selection - Clickable Option - White Button */}
+            {/* Color & Other Options Selection - Clickable Option - White Button - Only show for multi-variant products */}
+            {!hasOnlyOneVariant && (
 
             <div className="border-0 rounded-lg p-4 bg-white mb-2 cursor-pointer" onClick={() => startSmartSelectionWithPriority('color')}>
 
@@ -4341,6 +4061,28 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
                 </div>
                 </div>
               </div>
+
+            )}
+
+            {/* Single Variant Info - Show for single variant products - DISABLED */}
+            {false && hasOnlyOneVariant && singleVariant && (
+              <div className="border-0 rounded-lg p-4 bg-blue-50 mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 text-blue-600">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  </div>
+                  <span className="text-blue-700 font-semibold text-lg">
+                    Single Variant Product
+                  </span>
+                </div>
+                <div className="mt-2 text-sm text-blue-600">
+                  {singleVariant.size && <span className="mr-4">Size: {singleVariant.size}</span>}
+                  {singleVariant.color && <span>Color: {singleVariant.color}</span>}
+                </div>
+              </div>
+            )}
 
 
 
@@ -4394,7 +4136,7 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
                   <div className="flex items-center">
                     <span className="font-bold text-xl tracking-wide">
-                      Add to Basket
+                      {hasOnlyOneVariant ? 'Add to Basket' : 'Choose Options & Add to Basket'}
                     </span>
                   </div>
 
@@ -4519,6 +4261,9 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
             <div className="text-sm text-primary underline cursor-pointer">Learn more</div>
 
           </div>
+
+
+            
 
         </div>
 
@@ -4960,8 +4705,4 @@ export function ProductDetailHappy({ product }: ProductDetailHappyProps) {
 
   )
 
-}
-
-
-
-export default ProductDetailHappy
+})

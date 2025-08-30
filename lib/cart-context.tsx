@@ -12,20 +12,37 @@ interface CartItem {
   size?: string
   color?: string
   quantity: number
+  freeGiftProductId?: string // Added for free gifts
 }
 
 interface CartState {
   items: CartItem[]
   total: number
   itemCount: number
+  showFreeGiftNotification: boolean
+  freeGiftInfo: {
+    giftProduct: {
+      name: string
+      image: string
+    }
+    mainProduct: {
+      name: string
+      image: string
+    }
+  } | null
 }
 
 type CartAction =
-  | { type: 'ADD_ITEM'; payload: Omit<CartItem, 'quantity'> }
-  | { type: 'REMOVE_ITEM'; payload: string }
-  | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
+  | { type: 'ADD_ITEM'; payload: Omit<CartItem, 'quantity'> & { 
+      freeGiftProductId?: string; 
+      freeGiftProductName?: string; 
+      freeGiftProductImage?: string; 
+    } }
+  | { type: 'REMOVE_ITEM'; payload: string | { id: string; size?: string; color?: string } }
+  | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number; size?: string; color?: string } }
   | { type: 'CLEAR_CART' }
   | { type: 'VALIDATE_ITEM'; payload: { id: string; size?: string; color?: string } }
+  | { type: 'HIDE_FREE_GIFT_NOTIFICATION' }
 
 const CartContext = createContext<{
   state: CartState
@@ -36,11 +53,15 @@ const CartContext = createContext<{
     color?: string,
     options?: { requireSize?: boolean; requireColor?: boolean }
   ) => { isValid: boolean; missingFields: string[] }
+  hideFreeGiftNotification: () => void
+  updateQuantity: (id: string, quantity: number, size?: string, color?: string) => void
 } | null>(null)
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case 'ADD_ITEM': {
+      console.log('ADD_ITEM action received:', action.payload)
+      
       const existingItem = state.items.find(item => 
         item.id === action.payload.id && 
         item.size === action.payload.size && 
@@ -58,43 +79,169 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         const total = updatedItems.reduce((sum, item) => sum + (item.currentPrice * item.quantity), 0)
         const itemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0)
         
-        return { items: updatedItems, total, itemCount }
+        // Check if this product has a free gift and should show notification
+        const hasFreeGift = !!action.payload.freeGiftProductId
+        const showNotification = hasFreeGift
+        
+        console.log('Updating existing item with free gift:', {
+          hasFreeGift,
+          freeGiftProductId: action.payload.freeGiftProductId,
+          freeGiftProductName: action.payload.freeGiftProductName,
+          showNotification
+        })
+        
+        return { 
+          items: updatedItems, 
+          total, 
+          itemCount,
+          showFreeGiftNotification: showNotification,
+          freeGiftInfo: showNotification ? {
+            giftProduct: {
+              name: action.payload.freeGiftProductName || 'Free Gift',
+              image: action.payload.freeGiftProductImage || ''
+            },
+            mainProduct: {
+              name: action.payload.name,
+              image: action.payload.image
+            }
+          } : null
+        }
       } else {
         const newItem = { ...action.payload, quantity: 1 }
-        const updatedItems = [...state.items, newItem]
+        let updatedItems = [...state.items, newItem]
+        
+        // Check if this product has a free gift and add it automatically
+        console.log('Checking for free gift:', {
+          freeGiftProductId: action.payload.freeGiftProductId,
+          freeGiftProductName: action.payload.freeGiftProductName,
+          hasFreeGift: !!action.payload.freeGiftProductId
+        })
+        
+        if (action.payload.freeGiftProductId) {
+          const freeGiftItem: CartItem = {
+            id: action.payload.freeGiftProductId,
+            name: action.payload.freeGiftProductName || 'Free Gift',
+            brand: 'Free Gift',
+            image: action.payload.freeGiftProductImage || '',
+            currentPrice: 0,
+            originalPrice: 0,
+            quantity: 1,
+            freeGiftProductId: action.payload.freeGiftProductId
+          }
+          updatedItems.push(freeGiftItem)
+          console.log('Free gift item added to cart:', freeGiftItem)
+        } else {
+          console.log('No free gift to add')
+        }
+        
         const total = updatedItems.reduce((sum, item) => sum + (item.currentPrice * item.quantity), 0)
         const itemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0)
         
-        return { items: updatedItems, total, itemCount }
+        // Check if we added a free gift and should show notification
+        const hasFreeGift = !!action.payload.freeGiftProductId
+        const showNotification = hasFreeGift
+        
+        console.log('Adding item with free gift:', {
+          hasFreeGift,
+          freeGiftProductId: action.payload.freeGiftProductId,
+          freeGiftProductName: action.payload.freeGiftProductName,
+          showNotification
+        })
+        
+        return { 
+          items: updatedItems, 
+          total, 
+          itemCount,
+          showFreeGiftNotification: showNotification,
+          freeGiftInfo: showNotification ? {
+            giftProduct: {
+              name: action.payload.freeGiftProductName || 'Free Gift',
+              image: action.payload.freeGiftProductImage || ''
+            },
+            mainProduct: {
+              name: action.payload.name,
+              image: action.payload.image
+            }
+          } : null
+        }
       }
     }
     
     case 'REMOVE_ITEM': {
-      const updatedItems = state.items.filter(item => item.id !== action.payload)
+      // action.payload should be an object with id, size, and color for proper removal
+      const { id, size, color } = typeof action.payload === 'string' 
+        ? { id: action.payload, size: undefined, color: undefined }
+        : action.payload
+      
+      const updatedItems = state.items.filter(item => 
+        !(item.id === id && 
+          (size === undefined || item.size === size) && 
+          (color === undefined || item.color === color))
+      )
+      
       const total = updatedItems.reduce((sum, item) => sum + (item.currentPrice * item.quantity), 0)
       const itemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0)
       
-      return { items: updatedItems, total, itemCount }
+      return { 
+        items: updatedItems, 
+        total, 
+        itemCount,
+        showFreeGiftNotification: state.showFreeGiftNotification,
+        freeGiftInfo: state.freeGiftInfo
+      }
     }
     
     case 'UPDATE_QUANTITY': {
       if (action.payload.quantity <= 0) {
-        return cartReducer(state, { type: 'REMOVE_ITEM', payload: action.payload.id })
+        // Find the item to get its size and color for proper removal
+        const itemToRemove = state.items.find(item => item.id === action.payload.id)
+        if (itemToRemove) {
+          return cartReducer(state, { 
+            type: 'REMOVE_ITEM', 
+            payload: { 
+              id: action.payload.id, 
+              size: itemToRemove.size, 
+              color: itemToRemove.color 
+            } 
+          })
+        }
+        return state
       }
       
       const updatedItems = state.items.map(item =>
-        item.id === action.payload.id
+        item.id === action.payload.id && 
+        item.size === action.payload.size && 
+        item.color === action.payload.color
           ? { ...item, quantity: action.payload.quantity }
           : item
       )
       const total = updatedItems.reduce((sum, item) => sum + (item.currentPrice * item.quantity), 0)
       const itemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0)
       
-      return { items: updatedItems, total, itemCount }
+      return { 
+        items: updatedItems, 
+        total, 
+        itemCount,
+        showFreeGiftNotification: state.showFreeGiftNotification,
+        freeGiftInfo: state.freeGiftInfo
+      }
     }
     
     case 'CLEAR_CART':
-      return { items: [], total: 0, itemCount: 0 }
+      return { 
+        items: [], 
+        total: 0, 
+        itemCount: 0,
+        showFreeGiftNotification: false,
+        freeGiftInfo: null
+      }
+    
+    case 'HIDE_FREE_GIFT_NOTIFICATION':
+      return {
+        ...state,
+        showFreeGiftNotification: false,
+        freeGiftInfo: null
+      }
     
     default:
       return state
@@ -109,6 +256,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const savedCart = localStorage.getItem('cart')
         if (savedCart) {
           const parsedCart = JSON.parse(savedCart)
+          console.log('Loading cart from localStorage:', parsedCart)
           // Ensure the parsed cart has the correct structure
           if (parsedCart.items && Array.isArray(parsedCart.items)) {
             // Recompute totals to avoid stale/zero values
@@ -122,11 +270,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
               0
             )
             const itemCount = sanitizedItems.reduce((sum: number, item: any) => sum + (Number(item.quantity) || 1), 0)
-            return {
+            
+            const result = {
               items: sanitizedItems,
               total,
               itemCount,
+              showFreeGiftNotification: parsedCart.showFreeGiftNotification || false,
+              freeGiftInfo: parsedCart.freeGiftInfo || null
             }
+            console.log('Cart loaded with state:', result)
+            return result
           }
         }
       } catch (error) {
@@ -136,7 +289,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return {
       items: [],
       total: 0,
-      itemCount: 0
+      itemCount: 0,
+      showFreeGiftNotification: false,
+      freeGiftInfo: null
     }
   }
 
@@ -146,6 +301,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
+        console.log('Saving cart to localStorage:', state)
         localStorage.setItem('cart', JSON.stringify(state))
       } catch (error) {
         console.error('Error saving cart to localStorage:', error)
@@ -181,8 +337,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
 
 
+  const hideFreeGiftNotification = () => {
+    dispatch({ type: 'HIDE_FREE_GIFT_NOTIFICATION' })
+  }
+
+  const updateQuantity = (id: string, quantity: number, size?: string, color?: string) => {
+    dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity, size, color } })
+  }
+
   return (
-    <CartContext.Provider value={{ state, dispatch, validateItem }}>
+    <CartContext.Provider value={{ state, dispatch, validateItem, hideFreeGiftNotification, updateQuantity }}>
       {children}
     </CartContext.Provider>
   )
@@ -194,9 +358,11 @@ export function useCart() {
     // Graceful fallback when provider isn't mounted (prevents hard crashes on SSR/routes)
     const noop = () => {}
     return {
-      state: { items: [], total: 0, itemCount: 0 },
+      state: { items: [], total: 0, itemCount: 0, showFreeGiftNotification: false, freeGiftInfo: null },
       dispatch: noop as unknown as React.Dispatch<any>,
-      validateItem: () => ({ isValid: true, missingFields: [] })
+      validateItem: () => ({ isValid: true, missingFields: [] }),
+      hideFreeGiftNotification: noop,
+      updateQuantity: noop
     }
   }
   return context

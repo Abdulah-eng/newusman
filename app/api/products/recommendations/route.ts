@@ -19,7 +19,10 @@ export async function GET(request: NextRequest) {
         rating,
         headline,
         variants:product_variants(id, current_price, original_price, size, color, depth, firmness),
-        images:product_images(image_url)
+        images:product_images(image_url),
+        badges,
+        free_gift_product_id,
+        free_gift_enabled
       `)
 
     // Filter by category ID for more reliable filtering
@@ -56,15 +59,48 @@ export async function GET(request: NextRequest) {
     console.log('Found products:', products?.length || 0)
 
     // Transform the data to match the expected format
-    const transformedProducts = products?.map(product => ({
-      id: product.id,
-      name: product.name,
-      category: category || 'All',
-      image: product.images?.[0]?.image_url || '/placeholder.jpg',
-      currentPrice: product.variants?.[0]?.current_price || 0,
-      originalPrice: product.variants?.[0]?.original_price || 0,
-      size: product.variants?.[0]?.size || 'Standard'
-    })) || []
+    const transformedProducts = await Promise.all(products?.map(async (product) => {
+      // Fetch gift product details if this product has a free gift
+      let giftProductDetails = null
+      if (product.free_gift_product_id && product.free_gift_enabled) {
+        try {
+          const { data: giftProduct } = await supabase
+            .from('products')
+            .select(`
+              id,
+              name,
+              product_images(image_url)
+            `)
+            .eq('id', product.free_gift_product_id)
+            .single()
+          
+          if (giftProduct) {
+            giftProductDetails = {
+              id: giftProduct.id,
+              name: giftProduct.name,
+              image: giftProduct.product_images?.[0]?.image_url || ''
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching gift product details:', error)
+        }
+      }
+      
+      return {
+        id: product.id,
+        name: product.name,
+        category: category || 'All',
+        image: product.images?.[0]?.image_url || '/placeholder.jpg',
+        currentPrice: product.variants?.[0]?.current_price || 0,
+        originalPrice: product.variants?.[0]?.original_price || 0,
+        size: product.variants?.[0]?.size || 'Standard',
+        badges: product.badges || [],
+        free_gift_product_id: product.free_gift_product_id || null,
+        free_gift_enabled: product.free_gift_enabled || false,
+        free_gift_product_name: giftProductDetails?.name || null,
+        free_gift_product_image: giftProductDetails?.image || null
+      }
+    }) || [])
 
     console.log('Transformed products:', transformedProducts.length)
 
