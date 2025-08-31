@@ -60,7 +60,7 @@ const CartContext = createContext<{
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case 'ADD_ITEM': {
-              // ADD_ITEM action received
+      console.log('ADD_ITEM action received:', action.payload)
       
       const existingItem = state.items.find(item => 
         item.id === action.payload.id && 
@@ -83,7 +83,12 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         const hasFreeGift = !!action.payload.freeGiftProductId
         const showNotification = hasFreeGift
         
-        // Updating existing item with free gift
+        console.log('Updating existing item with free gift:', {
+          hasFreeGift,
+          freeGiftProductId: action.payload.freeGiftProductId,
+          freeGiftProductName: action.payload.freeGiftProductName,
+          showNotification
+        })
         
         return { 
           items: updatedItems, 
@@ -106,6 +111,11 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         let updatedItems = [...state.items, newItem]
         
         // Check if this product has a free gift and add it automatically
+        console.log('Checking for free gift:', {
+          freeGiftProductId: action.payload.freeGiftProductId,
+          freeGiftProductName: action.payload.freeGiftProductName,
+          hasFreeGift: !!action.payload.freeGiftProductId
+        })
         
         if (action.payload.freeGiftProductId) {
           const freeGiftItem: CartItem = {
@@ -119,9 +129,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             freeGiftProductId: action.payload.freeGiftProductId
           }
           updatedItems.push(freeGiftItem)
-          // Free gift item added to cart
+          console.log('Free gift item added to cart:', freeGiftItem)
         } else {
-          // No free gift to add
+          console.log('No free gift to add')
         }
         
         const total = updatedItems.reduce((sum, item) => sum + (item.currentPrice * item.quantity), 0)
@@ -131,7 +141,12 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         const hasFreeGift = !!action.payload.freeGiftProductId
         const showNotification = hasFreeGift
         
-        // Adding item with free gift
+        console.log('Adding item with free gift:', {
+          hasFreeGift,
+          freeGiftProductId: action.payload.freeGiftProductId,
+          freeGiftProductName: action.payload.freeGiftProductName,
+          showNotification
+        })
         
         return { 
           items: updatedItems, 
@@ -241,7 +256,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const savedCart = localStorage.getItem('cart')
         if (savedCart) {
           const parsedCart = JSON.parse(savedCart)
-          // Loading cart from localStorage
+          console.log('Loading cart from localStorage:', parsedCart)
           // Ensure the parsed cart has the correct structure
           if (parsedCart.items && Array.isArray(parsedCart.items)) {
             // Recompute totals to avoid stale/zero values
@@ -263,7 +278,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
               showFreeGiftNotification: parsedCart.showFreeGiftNotification || false,
               freeGiftInfo: parsedCart.freeGiftInfo || null
             }
-            // Cart loaded with state
+            console.log('Cart loaded with state:', result)
             return result
           }
         }
@@ -286,7 +301,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        // Saving cart to localStorage
+        console.log('Saving cart to localStorage:', state)
         localStorage.setItem('cart', JSON.stringify(state))
       } catch (error) {
         console.error('Error saving cart to localStorage:', error)

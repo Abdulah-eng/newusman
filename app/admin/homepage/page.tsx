@@ -199,13 +199,13 @@ export default function HomePageAdmin() {
               })
               break
             case 'mattresses':
-              // Console log removed for performance
+              console.log('🔍 Admin - Loading mattresses section:', item.content)
               // Handle both old and new structure for backward compatibility
               if (item.content.mattressCards) {
-                // Console log removed for performance
+                console.log('🔍 Admin - Using new structure with mattress cards')
                 setMattressesSection(item.content)
               } else {
-                // Console log removed for performance
+                console.log('🔍 Admin - Converting old structure to new structure')
                 // Convert old structure to new structure
                 setMattressesSection({
                   productIds: item.content.productIds || [],
@@ -218,13 +218,13 @@ export default function HomePageAdmin() {
               }
               break
             case 'bedroom_inspiration':
-              // Console log removed for performance
+              console.log('🔍 Admin - Loading bedroom inspiration section:', item.content)
               // Handle both old and new structure for backward compatibility
               if (item.content.productCards) {
-                // Console log removed for performance
+                console.log('🔍 Admin - Using new structure with product cards')
                 setBedroomInspiration(item.content)
               } else {
-                // Console log removed for performance
+                console.log('🔍 Admin - Converting old structure to new structure')
                 // Convert old structure to new structure
                 setBedroomInspiration({
                   productIds: item.content.productIds || [],
@@ -253,7 +253,7 @@ export default function HomePageAdmin() {
   const loadProducts = async () => {
     setLoading(true)
     try {
-      // Console log removed for performance
+      console.log('Starting to load products...')
       
       // Load all products for deal of day with category info
       const { data: products, error: productsError } = await supabase
@@ -282,7 +282,7 @@ export default function HomePageAdmin() {
         image: '/placeholder.jpg'
       })) || []
       
-      // Console log removed for performance
+      console.log('Loaded products:', transformedProducts)
       setAllProducts(transformedProducts)
 
       // Load mattresses (products in mattress category)
@@ -310,7 +310,7 @@ export default function HomePageAdmin() {
         image: '/placeholder.jpg'
       })) || []
       
-      // Console log removed for performance
+      console.log('Loaded mattresses:', transformedMattresses)
       setAllMattresses(transformedMattresses)
 
       // Load sofas (products in sofa category)
@@ -338,10 +338,10 @@ export default function HomePageAdmin() {
         image: '/placeholder.jpg'
       })) || []
       
-      // Console log removed for performance
+      console.log('Loaded sofas:', transformedSofas)
       setAllSofas(transformedSofas)
 
-      // Console log removed for performance
+      console.log('All products loaded successfully')
     } catch (error) {
       console.error('Error loading products:', error)
       alert(`Error loading products: ${error.message || 'Unknown error'}. Please check your database connection.`)
@@ -364,12 +364,12 @@ export default function HomePageAdmin() {
         { section: 'ideas_guides', content: ideasGuides, order_index: 8 }
       ]
 
-      // Console log removed for performance
+      console.log('Saving content sections:', contentSections)
 
       for (const section of contentSections) {
-        // Console log removed for performance
+        console.log(`Saving section: ${section.section}`)
         if (section.section === 'mattresses') {
-          // Console log removed for performance
+          console.log('🔍 Admin - Saving mattresses section with content:', section.content)
         }
         const { error } = await supabase
           .from('homepage_content')
@@ -383,7 +383,7 @@ export default function HomePageAdmin() {
           console.error(`Error saving section ${section.section}:`, error)
           throw error
         }
-        // Console log removed for performance
+        console.log(`Successfully saved section: ${section.section}`)
       }
 
       alert('Homepage content saved successfully!')
@@ -418,7 +418,7 @@ export default function HomePageAdmin() {
         
         alert(`Homepage image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
         
-        // Console log removed for performance
+        console.log('[Homepage Upload] Optimized upload result:', result)
       } else {
         const error = await response.json()
         console.error('[Homepage Upload] Optimized upload error:', error)

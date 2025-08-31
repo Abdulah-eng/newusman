@@ -244,12 +244,12 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           
           // Check other variants
           if (hasDepths && !(product as any).selectedDepth) {
-            // Console log removed for performance
+            console.log('Depth selection required but not implemented yet')
             return
           }
           
           if (hasFirmness && !(product as any).selectedFirmness) {
-            // Console log removed for performance
+            console.log('Firmness selection required but not implemented yet')
             return
           }
           
@@ -318,12 +318,12 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           
           // Check other variants
           if (hasDepths && !(product as any).selectedDepth) {
-            // Console log removed for performance
+            console.log('Depth selection required but not implemented yet')
             return
           }
           
           if (hasFirmness && !(product as any).selectedFirmness) {
-            // Console log removed for performance
+            console.log('Firmness selection required but not implemented yet')
             return
           }
           
@@ -591,8 +591,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     ]
   }
 
-  // OPTIMIZATION: Simplified feature building without useMemo for better performance
-  const productFeatures = buildProductFeatures()
+  const productFeatures = useMemo(() => buildProductFeatures(), [product.features, product.category])
 
   // Check if product has only one variant
   const hasOnlyOneVariant = (product as any).variants && (product as any).variants.length === 1
@@ -621,10 +620,20 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       (product as any).free_gift_enabled || 
       (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
     )
-    // Performance logging (only in development)
-    if (process.env.NODE_ENV === 'development') {
-      // Console log removed for performance
-    }
+    // Debug logging
+    console.log('Product being added to cart from detail page:', {
+      id: product.id,
+      name: product.name,
+      badges: (product as any).badges,
+      free_gift_product_id: (product as any).free_gift_product_id,
+      free_gift_enabled: (product as any).free_gift_enabled,
+      free_gift_product_name: (product as any).free_gift_product_name,
+      free_gift_product_image: (product as any).free_gift_product_image,
+      hasFreeGift,
+      badgesType: typeof (product as any).badges,
+      badgesIsArray: Array.isArray((product as any).badges),
+      badgesContent: (product as any).badges
+    })
 
     // For single variant products, skip validation and go straight to cart
     if (hasOnlyOneVariant && singleVariant) {
@@ -650,9 +659,18 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           freeGiftProductName: giftProductName,
           freeGiftProductImage: (product as any).free_gift_product_image || ''
         })
-        // Free gift will be added (logging removed for performance)
+        console.log('Free gift will be added:', {
+          freeGiftProductId: (product as any).free_gift_product_id,
+          freeGiftProductName: giftProductName,
+          freeGiftProductImage: (product as any).free_gift_product_image || '',
+          source: 'product_detail_page'
+        })
       } else {
-        // No free gift details available (logging removed for performance)
+        console.log('No free gift details available - reasons:', {
+          hasFreeGiftProductId: !!(product as any).free_gift_product_id,
+          free_gift_enabled: (product as any).free_gift_enabled,
+          hasFreeGiftBadge: (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+        })
       }
 
       // Add the single variant directly to cart
@@ -690,14 +708,14 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     if (hasDepths && !(product as any).selectedDepth) {
       // Depth is required but not selected, would need to implement depth modal
       // For now, just return to prevent adding to cart
-      // Depth selection required but not implemented yet
+      console.log('Depth selection required but not implemented yet')
       return
     }
 
     if (hasFirmness && !(product as any).selectedFirmness) {
       // Firmness is required but not selected, would need to implement firmness modal
       // For now, just return to prevent adding to cart
-      // Firmness selection required but not implemented yet
+      console.log('Firmness selection required but not implemented yet')
       return
     }
 
@@ -727,9 +745,18 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
         freeGiftProductName: giftProductName,
         freeGiftProductImage: (product as any).free_gift_product_image || ''
       })
-      // Free gift will be added (logging removed for performance)
+      console.log('Free gift will be added:', {
+        freeGiftProductId: (product as any).free_gift_product_id,
+        freeGiftProductName: giftProductName,
+        freeGiftProductImage: (product as any).free_gift_product_image || '',
+        source: 'product_detail_page'
+      })
     } else {
-      // No free gift details available
+      console.log('No free gift details available - reasons:', {
+        hasFreeGiftProductId: !!(product as any).free_gift_product_id,
+        free_gift_enabled: (product as any).free_gift_enabled,
+        hasFreeGiftBadge: (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+      })
     }
 
     // Actually add the item to cart using cart context
@@ -747,8 +774,8 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
   const buttonRef = useRef<HTMLDivElement>(null)
   
-  // OPTIMIZATION: Simplified size data processing without useMemo for better performance
-  const sizeData = (() => {
+  // Dynamic size data from variants (data-driven)
+  const sizeData = useMemo(() => {
     if (Array.isArray((product as any).variants) && (product as any).variants.length > 0) {
       // Only consider entries that actually have a size defined
       const sized = ((product as any).variants as Array<any>).filter(v => Boolean(v.size))
@@ -790,7 +817,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     }
     // If no sizes exist, return an empty list to indicate size is not applicable
     return []
-  })()
+  }, [(product as any).variants, (product as any).inStock])
   
   // Ensure we have valid prices
   const originalPrice = product.originalPrice || product.currentPrice || 0
@@ -867,13 +894,13 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     // Check for other variant types if they exist
     if (hasDepths && !(product as any).selectedDepth) {
       // Depth is required but not selected, would need to implement depth modal
-      // Console log removed for performance
+      console.log('Depth selection required but not implemented yet')
       return
     }
     
     if (hasFirmness && !(product as any).selectedFirmness) {
       // Firmness is required but not selected, would need to implement depth modal
-      // Console log removed for performance
+      console.log('Firmness selection required but not implemented yet')
       return
     }
     

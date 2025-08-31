@@ -2040,7 +2040,7 @@ function ProductForm() {
   // Recommended products functions
   const fetchRecommendedProducts = async () => {
     try {
-      // Console log removed for performance
+      console.log('Fetching recommended products for all categories...')
       
       // Fetch products for each category
       const [mattressesRes, bedsRes, sofasRes, pillowsRes, toppersRes] = await Promise.all([
@@ -2054,8 +2054,8 @@ function ProductForm() {
       // Handle mattresses
       if (mattressesRes.ok) {
         const data = await mattressesRes.json()
-        // Console log removed for performance
-        // Console log removed for performance
+        console.log('Mattresses loaded:', data.products?.length || 0)
+        console.log('Sample mattress data:', data.products?.[0])
         setMattresses(data.products || [])
       } else {
         const errorData = await mattressesRes.json().catch(() => ({}))
@@ -2066,7 +2066,7 @@ function ProductForm() {
       // Handle beds
       if (bedsRes.ok) {
         const data = await bedsRes.json()
-        // Console log removed for performance
+        console.log('Beds loaded:', data.products?.length || 0)
         setBeds(data.products || [])
       } else {
         const errorData = await bedsRes.json().catch(() => ({}))
@@ -2077,7 +2077,7 @@ function ProductForm() {
       // Handle sofas
       if (sofasRes.ok) {
         const data = await sofasRes.json()
-        // Console log removed for performance
+        console.log('Sofas loaded:', data.products?.length || 0)
         setSofas(data.products || [])
       } else {
         const errorData = await sofasRes.json().catch(() => ({}))
@@ -2088,7 +2088,7 @@ function ProductForm() {
       // Handle pillows
       if (pillowsRes.ok) {
         const data = await pillowsRes.json()
-        // Console log removed for performance
+        console.log('Pillows loaded:', data.products?.length || 0)
         setPillows(data.products || [])
       } else {
         const errorData = await pillowsRes.json().catch(() => ({}))
@@ -2099,7 +2099,7 @@ function ProductForm() {
       // Handle toppers
       if (toppersRes.ok) {
         const data = await toppersRes.json()
-        // Console log removed for performance
+        console.log('Toppers loaded:', data.products?.length || 0)
         setToppers(data.products || [])
       } else {
         const errorData = await toppersRes.json().catch(() => ({}))
@@ -2107,7 +2107,7 @@ function ProductForm() {
       }
       setLoadingToppers(false)
       
-      // Console log removed for performance
+      console.log('Finished fetching recommended products')
     } catch (error) {
       console.error('Error fetching recommended products:', error)
       setLoadingMattresses(false)
@@ -2123,7 +2123,7 @@ function ProductForm() {
       alert('You can only select up to 3 recommended products')
       return
     }
-    // Console log removed for performance
+    console.log('Adding recommended product:', product)
     setSelectedRecommendedProducts(prev => [...prev, product])
   }
 
@@ -2324,7 +2324,7 @@ function ProductForm() {
       // 1) Upload any selected files to Supabase Storage and collect public URLs
       const uploadedUrls: string[] = []
       if (uploadedFiles.length > 0) {
-        // Console log removed for performance))
+        console.log('[Admin Save] Uploading files to Supabase bucket:', process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images', uploadedFiles.map(f => ({ name: f.name, size: f.size, type: f.type })))
         // Collect upload results for summary alert
         const uploadResults: Array<{
           fileName: string
@@ -2362,19 +2362,19 @@ function ProductForm() {
                 success: true
               })
               
-              // Console log removed for performance
+              console.log('[Admin Save] Optimized upload result:', result)
             } else {
               const error = await response.json()
               console.error('[Admin Save] Optimized upload error:', error)
               
               // Fallback to regular upload if optimized upload fails
-              const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
-              const filePath = `products/${Date.now()}-${i}-${safeName}`
-              const { error: uploadError } = await supabase
-                .storage
-                .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
-                .upload(filePath, file, { upsert: true, contentType: file.type })
-              if (uploadError) {
+          const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
+          const filePath = `products/${Date.now()}-${i}-${safeName}`
+          const { error: uploadError } = await supabase
+            .storage
+            .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+            .upload(filePath, file, { upsert: true, contentType: file.type })
+          if (uploadError) {
                 console.error('[Admin Save] Fallback upload error:', uploadError, 'for', filePath)
                 uploadResults.push({
                   fileName: file.name,
@@ -2384,12 +2384,12 @@ function ProductForm() {
                   success: false,
                   error: 'Upload failed'
                 })
-                continue
-              }
-              const { data: publicData } = supabase
-                .storage
-                .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
-                .getPublicUrl(filePath)
+            continue
+          }
+          const { data: publicData } = supabase
+            .storage
+            .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+            .getPublicUrl(filePath)
               if (publicData?.publicUrl) {
                 uploadedUrls.push(publicData.publicUrl)
                 uploadResults.push({
@@ -2481,12 +2481,12 @@ function ProductForm() {
         
 
         
-        // Console log removed for performance
+        console.log('[Admin Save] Uploaded public URLs:', uploadedUrls)
       }
 
-              // 2) Upload description paragraph files to storage and replace with public URLs
-        const descriptionPublicUrls: Array<string | null> = []
-        const updatedDescriptionParagraphs = [] as typeof descriptionParagraphs
+      // 2) Upload description paragraph files to storage and replace with public URLs
+      const descriptionPublicUrls: Array<string | null> = []
+      const updatedDescriptionParagraphs = [] as typeof descriptionParagraphs
         const descriptionUploadResults: Array<{
           fileName: string
           originalSize: number
@@ -2496,11 +2496,11 @@ function ProductForm() {
           error?: string
         }> = []
         
-        for (let i = 0; i < descriptionParagraphs.length; i++) {
-          const para = descriptionParagraphs[i]
-          let imageUrl = para.image
-          if (para.uploadedFile) {
-            const file = para.uploadedFile
+      for (let i = 0; i < descriptionParagraphs.length; i++) {
+        const para = descriptionParagraphs[i]
+        let imageUrl = para.image
+        if (para.uploadedFile) {
+          const file = para.uploadedFile
             
             try {
               // Use optimized upload API for description images
@@ -2526,19 +2526,19 @@ function ProductForm() {
                   success: true
                 })
                 
-                // Console log removed for performance
+                console.log('[Admin Save] Description optimized upload result:', result)
               } else {
                 const error = await response.json()
                 console.error('[Admin Save] Description optimized upload error:', error)
                 // Fallback to regular upload
-                const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
-                const filePath = `descriptions/${Date.now()}-${i}-${safeName}`
-                const { error: descUploadError } = await supabase
-                  .storage
-                  .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
-                  .upload(filePath, file, { upsert: true, contentType: file.type })
-                if (descUploadError) {
-                  console.error('[Admin Save] Description image upload error:', descUploadError, 'for', filePath)
+          const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
+          const filePath = `descriptions/${Date.now()}-${i}-${safeName}`
+          const { error: descUploadError } = await supabase
+            .storage
+            .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+            .upload(filePath, file, { upsert: true, contentType: file.type })
+          if (descUploadError) {
+            console.error('[Admin Save] Description image upload error:', descUploadError, 'for', filePath)
                   descriptionUploadResults.push({
                     fileName: file.name,
                     originalSize: file.size,
@@ -2547,13 +2547,13 @@ function ProductForm() {
                     success: false,
                     error: 'Upload failed'
                   })
-                } else {
-                  const { data: publicData } = supabase
-                    .storage
-                    .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
-                    .getPublicUrl(filePath)
-                  // Console log removed for performance
-                  imageUrl = publicData?.publicUrl || imageUrl
+          } else {
+            const { data: publicData } = supabase
+              .storage
+              .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+              .getPublicUrl(filePath)
+            console.log('[Admin Save] Description public URL for', filePath, '=>', publicData?.publicUrl)
+            imageUrl = publicData?.publicUrl || imageUrl
                   descriptionUploadResults.push({
                     fileName: file.name,
                     originalSize: file.size,
@@ -2567,12 +2567,12 @@ function ProductForm() {
             } catch (error) {
               console.error('[Admin Save] Description upload error:', error, 'for', file.name)
               // Fallback to regular upload
-              const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
+          const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')
               const filePath = `descriptions/${Date.now()}-${i}-${safeName}`
               const { error: descUploadError } = await supabase
-                .storage
-                .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
-                .upload(filePath, file, { upsert: true, contentType: file.type })
+            .storage
+            .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+            .upload(filePath, file, { upsert: true, contentType: file.type })
               if (descUploadError) {
                 console.error('[Admin Save] Description image upload error:', descUploadError, 'for', filePath)
                 descriptionUploadResults.push({
@@ -2583,13 +2583,13 @@ function ProductForm() {
                   success: false,
                   error: 'Upload failed'
                 })
-              } else {
-                const { data: publicData } = supabase
-                  .storage
-                  .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
-                  .getPublicUrl(filePath)
-                // Console log removed for performance
-                imageUrl = publicData?.publicUrl || imageUrl
+          } else {
+            const { data: publicData } = supabase
+              .storage
+              .from(process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images')
+              .getPublicUrl(filePath)
+                console.log('[Admin Save] Description public URL for', filePath, '=>', publicData?.publicUrl)
+            imageUrl = publicData?.publicUrl || imageUrl
                 descriptionUploadResults.push({
                   fileName: file.name,
                   originalSize: file.size,
@@ -2646,10 +2646,16 @@ function ProductForm() {
 
 
               // 4) Build payload with URL images (typed URLs + uploaded URLs)
-      // Characteristics being sent
+      console.log('[Admin Save] Characteristics being sent:', {
+        firmnessScale,
+        supportLevel,
+        pressureReliefLevel,
+        airCirculationLevel,
+        durabilityLevel
+      })
       
       // Debug: Log what we're sending for reasons to love
-      // Console log removed for performance
+      console.log('[Admin Save] selectedReasonsToLove being sent:', selectedReasonsToLove)
       
       const payload = {
         category: selectedCategory,
@@ -2727,7 +2733,7 @@ function ProductForm() {
       }
 
       const result = await response.json()
-      // Console log removed for performance
+      console.log('[Admin Save] Product created result:', result)
       
       // Show single success message and automatically clear form
       alert('Product is saved')
@@ -2767,12 +2773,12 @@ function ProductForm() {
     if (selectedCategory === 'bunkbeds') {
       setLoadingBunkbedMattresses(true)
       try {
-        // Console log removed for performance
+        console.log('Fetching mattresses for bunkbed selection...')
         const response = await fetch('/api/products/recommendations?category=mattresses&limit=20')
         
         if (response.ok) {
           const data = await response.json()
-          // Console log removed for performance
+          console.log('Bunkbed mattresses loaded:', data.products?.length || 0)
           
           // Transform the data to match the expected format
           const transformedMattresses = data.products?.map((product: any) => ({
@@ -3194,7 +3200,7 @@ function ProductForm() {
                                     
                                     alert(`Variant image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
                                     
-                                    // Console log removed for performance
+                                    console.log('[Variant Upload] Optimized upload result:', result)
                                   } else {
                                     const error = await response.json()
                                     console.error('[Variant Upload] Optimized upload error:', error)
@@ -3902,7 +3908,7 @@ function ProductForm() {
                   ] as const).map((val) => (
                     <label key={val} className={`px-3 py-1 rounded border cursor-pointer text-sm ${firmnessScale===val ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
                       <input type="radio" name="firmness" className="mr-1" checked={firmnessScale===val} onChange={() => {
-                        // Console log removed for performance
+                        console.log('[Admin] Setting firmnessScale to:', val);
                         setFirmnessScale(val);
                       }} />{val}
                     </label>
@@ -4473,7 +4479,7 @@ function ProductForm() {
                     }
 
                     return filtered.map((product) => {
-                      // Console log removed for performance
+                      console.log('Rendering product in free gift selector:', product)
                       return (
                         <div 
                           key={product.id} 

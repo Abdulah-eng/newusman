@@ -120,7 +120,7 @@ interface ProductFormData {
 
 export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
   // Debug: Log the product object to see its structure
-      // ProductForm - product object loaded
+  console.log('ProductForm - product object:', product)
   
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<any[]>([])
@@ -315,7 +315,7 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
             
             alert(`Main product image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
             
-            // Main image optimized upload result
+            console.log('[Product Form] Main image optimized upload result:', result)
           } else {
             const error = await response.json()
             console.error('[Product Form] Main image optimized upload error:', error)
@@ -394,7 +394,7 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
                 success: true
               })
               
-              // Additional image optimized upload result
+              console.log('[Product Form] Additional image optimized upload result:', result)
               return result.url
             } else {
               const error = await response.json()

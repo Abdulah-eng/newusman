@@ -77,7 +77,7 @@ export default function AdminProductsPage() {
   const fetchProducts = async () => {
     setLoading(true)
     try {
-      // Console log removed for performance
+      console.log('Fetching products with category:', selectedCategory, 'sortBy:', sortBy, 'sortOrder:', sortOrder)
       
       let query = supabase
         .from('products')
@@ -106,10 +106,10 @@ export default function AdminProductsPage() {
         return
       }
 
-      // Console log removed for performance
-      // Console log removed for performance
-      // Console log removed for performance
-      // Console log removed for performance
+      console.log('Successfully fetched products:', data?.length || 0)
+      console.log('Sample product data:', data?.[0])
+      console.log('Categories:', categories)
+      console.log('Selected category:', selectedCategory)
       setProducts(data || [])
     } catch (error) {
       console.error('Error fetching products:', error)

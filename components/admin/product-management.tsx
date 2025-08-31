@@ -33,7 +33,13 @@ export function ProductManagement({ category }: ProductManagementProps) {
   // Check if product has a valid database ID (not sample data)
   const hasValidProductId = (product: any) => {
     const isValid = product && product.id && typeof product.id === 'string' && product.id.length > 10
-    // Product ID check
+    console.log('Product ID check:', { 
+      product, 
+      id: product?.id, 
+      type: typeof product?.id, 
+      length: product?.id?.length, 
+      isValid 
+    })
     return isValid
   }
 
@@ -681,7 +687,7 @@ export function ProductManagement({ category }: ProductManagementProps) {
                       filterMaterial: selectedProduct.filterMaterial || []
                     }
 
-                    // Sending data to API
+                    console.log('Sending data to API:', JSON.stringify(apiData, null, 2))
 
                     // Save to Supabase
                     const response = await fetch(`/api/products`, {
@@ -692,11 +698,12 @@ export function ProductManagement({ category }: ProductManagementProps) {
                       body: JSON.stringify(apiData)
                     })
 
-                            // Response received
+                    console.log('Response status:', response.status)
+                    console.log('Response headers:', Object.fromEntries(response.headers.entries()))
 
                     if (response.ok) {
                       const result = await response.json()
-                      // Success response
+                      console.log('Success response:', result)
                       alert('Product saved successfully!')
                       
                       // Update the product ID if it's a new product
