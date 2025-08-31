@@ -237,6 +237,7 @@ export async function GET(
         heading: warranty.heading,
         content: warranty.content
       })) || [],
+      careInstructions: product.care_instructions || null,
       dimensions: product.product_dimensions ? {
         height: product.product_dimensions.height,
         length: product.product_dimensions.length,
@@ -253,7 +254,9 @@ export async function GET(
         weight_capacity_heading: product.product_dimensions.weight_capacity_heading,
         pocket_springs_heading: product.product_dimensions.pocket_springs_heading,
         comfort_layer_heading: product.product_dimensions.comfort_layer_heading,
-        support_layer_heading: product.product_dimensions.support_layer_heading
+        support_layer_heading: product.product_dimensions.support_layer_heading,
+        // Dimension disclaimer
+        dimension_disclaimer: product.product_dimensions.dimension_disclaimer
       } : null,
       // Important notices for the dimensions section
       importantNotices: product.product_important_notices?.map((notice: any) => ({
@@ -276,6 +279,7 @@ export async function GET(
       originalPrice: Number.isFinite(minOriginalPrice) ? minOriginalPrice : (product.product_variants?.[0]?.original_price || 0),
       sizes: uniqueSizes.length ? uniqueSizes : ['Standard'],
       warrantyDeliveryLine: product.warranty_delivery_line || null,
+      trialInformation: product.trial_information || null,
       badges: product.badges || [],
       free_gift_product_id: product.free_gift_product_id || null,
       free_gift_enabled: product.free_gift_enabled || false,

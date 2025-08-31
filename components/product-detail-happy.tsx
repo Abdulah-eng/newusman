@@ -57,6 +57,7 @@ export interface ProductDetailHappyProps {
       pocket_springs_heading?: string
       comfort_layer_heading?: string
       support_layer_heading?: string
+      dimension_disclaimer?: string
     }
 
     dispatchTime?: string
@@ -72,6 +73,10 @@ export interface ProductDetailHappyProps {
     careInstructions?: string
 
     warrantyDeliveryLine?: string
+
+    trialInformation?: string
+
+    headline?: string
 
     stockQuantity?: number
 
@@ -1040,8 +1045,10 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                                               <span className="text-sm sm:text-lg text-gray-800 break-words">
                           {selectedSizeData && selectedSizeData.wasPrice && selectedSizeData.currentPrice && selectedSizeData.wasPrice > selectedSizeData.currentPrice ? (
                             `Save £${(selectedSizeData.wasPrice - selectedSizeData.currentPrice).toFixed(2)}`
-                          ) : selectedSizeData ? (
+                          ) : selectedSizeData && selectedSizeData.currentPrice ? (
                             `£${selectedSizeData.currentPrice.toFixed(2)}`
+                          ) : product.originalPrice && product.currentPrice && product.originalPrice > product.currentPrice ? (
+                            `Save £${(product.originalPrice - product.currentPrice).toFixed(2)}`
                           ) : (
                             `£${product.currentPrice.toFixed(2)}`
                           )}
@@ -1152,9 +1159,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                   {/* Right Side: Size Selection Prompt and Base Dimensions */}
                   <div className="text-left sm:text-right sm:ml-4 min-w-0">
 
-                    {!hasOnlyOneVariant && (
+                    {(!(product as any).variants || (product as any).variants.length <= 1) ? null : (
                       <>
-                        <div className="text-lg font-semibold text-gray-600 mb-2">Select a size to see pricing</div>
+                        <div className="text-lg font-semibold text-gray-600 mb-2">Choose options to see related prices</div>
                         <div className="text-sm text-gray-500">Choose from available sizes below</div>
                       </>
                     )}
@@ -1689,11 +1696,11 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                 </div>
 
-                <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent">
-
-                  Premium Sleep Experience
-
-                </h2>
+                {product.headline && (
+                  <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent">
+                    {product.headline}
+                  </h2>
+                )}
 
               </div>
 
@@ -1701,7 +1708,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
               <p className="text-base sm:text-lg text-gray-700 leading-relaxed font-medium mb-4">
 
-                {product.longDescription || `Experience the perfect blend of luxury comfort and advanced technology. Our premium mattress combines 1000 individual pocket springs with memory foam layers for exceptional support and ultimate relaxation.`}
+                {product.longDescription || ''}
 
               </p>
 
@@ -2732,17 +2739,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                       <div className="pt-6 space-y-12">
 
-                        {/* Introduction */}
 
-                        <div className="text-center">
-
-                          <p className="text-gray-700 leading-relaxed text-lg max-w-3xl mx-auto">
-
-                            {((product as any).longDescription) || `Discover ${product.name} — designed for comfort, support, and everyday durability.`}
-
-                          </p>
-
-                        </div>
 
                         
 
@@ -2809,61 +2806,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                           ))
 
                         ) : (
-
-                          <>
-
-                            {/* Fallback Content */}
-
-                            <div className="border-t border-gray-200 my-8"></div>
-
-                            
-
-                            <div className="text-center space-y-6">
-
-                              <h3 className="text-2xl font-bold text-gray-900">Premium Sleep Technology</h3>
-
-                              <div className="relative h-80 lg:h-96 xl:h-[28rem] rounded-xl overflow-hidden bg-gray-100 mx-auto max-w-3xl lg:max-w-4xl">
-
-                                <img 
-
-                                  src="/hello.jpeg" 
-
-                                  alt="Premium mattress with pocket springs showing internal structure"
-
-                                  className="w-full h-full object-cover"
-
-                                  onError={(e) => {
-
-                                    const target = e.target as HTMLImageElement;
-
-                                    target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300' fill='%23f3f4f6'%3E%3Crect width='400' height='300' fill='%23f3f4f6'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='16' fill='%236b7280'%3EMattress Springs%3C/text%3E%3C/svg%3E";
-
-                                  }}
-
-                                />
-
-                              </div>
-
-                              <div className="max-w-3xl mx-auto space-y-4">
-
-                                <p className="text-gray-700 leading-relaxed">
-
-                                  Our advanced mattress technology combines the best of both worlds. The innovative pocket spring system provides targeted support while the premium memory foam layers offer exceptional comfort and pressure relief.
-
-                                </p>
-
-                                <p className="text-gray-700 leading-relaxed">
-
-                                  Each spring works independently to contour to your body shape, ensuring optimal spinal alignment and reducing pressure points for a truly restful night's sleep.
-
-                                </p>
-
-                              </div>
-
-                            </div>
-
-                          </>
-
+                          <div className="text-center py-8">
+                            <p className="text-gray-500 text-sm italic">No description content available</p>
+                          </div>
                         )}
 
                         
@@ -3081,7 +3026,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                                 <div className="flex items-center justify-between py-2 border-b border-gray-200">
 
-                                  <span className="font-medium text-gray-700">{product.dimensions?.maximum_height_heading || 'Maximum Height'}</span>
+                                  <span className="font-medium text-gray-700">{product.dimensions?.maximum_height_heading}</span>
                                   <span className="text-gray-900 font-semibold">{product.dimensions?.max_height || '25 cm'}</span>
 
                                 </div>
@@ -3150,11 +3095,11 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                             
 
-                            <div className="text-sm text-gray-500 italic">
-
-                              All measurements are approximate and may vary slightly.
-
-                            </div>
+                            {product.dimensions?.dimension_disclaimer && (
+                              <div className="text-sm text-gray-500 italic">
+                                {product.dimensions.dimension_disclaimer}
+                              </div>
+                            )}
 
                           </div>
 
@@ -3593,7 +3538,10 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                                 <h4 className="font-semibold text-gray-900 mb-2">How do I care for my mattress?</h4>
 
-                                <p className="text-gray-700 text-sm">{product.careInstructions || 'Rotate your mattress every 3-6 months, use a mattress protector, and clean spills immediately. The bamboo cover is removable and machine washable.'}</p>
+                                <p className="text-gray-700 text-sm">
+                          {product.careInstructions ? product.careInstructions : 'No care instructions available'}
+                          {/* Debug: {JSON.stringify({ careInstructions: product.careInstructions, hasCare: !!product.careInstructions })} */}
+                        </p>
 
                               </div>
 
@@ -3685,46 +3633,22 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                           <h4 className="text-lg font-semibold text-gray-900 mb-3">Warranty Coverage</h4>
 
-                          {product.warrantyInfo && Object.keys(product.warrantyInfo).length > 0 ? (
-
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-
-                              <div className="flex items-center gap-2 mb-2">
-
-                                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-
-                                </svg>
-
-                                <span className="font-semibold text-green-800">{product.warrantyInfo.duration || '10-Year Full Warranty'}</span>
-
-                              </div>
-
-                              <p className="text-green-700 text-sm">{product.warrantyInfo.description || 'Comprehensive coverage against manufacturing defects, sagging, and structural issues.'}</p>
-
+                          {product.warrantyInfo && Array.isArray(product.warrantyInfo) && product.warrantyInfo.length > 0 ? (
+                            <div className="space-y-3">
+                              {product.warrantyInfo.map((warranty: any, index: number) => (
+                                <div key={index} className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    <span className="font-semibold text-green-800">{warranty.heading}</span>
+                                  </div>
+                                  <p className="text-green-700 text-sm">{warranty.content}</p>
+                                </div>
+                              ))}
                             </div>
-
                           ) : (
-
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-
-                              <div className="flex items-center gap-2 mb-2">
-
-                                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-
-                                </svg>
-
-                                <span className="font-semibold text-green-800">10-Year Full Warranty</span>
-
-                              </div>
-
-                              <p className="text-green-700 text-sm">Comprehensive coverage against manufacturing defects, sagging, and structural issues.</p>
-
-                            </div>
-
+                            <div className="text-gray-500 text-sm italic">No warranty information available</div>
                           )}
 
                         </div>
@@ -3738,57 +3662,16 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                           <h4 className="text-lg font-semibold text-gray-900 mb-3">Care Instructions</h4>
 
                           {product.careInstructions ? (
-
                             <div className="space-y-3">
-
                               <div className="flex items-start gap-3">
-
                                 <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-
                                 <div>
-
                                   <span className="text-gray-700 text-sm">{product.careInstructions}</span>
-
                                 </div>
-
                               </div>
-
                             </div>
-
                           ) : (
-
-                            <div className="space-y-3">
-
-                              <div className="flex items-start gap-3">
-
-                                <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-
-                                <div>
-
-                                  <span className="font-medium text-gray-900">Regular Rotation:</span>
-
-                                  <span className="text-gray-700 text-sm"> Rotate your mattress every 3-6 months to ensure even wear.</span>
-
-                                </div>
-
-                              </div>
-
-                              <div className="flex items-start gap-3">
-
-                                <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-
-                                <div>
-
-                                  <span className="font-medium text-gray-900">Use a Mattress Protector:</span>
-
-                                  <span className="text-gray-700 text-sm"> Protect against spills, stains, and allergens.</span>
-
-                                </div>
-
-                              </div>
-
-                            </div>
-
+                            <div className="text-gray-500 text-sm italic">No care instructions available</div>
                           )}
 
                         </div>
@@ -3796,24 +3679,16 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                         
 
                         {/* Trial Period */}
-
-                        <div>
-
-                          <h4 className="text-lg font-semibold text-gray-900 mb-3">100-Night Trial</h4>
-
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-
-                            <p className="text-blue-800 text-sm">
-
-                              Try your mattress risk-free for 100 nights. If you're not completely satisfied, 
-
-                              return it for a full refund. No questions asked.
-
-                            </p>
-
+                        {product.trialInformation && (
+                          <div>
+                            <h4 className="text-lg font-semibold text-gray-900 mb-3">100-Night Trial</h4>
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                              <p className="text-blue-800 text-sm">
+                                {product.trialInformation}
+                              </p>
+                            </div>
                           </div>
-
-                        </div>
+                        )}
 
                       </div>
 
@@ -3875,9 +3750,13 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                             `Save £${(selectedSizeData.wasPrice - selectedSizeData.currentPrice).toFixed(2)}`
 
-                          ) : selectedSizeData ? (
+                          ) : selectedSizeData && selectedSizeData.currentPrice ? (
 
                             `£${selectedSizeData.currentPrice.toFixed(2)}`
+
+                          ) : product.originalPrice && product.currentPrice && product.originalPrice > product.currentPrice ? (
+
+                            `Save £${(product.originalPrice - product.currentPrice).toFixed(2)}`
 
                           ) : (
 
@@ -4058,9 +3937,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                   {/* Right Side: Size Selection Prompt and Base Dimensions */}
                   <div className="text-right ml-4">
 
-                    {!hasOnlyOneVariant && (
+                    {(!(product as any).variants || (product as any).variants.length <= 1) ? null : (
                       <>
-                        <div className="text-lg font-semibold text-gray-600 mb-2">Select a size to see pricing</div>
+                        <div className="text-lg font-semibold text-gray-600 mb-2">Choose options to see related prices</div>
                         <div className="text-sm text-gray-500">Choose from available sizes below</div>
                       </>
                     )}

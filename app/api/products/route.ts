@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
         rating,
         headline,
         long_description,
+        care_instructions,
         category_id,
         categories(name, slug),
         product_images(*),
@@ -94,6 +95,7 @@ export async function GET(request: NextRequest) {
         rating: product.rating,
         headline: product.headline,
         long_description: product.long_description,
+        careInstructions: product.care_instructions,
         category: product.categories?.slug,
         categories: product.categories,
         images: (product.product_images || [])
@@ -215,6 +217,8 @@ export async function POST(request: NextRequest) {
         headline,
         long_description: longDescription || null,
         warranty_delivery_line: warrantyDeliveryLine || null,
+        care_instructions: body.careInstructions || null,
+        trial_information: body.trialInformation || null,
         firmness_scale: validateFirmnessScale(firmnessScale),
         support_level: validateComfortLevel(supportLevel),
         pressure_relief_level: validateComfortLevel(pressureReliefLevel),
@@ -607,7 +611,9 @@ export async function POST(request: NextRequest) {
           weight_capacity_heading: dimensions.weightCapacityHeading || 'Weight Capacity',
           pocket_springs_heading: dimensions.pocketSpringsHeading || 'Pocket Springs',
           comfort_layer_heading: dimensions.comfortLayerHeading || 'Comfort Layer',
-          support_layer_heading: dimensions.supportLayerHeading || 'Support Layer'
+          support_layer_heading: dimensions.supportLayerHeading || 'Support Layer',
+          // Dimension disclaimer
+          dimension_disclaimer: dimensions.dimensionDisclaimer || null
         })
 
       if (dimensionError) {

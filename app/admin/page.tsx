@@ -1790,25 +1790,33 @@ function ProductForm() {
     { heading: 'Support', content: 'Dedicated customer support for warranty claims...' }
   ])
   
-  // Dimensions and specifications
-  const [dimensions, setDimensions] = useState({
-    height: '25 cm',
-    length: 'L 190cm',
-    width: '135cm',
-    mattressSize: '135cm x L 190cm cm',
-    maxHeight: '25 cm',
-    weightCapacity: '200 kg',
-    pocketSprings: '1000 count',
-    comfortLayer: '8 cm',
-    supportLayer: '17 cm',
-    // Editable headings
-    mattressSizeHeading: 'Mattress Size',
-    maxHeightHeading: 'Maximum Height',
-    weightCapacityHeading: 'Weight Capacity',
-    pocketSpringsHeading: 'Pocket Springs',
-    comfortLayerHeading: 'Comfort Layer',
-    supportLayerHeading: 'Support Layer'
-  })
+  // Care instructions
+  const [careInstructions, setCareInstructions] = useState('')
+  
+  // Trial information
+  const [trialInformation, setTrialInformation] = useState('Try your mattress risk-free for 100 nights. If you are not completely satisfied, return it for a full refund. No questions asked.')
+  
+      // Dimensions and specifications
+    const [dimensions, setDimensions] = useState({
+      height: '25 cm',
+      length: 'L 190cm',
+      width: '135cm',
+      mattressSize: '135cm x L 190cm cm',
+      maxHeight: '25 cm',
+      weightCapacity: '200 kg',
+      pocketSprings: '1000 count',
+      comfortLayer: '8 cm',
+      supportLayer: '17 cm',
+      // Editable headings
+      mattressSizeHeading: 'Mattress Size',
+      maximumHeightHeading: 'Maximum Height',
+      weightCapacityHeading: 'Weight Capacity',
+      pocketSpringsHeading: 'Pocket Springs',
+      comfortLayerHeading: 'Comfort Layer',
+      supportLayerHeading: 'Support Layer',
+      // Dimension disclaimer
+      dimensionDisclaimer: 'All measurements are approximate and may vary slightly.'
+    })
 
   // Important notices state
   const [importantNotices, setImportantNotices] = useState<Array<{
@@ -1913,12 +1921,52 @@ function ProductForm() {
   }
 
   const updateVariant = (id: string, patch: Partial<VariantRow>) => {
-    setVariants(v => v.map(row => row.id === id ? { ...row, ...patch } : row))
+    setVariants(v => {
+      const updatedVariants = v.map(row => row.id === id ? { ...row, ...patch } : row)
+      
+      // Auto-sync attribute checkboxes based on actual variant data
+      const hasColorData = updatedVariants.some(variant => variant.color && variant.color.trim() !== '')
+      const hasDepthData = updatedVariants.some(variant => variant.depth && variant.depth.trim() !== '')
+      const hasFirmnessData = updatedVariants.some(variant => variant.firmness && variant.firmness.trim() !== '')
+      const hasSizeData = updatedVariants.some(variant => variant.size && variant.size.trim() !== '')
+      
+      // Update checkboxes if data exists but checkbox is unchecked
+      if (hasColorData && !useColor) setUseColor(true)
+      if (hasDepthData && !useDepth) setUseDepth(true)
+      if (hasFirmnessData && !useFirmness) setUseFirmness(true)
+      if (hasSizeData && !useSize) setUseSize(true)
+      
+      return updatedVariants
+    })
   }
 
-  const removeVariant = (id: string) => setVariants(v => v.filter(row => row.id !== id))
+  const removeVariant = (id: string) => setVariants(v => {
+    const updatedVariants = v.filter(row => row.id !== id)
+    
+    // Re-sync attributes after removing a variant
+    setTimeout(() => syncAttributesWithVariants(), 0)
+    
+    return updatedVariants
+  })
+
+  // Auto-sync attribute checkboxes based on actual variant data
+  const syncAttributesWithVariants = () => {
+    const hasColorData = variants.some(v => v.color && v.color.trim() !== '')
+    const hasDepthData = variants.some(v => v.depth && v.depth.trim() !== '')
+    const hasFirmnessData = variants.some(v => v.firmness && v.firmness.trim() !== '')
+    const hasSizeData = variants.some(v => v.size && v.size.trim() !== '')
+    
+    // Update checkboxes if data exists
+    if (hasColorData) setUseColor(true)
+    if (hasDepthData) setUseDepth(true)
+    if (hasFirmnessData) setUseFirmness(true)
+    if (hasSizeData) setUseSize(true)
+  }
 
   const confirmAttributes = () => {
+    // Auto-sync attributes before confirmation
+    syncAttributesWithVariants()
+    
     // Relaxed: allow bunkbeds without forcing both color and size; just ensure at least one attribute or mattress
     if (selectedCategory === 'bunkbeds') {
       if (selectedBunkbedMattresses.length === 0 && !useColor && !useSize) {
@@ -2248,6 +2296,8 @@ function ProductForm() {
       { heading: 'Terms', content: 'Warranty terms and conditions apply...' },
       { heading: 'Support', content: 'Dedicated customer support for warranty claims...' }
     ])
+    setCareInstructions('')
+    setTrialInformation('Try your mattress risk-free for 100 nights. If you are not completely satisfied, return it for a full refund. No questions asked.')
     setDimensions({
       height: '25 cm',
       length: 'L 190cm',
@@ -2260,11 +2310,13 @@ function ProductForm() {
       supportLayer: '17 cm',
       // Editable headings
       mattressSizeHeading: 'Mattress Size',
-      maxHeightHeading: 'Maximum Height',
+      maximumHeightHeading: 'Maximum Height',
       weightCapacityHeading: 'Weight Capacity',
       pocketSpringsHeading: 'Pocket Springs',
       comfortLayerHeading: 'Comfort Layer',
-      supportLayerHeading: 'Support Layer'
+      supportLayerHeading: 'Support Layer',
+      // Dimension disclaimer
+      dimensionDisclaimer: 'All measurements are approximate and may vary slightly.'
     })
 
     setImportantNotices([])
@@ -2320,7 +2372,10 @@ function ProductForm() {
 
   const handleSave = async () => {
     setIsSaving(true)
+    
     try {
+      // Auto-sync attributes with variant data before saving
+      syncAttributesWithVariants()
       // 1) Upload any selected files to Supabase Storage and collect public URLs
       const uploadedUrls: string[] = []
       if (uploadedFiles.length > 0) {
@@ -2687,15 +2742,19 @@ function ProductForm() {
         })),
         faqs,
         warrantySections,
+        careInstructions,
+        trialInformation,
         dimensions: {
           ...dimensions,
           // Include editable headings
           mattressSizeHeading: dimensions.mattressSizeHeading,
-          maxHeightHeading: dimensions.maxHeightHeading,
+          maximumHeightHeading: dimensions.maximumHeightHeading,
           weightCapacityHeading: dimensions.weightCapacityHeading,
           pocketSpringsHeading: dimensions.pocketSpringsHeading,
           comfortLayerHeading: dimensions.comfortLayerHeading,
-          supportLayerHeading: dimensions.supportLayerHeading
+          supportLayerHeading: dimensions.supportLayerHeading,
+          // Include dimension disclaimer
+          dimensionDisclaimer: dimensions.dimensionDisclaimer
         },
         importantNotices: importantNotices.map(notice => ({
           noticeText: notice.noticeText,
@@ -3537,6 +3596,38 @@ function ProductForm() {
         ))}
       </Card>
 
+      {/* Care Instructions */}
+      <Card className="p-4">
+        <h2 className="text-xl font-semibold mb-4">Care Instructions</h2>
+        <p className="text-sm text-gray-600 mb-4">Enter care and maintenance instructions for the product.</p>
+        
+        <div>
+          <Label className="text-sm font-medium mb-2 block">Care Instructions</Label>
+          <Textarea 
+            value={careInstructions} 
+            onChange={e => setCareInstructions(e.target.value)}
+            placeholder="e.g., Rotate your mattress every 3-6 months, use a mattress protector, and clean spills immediately. The bamboo cover is removable and machine washable."
+            rows={4}
+          />
+        </div>
+      </Card>
+
+      {/* Trial Information */}
+      <Card className="p-4">
+        <h2 className="text-xl font-semibold mb-4">Trial Information</h2>
+        <p className="text-sm text-gray-600 mb-4">Enter the trial period information that will appear in the Warranty & Care section.</p>
+        
+        <div>
+          <Label className="text-sm font-medium mb-2 block">Trial Information</Label>
+          <Textarea 
+            value={trialInformation} 
+            onChange={e => setTrialInformation(e.target.value)}
+            placeholder="e.g., Try your mattress risk-free for 100 nights. If you are not completely satisfied, return it for a full refund. No questions asked."
+            rows={3}
+          />
+        </div>
+      </Card>
+
       {/* Dimensions & Specifications */}
       <Card className="p-4">
         <h2 className="text-xl font-semibold mb-4">Dimensions & Specifications</h2>
@@ -3594,8 +3685,8 @@ function ProductForm() {
             <div className="flex items-center gap-2 mb-2">
               <Label className="text-sm font-medium block">Heading</Label>
               <Input 
-                value={dimensions.maxHeightHeading} 
-                onChange={e => updateDimension('maxHeightHeading', e.target.value)}
+                value={dimensions.maximumHeightHeading} 
+                onChange={e => updateDimension('maximumHeightHeading', e.target.value)}
                 placeholder="Maximum Height"
                 className="text-xs"
               />
@@ -3677,6 +3768,18 @@ function ProductForm() {
               onChange={e => updateDimension('supportLayer', e.target.value)}
               placeholder="17 cm"
             />
+          </div>
+          
+          {/* Dimension Disclaimer */}
+          <div className="md:col-span-2 lg:col-span-3">
+            <Label className="text-sm font-medium mb-2 block">Dimension Disclaimer</Label>
+            <Textarea 
+              value={dimensions.dimensionDisclaimer} 
+              onChange={e => updateDimension('dimensionDisclaimer', e.target.value)}
+              placeholder="e.g., All measurements are approximate and may vary slightly."
+              rows={2}
+            />
+            <p className="text-xs text-gray-500 mt-1">This disclaimer will appear below the dimension specifications on the product page.</p>
           </div>
         </div>
       </Card>

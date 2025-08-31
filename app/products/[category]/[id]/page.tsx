@@ -293,6 +293,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     colors: product.colors || [],
     materials: product.materials || [],
     // Map the database fields correctly
+    headline: product.headline || null,
     dimensions: product.dimensions || {},
     dispatchTime: product.dispatchTime || product.dispatch_time,
     reasonsToBuy: product.customReasons || product.custom_reasons || [],
@@ -307,7 +308,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     // Map the database fields correctly for FAQs, warranty, and description
     productQuestions: product.faqs || [],
     warrantyInfo: product.warrantySections || {},
-    careInstructions: product.careInstructions || product.care_instructions,
+    careInstructions: product.careInstructions || product.care_instructions || '',
     stockQuantity: product.stockQuantity || product.stock_quantity,
     inStock: Boolean(product.inStock !== undefined ? product.inStock : product.in_stock !== false),
     shortDescription: product.shortDescription || product.short_description,
@@ -323,8 +324,21 @@ export default async function ProductDetailPage({ params }: PageProps) {
     free_gift_product_name: product.free_gift_product_name || null,
     free_gift_product_image: product.free_gift_product_image || null,
     // Add warranty delivery line
-    warrantyDeliveryLine: product.warrantyDeliveryLine || null
+    warrantyDeliveryLine: product.warrantyDeliveryLine || null,
+    // Add trial information
+    trialInformation: product.trialInformation || null
   }
+
+  // Debug care instructions
+  console.log('[Product Detail Page] Care Instructions Debug:', {
+    rawProduct: {
+      careInstructions: product.careInstructions,
+      care_instructions: product.care_instructions
+    },
+    transformedProductDetail: {
+      careInstructions: productDetail.careInstructions
+    }
+  })
 
   // Log reasons so you can verify from the terminal during SSR
   console.log('[Product Detail Page] reasonsToLove:', productDetail.reasonsToLove)

@@ -78,7 +78,15 @@ export function ColorSelectionModal({
   const colorOptions = (() => {
     if (!variants || variants.length === 0) return []
     const uniqueColors = [...new Set(variants.filter(v => v.color).map(v => v.color!))]
-    return uniqueColors.map(color => ({ name: color, hex: '#f3f4f6', image: undefined }))
+    return uniqueColors.map(color => {
+      // Find the first variant with this color to get its image
+      const variantWithImage = variants.find(v => v.color === color && v.variant_image)
+      return { 
+        name: color, 
+        hex: '#f3f4f6', 
+        image: variantWithImage?.variant_image || undefined 
+      }
+    })
   })()
 
   const depthOptions = (() => {
