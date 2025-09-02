@@ -613,7 +613,11 @@ export async function POST(request: NextRequest) {
           comfort_layer_heading: dimensions.comfortLayerHeading || 'Comfort Layer',
           support_layer_heading: dimensions.supportLayerHeading || 'Support Layer',
           // Dimension disclaimer
-          dimension_disclaimer: dimensions.dimensionDisclaimer || null
+          dimension_disclaimer: dimensions.dimensionDisclaimer || null,
+          // Visibility controls
+          show_basic_dimensions: dimensions.show_basic_dimensions !== undefined ? dimensions.show_basic_dimensions : true,
+          show_mattress_specs: dimensions.show_mattress_specs !== undefined ? dimensions.show_mattress_specs : true,
+          show_technical_specs: dimensions.show_technical_specs !== undefined ? dimensions.show_technical_specs : true
         })
 
       if (dimensionError) {

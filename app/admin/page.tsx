@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
 import { 
   Brain, 
   SlidersHorizontal, 
@@ -1815,7 +1816,11 @@ function ProductForm() {
     comfortLayerHeading: 'Comfort Layer',
       supportLayerHeading: 'Support Layer',
       // Dimension disclaimer
-      dimensionDisclaimer: 'All measurements are approximate and may vary slightly.'
+      dimensionDisclaimer: 'All measurements are approximate and may vary slightly.',
+      // Visibility controls
+      show_basic_dimensions: true,
+      show_mattress_specs: true,
+      show_technical_specs: true
   })
 
   // Important notices state
@@ -2058,7 +2063,7 @@ function ProductForm() {
     ))
   }
 
-  const updateDimension = (field: keyof typeof dimensions, value: string) => {
+  const updateDimension = (field: keyof typeof dimensions, value: string | boolean) => {
     setDimensions(prev => ({ ...prev, [field]: value }))
   }
 
@@ -2316,7 +2321,11 @@ function ProductForm() {
       comfortLayerHeading: 'Comfort Layer',
       supportLayerHeading: 'Support Layer',
       // Dimension disclaimer
-      dimensionDisclaimer: 'All measurements are approximate and may vary slightly.'
+      dimensionDisclaimer: 'All measurements are approximate and may vary slightly.',
+      // Visibility controls
+      show_basic_dimensions: true,
+      show_mattress_specs: true,
+      show_technical_specs: true
     })
 
     setImportantNotices([])
@@ -3681,152 +3690,194 @@ function ProductForm() {
         
 
         
-        {/* Dimensions Grid with Editable Headings */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Height</Label>
-            <Input 
-              value={dimensions.height} 
-              onChange={e => updateDimension('height', e.target.value)}
-              placeholder="25 cm"
+        {/* Section 1: Basic Dimensions */}
+        <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+          <div className="flex items-center space-x-2 mb-3">
+            <Checkbox
+              id="show_basic_dimensions_main"
+              checked={dimensions.show_basic_dimensions}
+              onCheckedChange={(checked) => updateDimension('show_basic_dimensions', checked as boolean)}
             />
+            <label htmlFor="show_basic_dimensions_main" className="text-sm font-medium text-gray-700">
+              Show Basic Dimensions Section
+            </label>
           </div>
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Length</Label>
-            <Input 
-              value={dimensions.length} 
-              onChange={e => updateDimension('length', e.target.value)}
-              placeholder="L 190cm"
-            />
-          </div>
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Width</Label>
-            <Input 
-              value={dimensions.width} 
-              onChange={e => updateDimension('width', e.target.value)}
-              placeholder="135cm"
-            />
-          </div>
-          
-          {/* Mattress Size with Editable Heading */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Label className="text-sm font-medium block">Heading</Label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Height</Label>
               <Input 
-                value={dimensions.mattressSizeHeading} 
-                onChange={e => updateDimension('mattressSizeHeading', e.target.value)}
-                placeholder="Mattress Size"
-                className="text-xs"
+                value={dimensions.height} 
+                onChange={e => updateDimension('height', e.target.value)}
+                placeholder="25 cm"
               />
             </div>
-            <Input 
-              value={dimensions.mattressSize} 
-              onChange={e => updateDimension('mattressSize', e.target.value)}
-              placeholder="135cm x L 190cm cm"
-            />
-          </div>
-          
-          {/* Maximum Height with Editable Heading */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Label className="text-sm font-medium block">Heading</Label>
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Length</Label>
               <Input 
-                value={dimensions.maximumHeightHeading} 
-                onChange={e => updateDimension('maximumHeightHeading', e.target.value)}
-                placeholder="Maximum Height"
-                className="text-xs"
+                value={dimensions.length} 
+                onChange={e => updateDimension('length', e.target.value)}
+                placeholder="L 190cm"
               />
             </div>
-            <Input 
-              value={dimensions.maxHeight} 
-              onChange={e => updateDimension('maxHeight', e.target.value)}
-              placeholder="25 cm"
-            />
-          </div>
-          
-          {/* Weight Capacity with Editable Heading */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Label className="text-sm font-medium block">Heading</Label>
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Width</Label>
               <Input 
-                value={dimensions.weightCapacityHeading} 
-                onChange={e => updateDimension('weightCapacityHeading', e.target.value)}
-                placeholder="Weight Capacity"
-                className="text-xs"
+                value={dimensions.width} 
+                onChange={e => updateDimension('width', e.target.value)}
+                placeholder="135cm"
               />
             </div>
-            <Input 
-              value={dimensions.weightCapacity} 
-              onChange={e => updateDimension('weightCapacity', e.target.value)}
-              placeholder="200 kg"
-            />
           </div>
-          
-          {/* Pocket Springs with Editable Heading */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Label className="text-sm font-medium block">Heading</Label>
+        </div>
+
+        {/* Section 2: Mattress Specifications */}
+        <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+          <div className="flex items-center space-x-2 mb-3">
+            <Checkbox
+              id="show_mattress_specs_main"
+              checked={dimensions.show_mattress_specs}
+              onCheckedChange={(checked) => updateDimension('show_mattress_specs', checked as boolean)}
+            />
+            <label htmlFor="show_mattress_specs_main" className="text-sm font-medium text-gray-700">
+              Show Mattress Specifications Section
+            </label>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Mattress Size with Editable Heading */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Label className="text-sm font-medium block">Heading</Label>
+                <Input 
+                  value={dimensions.mattressSizeHeading} 
+                  onChange={e => updateDimension('mattressSizeHeading', e.target.value)}
+                  placeholder="Mattress Size"
+                  className="text-xs"
+                />
+              </div>
               <Input 
-                value={dimensions.pocketSpringsHeading} 
-                onChange={e => updateDimension('pocketSpringsHeading', e.target.value)}
-                placeholder="Pocket Springs"
-                className="text-xs"
+                value={dimensions.mattressSize} 
+                onChange={e => updateDimension('mattressSize', e.target.value)}
+                placeholder="135cm x L 190cm cm"
               />
             </div>
-            <Input 
-              value={dimensions.pocketSprings} 
-              onChange={e => updateDimension('pocketSprings', e.target.value)}
-              placeholder="1000 count"
-            />
-          </div>
-          
-          {/* Comfort Layer with Editable Heading */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Label className="text-sm font-medium block">Heading</Label>
+            
+            {/* Maximum Height with Editable Heading */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Label className="text-sm font-medium block">Heading</Label>
+                <Input 
+                  value={dimensions.maximumHeightHeading} 
+                  onChange={e => updateDimension('maximumHeightHeading', e.target.value)}
+                  placeholder="Maximum Height"
+                  className="text-xs"
+                />
+              </div>
               <Input 
-                value={dimensions.comfortLayerHeading} 
-                onChange={e => updateDimension('comfortLayerHeading', e.target.value)}
-                placeholder="Comfort Layer"
-                className="text-xs"
+                value={dimensions.maxHeight} 
+                onChange={e => updateDimension('maxHeight', e.target.value)}
+                placeholder="25 cm"
               />
             </div>
-            <Input 
-              value={dimensions.comfortLayer} 
-              onChange={e => updateDimension('comfortLayer', e.target.value)}
-              placeholder="8 cm"
-            />
-          </div>
-          
-          {/* Support Layer with Editable Heading */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Label className="text-sm font-medium block">Heading</Label>
+            
+            {/* Weight Capacity with Editable Heading */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Label className="text-sm font-medium block">Heading</Label>
+                <Input 
+                  value={dimensions.weightCapacityHeading} 
+                  onChange={e => updateDimension('weightCapacityHeading', e.target.value)}
+                  placeholder="Weight Capacity"
+                  className="text-xs"
+                />
+              </div>
               <Input 
-                value={dimensions.supportLayerHeading} 
-                onChange={e => updateDimension('supportLayerHeading', e.target.value)}
-                placeholder="Support Layer"
-                className="text-xs"
+                value={dimensions.weightCapacity} 
+                onChange={e => updateDimension('weightCapacity', e.target.value)}
+                placeholder="200 kg"
               />
             </div>
-            <Input 
-              value={dimensions.supportLayer} 
-              onChange={e => updateDimension('supportLayer', e.target.value)}
-              placeholder="17 cm"
-            />
           </div>
-          
-          {/* Dimension Disclaimer */}
-          <div className="md:col-span-2 lg:col-span-3">
-            <Label className="text-sm font-medium mb-2 block">Dimension Disclaimer</Label>
-            <Textarea 
-              value={dimensions.dimensionDisclaimer} 
-              onChange={e => updateDimension('dimensionDisclaimer', e.target.value)}
-              placeholder="e.g., All measurements are approximate and may vary slightly."
-              rows={2}
+        </div>
+
+        {/* Section 3: Technical Specifications */}
+        <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+          <div className="flex items-center space-x-2 mb-3">
+            <Checkbox
+              id="show_technical_specs_main"
+              checked={dimensions.show_technical_specs}
+              onCheckedChange={(checked) => updateDimension('show_technical_specs', checked as boolean)}
             />
-            <p className="text-xs text-gray-500 mt-1">This disclaimer will appear below the dimension specifications on the product page.</p>
+            <label htmlFor="show_technical_specs_main" className="text-sm font-medium text-gray-700">
+              Show Technical Specifications Section
+            </label>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Pocket Springs with Editable Heading */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Label className="text-sm font-medium block">Heading</Label>
+                <Input 
+                  value={dimensions.pocketSpringsHeading} 
+                  onChange={e => updateDimension('pocketSpringsHeading', e.target.value)}
+                  placeholder="Pocket Springs"
+                  className="text-xs"
+                />
+              </div>
+              <Input 
+                value={dimensions.pocketSprings} 
+                onChange={e => updateDimension('pocketSprings', e.target.value)}
+                placeholder="1000 count"
+              />
+            </div>
+            
+            {/* Comfort Layer with Editable Heading */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Label className="text-sm font-medium block">Heading</Label>
+                <Input 
+                  value={dimensions.comfortLayerHeading} 
+                  onChange={e => updateDimension('comfortLayerHeading', e.target.value)}
+                  placeholder="Comfort Layer"
+                  className="text-xs"
+                />
+              </div>
+              <Input 
+                value={dimensions.comfortLayer} 
+                onChange={e => updateDimension('comfortLayer', e.target.value)}
+                placeholder="8 cm"
+              />
+            </div>
+            
+            {/* Support Layer with Editable Heading */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Label className="text-sm font-medium block">Heading</Label>
+                <Input 
+                  value={dimensions.supportLayerHeading} 
+                  onChange={e => updateDimension('supportLayerHeading', e.target.value)}
+                  placeholder="Support Layer"
+                  className="text-xs"
+                />
+              </div>
+              <Input 
+                value={dimensions.supportLayer} 
+                onChange={e => updateDimension('supportLayer', e.target.value)}
+                placeholder="17 cm"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Dimension Disclaimer */}
+        <div className="mb-4">
+          <Label className="text-sm font-medium mb-2 block">Dimension Disclaimer</Label>
+          <Textarea 
+            value={dimensions.dimensionDisclaimer} 
+            onChange={e => updateDimension('dimensionDisclaimer', e.target.value)}
+            placeholder="e.g., All measurements are approximate and may vary slightly."
+            rows={2}
+          />
+          <p className="text-xs text-gray-500 mt-1">This disclaimer will appear below the dimension specifications on the product page.</p>
         </div>
       </Card>
 

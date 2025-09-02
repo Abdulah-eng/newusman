@@ -58,6 +58,10 @@ export interface ProductDetailHappyProps {
       comfort_layer_heading?: string
       support_layer_heading?: string
       dimension_disclaimer?: string
+      // Visibility controls
+      show_basic_dimensions?: boolean
+      show_mattress_specs?: boolean
+      show_technical_specs?: boolean
     }
 
     dispatchTime?: string
@@ -919,15 +923,18 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     setIsAutoSelectionMode(true)
     setIsSequentialFlow(false) // Reset sequential flow flag for individual variant selection
     
-    if (priorityType === 'size' && !selectedSize && lastSelection !== 'size') {
-      // Start with size selection
+    // Reset lastSelection when manually opening modals to allow reopening
+    setLastSelection(null)
+    
+    if (priorityType === 'size') {
+      // Start with size selection - allow reopening even if size is already selected
       const { hasSizes } = getAvailableVariantOptions()
       if (hasSizes) {
         setSizeModalOpen(true)
         return
       }
-    } else if (priorityType === 'color' && !selectedColor && lastSelection !== 'color') {
-      // Start with color selection
+    } else if (priorityType === 'color') {
+      // Start with color selection - allow reopening even if color is already selected
       const { hasColors } = getAvailableVariantOptions()
       if (hasColors) {
         setColorModalOpen(true)
@@ -2946,152 +2953,153 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                               </h4>
 
                               <div className="space-y-3">
+                                {/* Basic Dimensions Section - Only show if enabled */}
+                                {(product.dimensions?.show_basic_dimensions !== false) && (
+                                  <>
+                                    <div className="flex items-center justify-between py-2 border-b border-gray-200">
 
-                                <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                                      <span className="font-medium text-gray-700">A: Height</span>
 
-                                  <span className="font-medium text-gray-700">A: Height</span>
+                                      <span className="text-gray-900 font-semibold">{product.dimensions?.height || '25 cm'}</span>
 
-                                  <span className="text-gray-900 font-semibold">{product.dimensions?.height || '25 cm'}</span>
+                                    </div>
 
-                                </div>
+                                    <div className="flex items-center justify-between py-2 border-b border-gray-200">
 
-                                <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                                      <span className="font-medium text-gray-700">B: Length</span>
 
-                                  <span className="font-medium text-gray-700">B: Length</span>
+                                      <span className="text-gray-900 font-semibold">{product.dimensions?.length || 'L 190cm'}</span>
 
-                                  <span className="text-gray-900 font-semibold">{product.dimensions?.length || 'L 190cm'}</span>
+                                    </div>
 
-                                </div>
+                                    <div className="flex items-center justify-between py-2 border-b border-gray-200">
 
-                                <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                                      <span className="font-medium text-gray-700">C: Width</span>
 
-                                  <span className="font-medium text-gray-700">C: Width</span>
+                                      <span className="text-gray-900 font-semibold">{product.dimensions?.width || '135cm'}</span>
 
-                                  <span className="text-gray-900 font-semibold">{product.dimensions?.width || '135cm'}</span>
-
-                                </div>
-
+                                    </div>
+                                  </>
+                                )}
                               </div>
 
                             </div>
 
                             
 
-                            <div>
-
-                              <h4 className="text-xl font-semibold text-gray-900 mb-4">
-                                {(() => {
-                                  const category = product.category || 'mattresses'
-                                  switch (category) {
-                                    case 'beds': return 'Bed Specifications'
-                                    case 'sofas': return 'Sofa Specifications'
-                                    case 'pillows': return 'Pillow Specifications'
-                                    case 'toppers': return 'Topper Specifications'
-                                    case 'bunkbeds': return 'Bunkbed Specifications'
-                                    case 'adjustable-bases': return 'Adjustable Base Specifications'
-                                    case 'bed-frames': return 'Bed Frame Specifications'
-                                    case 'box-springs': return 'Box Spring Specifications'
-                                    case 'bedding': return 'Bedding Specifications'
-                                    case 'kids': return 'Kids Product Specifications'
-                                    case 'sale': return 'Product Specifications'
-                                    default: return 'Mattress Specifications'
-                                  }
-                                })()}
-                              </h4>
-
-                              <div className="space-y-3">
-
-                                <div className="flex items-center justify-between py-2 border-b border-gray-200">
-
-                                  <span className="font-medium text-gray-700">{product.dimensions?.mattress_size_heading || (() => {
+                            {/* Mattress Specifications Section - Only show if enabled */}
+                            {(product.dimensions?.show_mattress_specs !== false) && (
+                              <div>
+                                <h4 className="text-xl font-semibold text-gray-900 mb-4">
+                                  {(() => {
                                     const category = product.category || 'mattresses'
                                     switch (category) {
-                                      case 'beds': return 'Bed Size'
-                                      case 'sofas': return 'Sofa Size'
-                                      case 'pillows': return 'Pillow Size'
-                                      case 'toppers': return 'Topper Size'
-                                      case 'bunkbeds': return 'Bunkbed Size'
-                                      case 'adjustable-bases': return 'Base Size'
-                                      case 'bed-frames': return 'Frame Size'
-                                      case 'box-springs': return 'Box Spring Size'
-                                      case 'bedding': return 'Bedding Size'
-                                      case 'kids': return 'Product Size'
-                                      case 'sale': return 'Product Size'
-                                      default: return 'Mattress Size'
+                                      case 'beds': return 'Bed Specifications'
+                                      case 'sofas': return 'Sofa Specifications'
+                                      case 'pillows': return 'Pillow Specifications'
+                                      case 'toppers': return 'Topper Specifications'
+                                      case 'bunkbeds': return 'Bunkbed Specifications'
+                                      case 'adjustable-bases': return 'Adjustable Base Specifications'
+                                      case 'bed-frames': return 'Bed Frame Specifications'
+                                      case 'box-springs': return 'Box Spring Specifications'
+                                      case 'bedding': return 'Bedding Specifications'
+                                      case 'kids': return 'Kids Product Specifications'
+                                      case 'sale': return 'Product Specifications'
+                                      default: return 'Mattress Specifications'
                                     }
-                                  })()}</span>
-                                  <span className="text-gray-900 font-semibold">{product.dimensions?.mattress_size || '135cm x L 190cm cm'}</span>
+                                  })()}
+                                </h4>
 
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between py-2 border-b border-gray-200">
+
+                                    <span className="font-medium text-gray-700">{product.dimensions?.mattress_size_heading || (() => {
+                                      const category = product.category || 'mattresses'
+                                      switch (category) {
+                                        case 'beds': return 'Bed Size'
+                                        case 'sofas': return 'Sofa Size'
+                                        case 'pillows': return 'Pillow Size'
+                                        case 'toppers': return 'Topper Size'
+                                        case 'bunkbeds': return 'Bunkbed Size'
+                                        case 'adjustable-bases': return 'Base Size'
+                                        case 'bed-frames': return 'Frame Size'
+                                        case 'box-springs': return 'Box Spring Size'
+                                        case 'bedding': return 'Bedding Size'
+                                        case 'kids': return 'Product Size'
+                                        case 'sale': return 'Product Size'
+                                        default: return 'Mattress Size'
+                                      }
+                                    })()}</span>
+                                    <span className="text-gray-900 font-semibold">{product.dimensions?.mattress_size || '135cm x L 190cm cm'}</span>
+
+                                  </div>
+
+                                  <div className="flex items-center justify-between py-2 border-b border-gray-200">
+
+                                    <span className="font-medium text-gray-700">{product.dimensions?.maximum_height_heading}</span>
+                                    <span className="text-gray-900 font-semibold">{product.dimensions?.max_height || '25 cm'}</span>
+
+                                  </div>
+
+                                  <div className="flex items-center justify-between py-2 border-b border-gray-200">
+
+                                    <span className="font-medium text-gray-700">{product.dimensions?.weight_capacity_heading || 'Weight Capacity'}</span>
+                                    <span className="text-gray-900 font-semibold">{product.dimensions?.weight_capacity || '200 kg'}</span>
+
+                                  </div>
                                 </div>
-
-                                <div className="flex items-center justify-between py-2 border-b border-gray-200">
-
-                                  <span className="font-medium text-gray-700">{product.dimensions?.maximum_height_heading}</span>
-                                  <span className="text-gray-900 font-semibold">{product.dimensions?.max_height || '25 cm'}</span>
-
-                                </div>
-
-                                <div className="flex items-center justify-between py-2 border-b border-gray-200">
-
-                                  <span className="font-medium text-gray-700">{product.dimensions?.weight_capacity_heading || 'Weight Capacity'}</span>
-                                  <span className="text-gray-900 font-semibold">{product.dimensions?.weight_capacity || '200 kg'}</span>
-
-                                </div>
-
                               </div>
-
-                            </div>
+                            )}
 
                             
 
-                            <div>
+                            {/* Technical Specifications Section - Only show if enabled */}
+                            {(product.dimensions?.show_technical_specs !== false) && (
+                              <div>
+                                <h4 className="text-xl font-semibold text-gray-900 mb-4">
+                                  {(() => {
+                                    const category = product.category || 'mattresses'
+                                    switch (category) {
+                                      case 'beds': return 'Frame Details'
+                                      case 'sofas': return 'Construction Details'
+                                      case 'pillows': return 'Material Details'
+                                      case 'toppers': return 'Layer Details'
+                                      case 'bunkbeds': return 'Construction Details'
+                                      case 'adjustable-bases': return 'Base Details'
+                                      case 'bed-frames': return 'Frame Details'
+                                      case 'box-springs': return 'Spring Details'
+                                      case 'bedding': return 'Material Details'
+                                      case 'kids': return 'Product Details'
+                                      case 'sale': return 'Product Details'
+                                      default: return 'Construction Details'
+                                    }
+                                  })()}
+                                </h4>
 
-                              <h4 className="text-xl font-semibold text-gray-900 mb-4">
-                                {(() => {
-                                  const category = product.category || 'mattresses'
-                                  switch (category) {
-                                    case 'beds': return 'Frame Details'
-                                    case 'sofas': return 'Construction Details'
-                                    case 'pillows': return 'Material Details'
-                                    case 'toppers': return 'Layer Details'
-                                    case 'bunkbeds': return 'Construction Details'
-                                    case 'adjustable-bases': return 'Base Details'
-                                    case 'bed-frames': return 'Frame Details'
-                                    case 'box-springs': return 'Spring Details'
-                                    case 'bedding': return 'Material Details'
-                                    case 'kids': return 'Product Details'
-                                    case 'sale': return 'Product Details'
-                                    default: return 'Construction Details'
-                                  }
-                                })()}
-                              </h4>
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between py-2 border-b border-gray-200">
 
-                              <div className="space-y-3">
+                                    <span className="font-medium text-gray-700">{product.dimensions?.pocket_springs_heading || 'Pocket Springs'}</span>
+                                    <span className="text-gray-900 font-semibold">{product.dimensions?.pocket_springs || '1000 count'}</span>
 
-                                <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                                  </div>
 
-                                  <span className="font-medium text-gray-700">{product.dimensions?.pocket_springs_heading || 'Pocket Springs'}</span>
-                                  <span className="text-gray-900 font-semibold">{product.dimensions?.pocket_springs || '1000 count'}</span>
+                                  <div className="flex items-center justify-between py-2 border-b border-gray-200">
 
+                                    <span className="font-medium text-gray-700">{product.dimensions?.comfort_layer_heading || 'Comfort Layer'}</span>
+                                    <span className="text-gray-900 font-semibold">{product.dimensions?.comfort_layer || '8 cm'}</span>
+
+                                  </div>
+
+                                  <div className="flex items-center justify-between py-2 border-b border-gray-200">
+
+                                    <span className="font-medium text-gray-700">{product.dimensions?.support_layer_heading || 'Support Layer'}</span>
+                                    <span className="text-gray-900 font-semibold">{product.dimensions?.support_layer || '17 cm'}</span>
+
+                                  </div>
                                 </div>
-
-                                <div className="flex items-center justify-between py-2 border-b border-gray-200">
-
-                                  <span className="font-medium text-gray-700">{product.dimensions?.comfort_layer_heading || 'Comfort Layer'}</span>
-                                  <span className="text-gray-900 font-semibold">{product.dimensions?.comfort_layer || '8 cm'}</span>
-
-                                </div>
-
-                                <div className="flex items-center justify-between py-2 border-b border-gray-200">
-
-                                  <span className="font-medium text-gray-700">{product.dimensions?.support_layer_heading || 'Support Layer'}</span>
-                                  <span className="text-gray-900 font-semibold">{product.dimensions?.support_layer || '17 cm'}</span>
-
-                                </div>
-
                               </div>
-
-                            </div>
+                            )}
 
                             
 

@@ -264,7 +264,11 @@ export async function GET(
         comfort_layer_heading: product.product_dimensions.comfort_layer_heading,
         support_layer_heading: product.product_dimensions.support_layer_heading,
         // Dimension disclaimer
-        dimension_disclaimer: product.product_dimensions.dimension_disclaimer
+        dimension_disclaimer: product.product_dimensions.dimension_disclaimer,
+        // Visibility controls
+        show_basic_dimensions: product.product_dimensions.show_basic_dimensions !== undefined ? product.product_dimensions.show_basic_dimensions : true,
+        show_mattress_specs: product.product_dimensions.show_mattress_specs !== undefined ? product.product_dimensions.show_mattress_specs : true,
+        show_technical_specs: product.product_dimensions.show_technical_specs !== undefined ? product.product_dimensions.show_technical_specs : true
       } : null,
       // Important notices for the dimensions section
       importantNotices: product.product_important_notices?.map((notice: any) => ({

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Check, X } from 'lucide-react'
 
@@ -33,6 +33,13 @@ export function SizeSelectionModal({
   selectedSize 
 }: SizeSelectionModalProps) {
   const [localSelectedSize, setLocalSelectedSize] = useState<string>(selectedSize || '')
+
+  // Update local state when props change (e.g., when modal reopens with different selections)
+  useEffect(() => {
+    if (isOpen) {
+      setLocalSelectedSize(selectedSize || '')
+    }
+  }, [isOpen, selectedSize])
 
   if (!isOpen) return null
 

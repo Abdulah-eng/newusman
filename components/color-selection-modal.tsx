@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Check, X } from 'lucide-react'
 
@@ -62,15 +62,18 @@ export function ColorSelectionModal({
   showOnlyColors,
   variants
 }: ColorSelectionModalProps) {
-  const [localSelectedColor, setLocalSelectedColor] = useState<string>('')
-  const [localSelectedDepth, setLocalSelectedDepth] = useState<string>('')
-  const [localSelectedFirmness, setLocalSelectedFirmness] = useState<string>('')
+  const [localSelectedColor, setLocalSelectedColor] = useState<string>(selectedColor || '')
+  const [localSelectedDepth, setLocalSelectedDepth] = useState<string>(selectedDepth || '')
+  const [localSelectedFirmness, setLocalSelectedFirmness] = useState<string>(selectedFirmness || '')
 
-  // Reset local state whenever modal opens to avoid stale selections
-  // and to prevent the modal from reappearing after Continue
-  if (isOpen && localSelectedColor === '' && selectedColor) {
-    // do not auto-seed; keep empty to require explicit user action
-  }
+  // Update local state when props change (e.g., when modal reopens with different selections)
+  useEffect(() => {
+    if (isOpen) {
+      setLocalSelectedColor(selectedColor || '')
+      setLocalSelectedDepth(selectedDepth || '')
+      setLocalSelectedFirmness(selectedFirmness || '')
+    }
+  }, [isOpen, selectedColor, selectedDepth, selectedFirmness])
   const [showMattresses, setShowMattresses] = useState(false)
   const [selectedMattress, setSelectedMattress] = useState<string>('')
 

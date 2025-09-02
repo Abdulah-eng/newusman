@@ -12,6 +12,7 @@ import { getFeaturesForCategory } from '@/lib/category-features'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
 
 type VariantRow = {
   id: string
@@ -75,7 +76,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     pocketSprings: '1000 count',
     comfortLayer: '8 cm',
     supportLayer: '17 cm',
-    dimensionDisclaimer: 'All measurements are approximate and may vary slightly.'
+    dimensionDisclaimer: 'All measurements are approximate and may vary slightly.',
+    show_basic_dimensions: true,
+    show_mattress_specs: true,
+    show_technical_specs: true
   })
   const [importantNotices, setImportantNotices] = useState<Array<{
     id: string
@@ -213,7 +217,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           pocketSprings: productData.dimensions.pocket_springs || '1000 count',
           comfortLayer: productData.dimensions.comfort_layer || '8 cm',
           supportLayer: productData.dimensions.support_layer || '17 cm',
-          dimensionDisclaimer: productData.dimensions.dimension_disclaimer || 'All measurements are approximate and may vary slightly.'
+          dimensionDisclaimer: productData.dimensions.dimension_disclaimer || 'All measurements are approximate and may vary slightly.',
+          show_basic_dimensions: productData.dimensions.show_basic_dimensions !== undefined ? productData.dimensions.show_basic_dimensions : true,
+          show_mattress_specs: productData.dimensions.show_mattress_specs !== undefined ? productData.dimensions.show_mattress_specs : true,
+          show_technical_specs: productData.dimensions.show_technical_specs !== undefined ? productData.dimensions.show_technical_specs : true
         })
       }
       
@@ -1787,78 +1794,125 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             <TabsContent value="dimensions" className="space-y-6">
               <Card className="p-6">
                 <h2 className="text-xl font-semibold mb-4">Dimensions & Specifications</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label>Height</Label>
-                    <Input
-                      value={dimensions.height}
-                      onChange={(e) => setDimensions({...dimensions, height: e.target.value})}
-                      placeholder="25 cm"
+                <p className="text-sm text-gray-600 mb-6">Enter product dimensions and technical specifications. You can customize the headings for each field.</p>
+                
+                {/* Section 1: Basic Dimensions */}
+                <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Checkbox
+                      id="show_basic_dimensions_edit"
+                      checked={dimensions.show_basic_dimensions}
+                      onCheckedChange={(checked) => setDimensions({...dimensions, show_basic_dimensions: checked as boolean})}
                     />
+                    <label htmlFor="show_basic_dimensions_edit" className="text-sm font-medium text-gray-700">
+                      Show Basic Dimensions Section
+                    </label>
                   </div>
-                  <div>
-                    <Label>Length</Label>
-                    <Input
-                      value={dimensions.length}
-                      onChange={(e) => setDimensions({...dimensions, length: e.target.value})}
-                      placeholder="L 190cm"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>Height</Label>
+                      <Input
+                        value={dimensions.height}
+                        onChange={(e) => setDimensions({...dimensions, height: e.target.value})}
+                        placeholder="25 cm"
+                      />
+                    </div>
+                    <div>
+                      <Label>Length</Label>
+                      <Input
+                        value={dimensions.length}
+                        onChange={(e) => setDimensions({...dimensions, length: e.target.value})}
+                        placeholder="L 190cm"
+                      />
+                    </div>
+                    <div>
+                      <Label>Width</Label>
+                      <Input
+                        value={dimensions.width}
+                        onChange={(e) => setDimensions({...dimensions, width: e.target.value})}
+                        placeholder="135cm"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label>Width</Label>
-                    <Input
-                      value={dimensions.width}
-                      onChange={(e) => setDimensions({...dimensions, width: e.target.value})}
-                      placeholder="135cm"
+                </div>
+
+                {/* Section 2: Mattress Specifications */}
+                <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Checkbox
+                      id="show_mattress_specs_edit"
+                      checked={dimensions.show_mattress_specs}
+                      onCheckedChange={(checked) => setDimensions({...dimensions, show_mattress_specs: checked as boolean})}
                     />
+                    <label htmlFor="show_mattress_specs_edit" className="text-sm font-medium text-gray-700">
+                      Show Mattress Specifications Section
+                    </label>
                   </div>
-                  <div>
-                    <Label>Mattress Size</Label>
-                    <Input
-                      value={dimensions.mattressSize}
-                      onChange={(e) => setDimensions({...dimensions, mattressSize: e.target.value})}
-                      placeholder="135cm x L 190cm cm"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>Mattress Size</Label>
+                      <Input
+                        value={dimensions.mattressSize}
+                        onChange={(e) => setDimensions({...dimensions, mattressSize: e.target.value})}
+                        placeholder="135cm x L 190cm cm"
+                      />
+                    </div>
+                    <div>
+                      <Label>Max Height</Label>
+                      <Input
+                        value={dimensions.maxHeight}
+                        onChange={(e) => setDimensions({...dimensions, maxHeight: e.target.value})}
+                        placeholder="25 cm"
+                      />
+                    </div>
+                    <div>
+                      <Label>Weight Capacity</Label>
+                      <Input
+                        value={dimensions.weightCapacity}
+                        onChange={(e) => setDimensions({...dimensions, weightCapacity: e.target.value})}
+                        placeholder="200 kg"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label>Max Height</Label>
-                    <Input
-                      value={dimensions.maxHeight}
-                      onChange={(e) => setDimensions({...dimensions, maxHeight: e.target.value})}
-                      placeholder="25 cm"
+                </div>
+
+                {/* Section 3: Technical Specifications */}
+                <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Checkbox
+                      id="show_technical_specs_edit"
+                      checked={dimensions.show_technical_specs}
+                      onCheckedChange={(checked) => setDimensions({...dimensions, show_technical_specs: checked as boolean})}
                     />
+                    <label htmlFor="show_technical_specs_edit" className="text-sm font-medium text-gray-700">
+                      Show Technical Specifications Section
+                    </label>
                   </div>
-                  <div>
-                    <Label>Weight Capacity</Label>
-                    <Input
-                      value={dimensions.weightCapacity}
-                      onChange={(e) => setDimensions({...dimensions, weightCapacity: e.target.value})}
-                      placeholder="200 kg"
-                    />
-                  </div>
-                  <div>
-                    <Label>Pocket Springs</Label>
-                    <Input
-                      value={dimensions.pocketSprings}
-                      onChange={(e) => setDimensions({...dimensions, pocketSprings: e.target.value})}
-                      placeholder="1000 count"
-                    />
-                  </div>
-                  <div>
-                    <Label>Comfort Layer</Label>
-                    <Input
-                      value={dimensions.comfortLayer}
-                      onChange={(e) => setDimensions({...dimensions, comfortLayer: e.target.value})}
-                      placeholder="8 cm"
-                    />
-                  </div>
-                  <div>
-                    <Label>Support Layer</Label>
-                    <Input
-                      value={dimensions.supportLayer}
-                      onChange={(e) => setDimensions({...dimensions, supportLayer: e.target.value})}
-                      placeholder="17 cm"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>Pocket Springs</Label>
+                      <Input
+                        value={dimensions.pocketSprings}
+                        onChange={(e) => setDimensions({...dimensions, pocketSprings: e.target.value})}
+                        placeholder="1000 count"
+                      />
+                    </div>
+                    <div>
+                      <Label>Comfort Layer</Label>
+                      <Input
+                        value={dimensions.comfortLayer}
+                        onChange={(e) => setDimensions({...dimensions, comfortLayer: e.target.value})}
+                        placeholder="8 cm"
+                      />
+                    </div>
+                    <div>
+                      <Label>Support Layer</Label>
+                      <Input
+                        value={dimensions.supportLayer}
+                        onChange={(e) => setDimensions({...dimensions, supportLayer: e.target.value})}
+                        placeholder="17 cm"
+                      />
+                    </div>
                   </div>
                 </div>
               </Card>

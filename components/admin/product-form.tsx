@@ -34,6 +34,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { supabase } from '@/lib/supabaseClient'
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { VariantManagement } from './variant-management'
 import { ProductSelectionModal } from './product-selection-modal'
 
@@ -83,6 +84,9 @@ interface ProductFormData {
     pocket_springs: string
     comfort_layer: string
     support_layer: string
+    show_basic_dimensions: boolean
+    show_mattress_specs: boolean
+    show_technical_specs: boolean
   }
   reasons_to_buy: string[]
   promotional_offers: any[]
@@ -178,7 +182,10 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
       weight_capacity: '200 kg',
       pocket_springs: '1000 count',
       comfort_layer: '8 cm',
-      support_layer: '17 cm'
+      support_layer: '17 cm',
+      show_basic_dimensions: true,
+      show_mattress_specs: true,
+      show_technical_specs: true
     },
     reasons_to_buy: product?.reasons_to_buy || ['100-Night Trial', 'Free Delivery', '10-Year Warranty'],
     promotional_offers: product?.promotional_offers || [],
@@ -1804,109 +1811,149 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
                     <p className="text-gray-600">Product Dimensions</p>
                   </div>
                   
-                  {/* Dimensions Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {/* Height */}
-                    <div className="text-center">
-                      <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
-                        <span className="text-2xl font-bold text-orange-600">A</span>
-                      </div>
-                      <h4 className="text-lg font-semibold text-gray-800 mb-2">Height</h4>
-                      <Input
-                        value={formData.dimensions.height}
-                        onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, height: e.target.value })}
-                        placeholder="e.g., 25 cm"
-                        className="text-center border border-gray-300 focus:ring-2 focus:ring-orange-300"
+                  {/* Section 1: Basic Dimensions */}
+                  <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <Checkbox
+                        id="show_basic_dimensions_old"
+                        checked={formData.dimensions.show_basic_dimensions}
+                        onCheckedChange={(checked) => handleInputChange('dimensions', { ...formData.dimensions, show_basic_dimensions: checked as boolean })}
                       />
+                      <label htmlFor="show_basic_dimensions_old" className="text-sm font-medium text-gray-700">
+                        Show Basic Dimensions Section
+                      </label>
                     </div>
-
-                    {/* Length */}
-                    <div className="text-center">
-                      <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
-                        <span className="text-2xl font-bold text-orange-600">B</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {/* Height */}
+                      <div className="text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
+                          <span className="text-2xl font-bold text-orange-600">A</span>
+                        </div>
+                        <h4 className="text-lg font-semibold text-gray-800 mb-2">Height</h4>
+                        <Input
+                          value={formData.dimensions.height}
+                          onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, height: e.target.value })}
+                          placeholder="e.g., 25 cm"
+                          className="text-center border border-gray-300 focus:ring-2 focus:ring-orange-300"
+                        />
                       </div>
-                      <h4 className="text-lg font-semibold text-gray-800 mb-2">Length</h4>
-                      <Input
-                        value={formData.dimensions.length}
-                        onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, length: e.target.value })}
-                        placeholder="e.g., L 190cm"
-                        className="text-center border border-gray-300 focus:ring-2 focus:ring-orange-300"
-                      />
-                    </div>
 
-                    {/* Width */}
-                    <div className="text-center">
-                      <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
-                        <span className="text-2xl font-bold text-orange-600">C</span>
+                      {/* Length */}
+                      <div className="text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
+                          <span className="text-2xl font-bold text-orange-600">B</span>
+                        </div>
+                        <h4 className="text-lg font-semibold text-gray-800 mb-2">Length</h4>
+                        <Input
+                          value={formData.dimensions.length}
+                          onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, length: e.target.value })}
+                          placeholder="e.g., L 190cm"
+                          className="text-center border border-gray-300 focus:ring-2 focus:ring-orange-300"
+                        />
                       </div>
-                      <h4 className="text-lg font-semibold text-gray-800 mb-2">Width</h4>
-                      <Input
-                        value={formData.dimensions.width}
-                        onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, width: e.target.value })}
-                        placeholder="e.g., 135cm"
-                        className="text-center border border-gray-300 focus:ring-2 focus:ring-orange-300"
-                      />
+
+                      {/* Width */}
+                      <div className="text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
+                          <span className="text-2xl font-bold text-orange-600">C</span>
+                        </div>
+                        <h4 className="text-lg font-semibold text-gray-800 mb-2">Width</h4>
+                        <Input
+                          value={formData.dimensions.width}
+                          onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, width: e.target.value })}
+                          placeholder="e.g., 135cm"
+                          className="text-center border border-gray-300 focus:ring-2 focus:ring-orange-300"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Additional Dimension Fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Mattress Size</label>
-                      <Input
-                        value={formData.dimensions.mattress_size}
-                        onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, mattress_size: e.target.value })}
-                        placeholder="e.g., 135cm x L 190cm cm"
-                        className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
-                      />
+                    {/* Section 2: Mattress Specifications */}
+                    <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Checkbox
+                          id="show_mattress_specs"
+                          checked={formData.dimensions.show_mattress_specs}
+                          onCheckedChange={(checked) => handleInputChange('dimensions', { ...formData.dimensions, show_mattress_specs: checked as boolean })}
+                        />
+                        <label htmlFor="show_mattress_specs" className="text-sm font-medium text-gray-700">
+                          Show Mattress Specifications Section
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Mattress Size</label>
+                          <Input
+                            value={formData.dimensions.mattress_size}
+                            onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, mattress_size: e.target.value })}
+                            placeholder="e.g., 135cm x L 190cm cm"
+                            className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Maximum Height</label>
+                          <Input
+                            value={formData.dimensions.max_height}
+                            onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, max_height: e.target.value })}
+                            placeholder="e.g., 25 cm"
+                            className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Weight Capacity</label>
+                          <Input
+                            value={formData.dimensions.weight_capacity}
+                            onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, weight_capacity: e.target.value })}
+                            placeholder="e.g., 200 kg"
+                            className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Maximum Height</label>
-                      <Input
-                        value={formData.dimensions.max_height}
-                        onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, max_height: e.target.value })}
-                        placeholder="e.g., 25 cm"
-                        className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Weight Capacity</label>
-                      <Input
-                        value={formData.dimensions.weight_capacity}
-                        onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, weight_capacity: e.target.value })}
-                        placeholder="e.g., 200 kg"
-                        className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Pocket Springs</label>
-                      <Input
-                        value={formData.dimensions.pocket_springs}
-                        onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, pocket_springs: e.target.value })}
-                        placeholder="e.g., 1000 count"
-                        className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Comfort Layer</label>
-                      <Input
-                        value={formData.dimensions.comfort_layer}
-                        onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, comfort_layer: e.target.value })}
-                        placeholder="e.g., 8 cm"
-                        className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Support Layer</label>
-                      <Input
-                        value={formData.dimensions.support_layer}
-                        onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, support_layer: e.target.value })}
-                        placeholder="e.g., 17 cm"
-                        className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
-                      />
+
+                    {/* Section 3: Technical Specifications */}
+                    <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Checkbox
+                          id="show_technical_specs"
+                          checked={formData.dimensions.show_technical_specs}
+                          onCheckedChange={(checked) => handleInputChange('dimensions', { ...formData.dimensions, show_technical_specs: checked as boolean })}
+                        />
+                        <label htmlFor="show_technical_specs" className="text-sm font-medium text-gray-700">
+                          Show Technical Specifications Section
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Pocket Springs</label>
+                          <Input
+                            value={formData.dimensions.pocket_springs}
+                            onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, pocket_springs: e.target.value })}
+                            placeholder="e.g., 1000 count"
+                            className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Comfort Layer</label>
+                          <Input
+                            value={formData.dimensions.comfort_layer}
+                            onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, comfort_layer: e.target.value })}
+                            placeholder="e.g., 8 cm"
+                            className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Support Layer</label>
+                          <Input
+                            value={formData.dimensions.support_layer}
+                            onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, support_layer: e.target.value })}
+                            placeholder="e.g., 17 cm"
+                            className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
               )}
             </div>
 
@@ -2123,87 +2170,55 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
                     </div>
                   </div>
 
-                  {/* Dimensions */}
-                  <div>
-                    <h4 className="text-md font-medium text-gray-800 mb-3">Dimensions</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Height</label>
-                        <Input
-                          value={formData.dimensions.height}
-                          onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, height: e.target.value })}
-                          placeholder="e.g., 25 cm"
-                          className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Length</label>
-                        <Input
-                          value={formData.dimensions.length}
-                          onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, length: e.target.value })}
-                          placeholder="e.g., L 190cm"
-                          className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Width</label>
-                        <Input
-                          value={formData.dimensions.width}
-                          onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, width: e.target.value })}
-                          placeholder="e.g., 135cm"
-                          className="border border-gray-300 focus:ring-2 focus:ring-orange-300"
-                        />
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Materials */}
-                  <div>
-                    <h4 className="text-md font-medium text-gray-800 mb-3">Materials</h4>
-                    <div className="space-y-2">
-                      {formData.materials.map((material, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Input
-                            value={material}
-                            onChange={(e) => {
-                              const newMaterials = [...formData.materials]
-                              newMaterials[index] = e.target.value
-                              handleInputChange('materials', newMaterials)
-                            }}
-                            className="flex-1 border border-gray-300 focus:ring-2 focus:ring-orange-300"
-                            placeholder="Material name"
-                          />
-                          <button
-                            onClick={() => handleArrayField('materials', material, 'remove')}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))}
-                      
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          value={newMaterial}
-                          onChange={(e) => setNewMaterial(e.target.value)}
-                          placeholder="Add material"
-                          className="flex-1 border border-gray-300 focus:ring-2 focus:ring-orange-300"
-                        />
-                        <Button
-                          onClick={() => {
-                            handleArrayField('materials', newMaterial, 'add')
-                            setNewMaterial('')
-                          }}
-                          size="sm"
-                          className="bg-orange-600 hover:bg-orange-700"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
+            </div>
+
+            {/* Materials */}
+            <div className="bg-white rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Materials</h3>
+              <div className="space-y-2">
+                {formData.materials.map((material, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <Input
+                      value={material}
+                      onChange={(e) => {
+                        const newMaterials = [...formData.materials]
+                        newMaterials[index] = e.target.value
+                        handleInputChange('materials', newMaterials)
+                      }}
+                      className="flex-1 border border-gray-300 focus:ring-2 focus:ring-orange-300"
+                      placeholder="Material name"
+                    />
+                    <button
+                      onClick={() => handleArrayField('materials', material, 'remove')}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+                
+                <div className="flex items-center space-x-2">
+                  <Input
+                    value={newMaterial}
+                    onChange={(e) => setNewMaterial(e.target.value)}
+                    placeholder="Add material"
+                    className="flex-1 border border-gray-300 focus:ring-2 focus:ring-orange-300"
+                  />
+                  <Button
+                    onClick={() => {
+                      handleArrayField('materials', newMaterial, 'add')
+                      setNewMaterial('')
+                    }}
+                    size="sm"
+                    className="bg-orange-600 hover:bg-orange-700"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
 
             {/* Variant Management */}
