@@ -3,14 +3,14 @@ import { CheckCircle } from 'lucide-react'
 
 export default function MattressGuidePage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50 py-8">
       <div className="container mx-auto px-4">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Mattress Buying Guide</h1>
           <p className="text-xl text-gray-700">Everything you need to know to choose the perfect mattress</p>
         </div>
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm border p-8">
+          <div className="bg-white rounded-lg shadow-sm border border-orange-100 p-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">How to Choose the Right Mattress</h2>
             <p className="text-gray-600 mb-6">
               Choosing the right mattress is one of the most important decisions you'll make for your sleep health. 

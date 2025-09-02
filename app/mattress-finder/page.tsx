@@ -91,20 +91,20 @@ export default function MattressFinderPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-orange-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-orange-50">
       {/* Hero */}
       <section className="container mx-auto px-4 py-10 sm:py-14">
-        <div className="rounded-3xl bg-gradient-to-br from-blue-100/70 via-white to-orange-100/60 p-6 sm:p-10 shadow-sm border border-white/60">
+        <div className="rounded-3xl bg-gradient-to-br from-gray-100/70 via-white to-orange-100/60 p-6 sm:p-10 shadow-sm border border-white/60">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
             <div className="md:col-span-2 text-center md:text-left">
-              <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-blue-900">
+              <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-gray-900">
                 Your best night's sleep starts here
               </h1>
-              <p className="mt-4 text-base sm:text-lg text-blue-900/80 max-w-2xl mx-auto md:mx-0">
+              <p className="mt-4 text-base sm:text-lg text-gray-700 max-w-2xl mx-auto md:mx-0">
                 Answer a few quick questions and our Mattress Match will browse our collection to find the perfect feel for you.
               </p>
               <div className="mt-6">
-                <a href="#quiz" className="inline-flex items-center justify-center rounded-full bg-blue-700 text-white px-6 py-3 font-semibold shadow hover:bg-blue-800 transition">
+                <a href="#quiz" className="inline-flex items-center justify-center rounded-full bg-orange-600 text-white px-6 py-3 font-semibold shadow hover:bg-orange-700 transition">
                   Match me
                 </a>
               </div>
@@ -119,10 +119,10 @@ export default function MattressFinderPage() {
         {/* Stepper */}
         <div className="max-w-4xl mx-auto mb-6">
           <div className="relative">
-            <div className="h-1.5 bg-blue-100 rounded-full overflow-hidden" />
+            <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden" />
             {/* Progress fill */}
             <div
-              className="absolute left-0 top-0 h-1.5 bg-gradient-to-r from-blue-600 to-blue-700 rounded-full transition-all duration-500"
+              className="absolute left-0 top-0 h-1.5 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full transition-all duration-500"
               style={{ width: `${Math.min(step, total) / total * 100}%` }}
             />
             {/* Number bubble */}
@@ -140,9 +140,9 @@ export default function MattressFinderPage() {
         
         <div className="max-w-4xl mx-auto">
           {step <= total ? (
-            <Card className="border-blue-100 shadow-sm">
+            <Card className="border-gray-200 shadow-sm">
               <CardContent className="p-6 sm:p-8">
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-blue-900 text-center mb-6">{current.question}</h2>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 text-center mb-6">{current.question}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   {current.options.map((opt) => {
                     const selected = answers[current.id] === opt.value
@@ -150,43 +150,43 @@ export default function MattressFinderPage() {
                       <button
                         key={opt.value}
                         onClick={() => handleAnswer(current.id, opt.value)}
-                        className={`text-left rounded-2xl border p-5 sm:p-6 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300 ${
-                          selected ? "border-blue-600 ring-2 ring-blue-200 bg-blue-50" : "border-blue-100 bg-white"
+                        className={`text-left rounded-2xl border p-5 sm:p-6 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-300 ${
+                          selected ? "border-orange-600 ring-2 ring-orange-200 bg-orange-50" : "border-gray-200 bg-white"
                         }`}
                       >
                         <div className="mb-3 h-28 flex items-center justify-center">
                           <img
                             alt={opt.label}
-                            src={createIllustration(opt.label, '#3b82f6')}
+                            src={createIllustration(opt.label, '#ea580c')}
                             className="h-24 w-auto rounded-xl shadow-sm"
                           />
                         </div>
-                        <div className="text-lg font-semibold text-blue-900">{opt.label}</div>
-                        {opt.hint && <div className="text-sm text-blue-900/70 mt-1">{opt.hint}</div>}
+                        <div className="text-lg font-semibold text-gray-900">{opt.label}</div>
+                        {opt.hint && <div className="text-sm text-gray-600 mt-1">{opt.hint}</div>}
                       </button>
                     )
                   })}
                       </div>
 
                 <div className="flex items-center justify-between mt-8">
-                  <Button variant="outline" onClick={prevStep} disabled={step === 1}>Previous</Button>
-                  <Button onClick={nextStep} disabled={!answers[current.id]} className="bg-blue-700 hover:bg-blue-800">
+                  <Button variant="outline" onClick={prevStep} disabled={step === 1} className="border-gray-300 text-gray-700 hover:bg-gray-50">Previous</Button>
+                  <Button onClick={nextStep} disabled={!answers[current.id]} className="bg-orange-600 hover:bg-orange-700">
                     {step === total ? "Get results" : "Next"}
                     </Button>
                 </div>
               </CardContent>
             </Card>
           ) : (
-            <Card className="border-blue-100 shadow-sm">
+            <Card className="border-gray-200 shadow-sm">
               <CardContent className="p-6 sm:p-8 text-center space-y-6">
-                <h2 className="text-3xl font-extrabold text-blue-900">Your Mattress Match</h2>
-                <p className="text-blue-900/80 max-w-2xl mx-auto">Based on your preferences, we think you'll love:</p>
+                <h2 className="text-3xl font-extrabold text-gray-900">Your Mattress Match</h2>
+                <p className="text-gray-700 max-w-2xl mx-auto">Based on your preferences, we think you'll love:</p>
                 <div className="text-2xl font-bold text-orange-600">{getRecommendation()}</div>
                 <div className="flex items-center justify-center gap-3 pt-2">
-                  <Button asChild className="bg-blue-700 hover:bg-blue-800">
+                  <Button asChild className="bg-orange-600 hover:bg-orange-700">
                     <a href="/mattresses">Shop recommendations</a>
                   </Button>
-                  <Button variant="outline" onClick={() => { setStep(1); setAnswers({}) }}>Retake quiz</Button>
+                  <Button variant="outline" onClick={() => { setStep(1); setAnswers({}) }} className="border-gray-300 text-gray-700 hover:bg-gray-50">Retake quiz</Button>
                 </div>
               </CardContent>
             </Card>

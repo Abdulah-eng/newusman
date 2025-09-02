@@ -7,10 +7,10 @@ export function MattressComfortLayers() {
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-blue-900 mb-6">
+          <h2 className="text-4xl font-bold text-gray-900 mb-6">
             Discover the Comfort Layers in Our Mattress
           </h2>
-          <p className="text-lg text-blue-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
             An ideal choice for budget-conscious shoppers and under 120lb sleepers. Perfect for children, bunk beds, or anyone needing a basic yet medium-firm mattress. It features a 1" Comfort Foam layer sewn into the quilt and an additional 1.5" layer of Comfort Foam, supported by a 504 15 Gauge SPECTRUM Coil innerspring unit. This entry-level mattress offers firm support, catering to those who prefer a solid sleeping surface.
           </p>
         </div>
@@ -30,8 +30,8 @@ export function MattressComfortLayers() {
                 </div>
                 
                 {/* Layer 1: Quilt with Comfort Foam */}
-                <div className="absolute top-8 left-0 right-0 h-12 bg-blue-50 relative">
-                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                <div className="absolute top-8 left-0 right-0 h-12 bg-orange-50 relative">
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
                     1
                   </div>
                   <div className="absolute left-16 top-1/2 transform -translate-y-1/2 text-sm font-medium text-gray-700">
@@ -41,7 +41,7 @@ export function MattressComfortLayers() {
                 
                 {/* Layer 2: Comfort Foam */}
                 <div className="absolute top-20 left-0 right-0 h-16 bg-white relative border-t border-gray-200">
-                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
                     2
                   </div>
                   <div className="absolute left-16 top-1/2 transform -translate-y-1/2 text-sm font-medium text-gray-700">
@@ -51,7 +51,7 @@ export function MattressComfortLayers() {
                 
                 {/* Layer 3: Support System - Coils */}
                 <div className="absolute top-36 left-0 right-0 bottom-0 bg-gray-100 relative">
-                  <div className="absolute left-4 top-8 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                  <div className="absolute left-4 top-8 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
                     3
                   </div>
                   <div className="absolute left-16 top-8 text-sm font-medium text-gray-700">
@@ -79,7 +79,7 @@ export function MattressComfortLayers() {
           <div className="space-y-8">
             <div className="space-y-6">
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg">
+                <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg">
                   1
                 </div>
                 <div>
@@ -91,7 +91,7 @@ export function MattressComfortLayers() {
               </div>
               
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg">
+                <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg">
                   2
                 </div>
                 <div>
@@ -103,7 +103,7 @@ export function MattressComfortLayers() {
               </div>
               
               <div className="flex items-start space-x-4">
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg">
+                <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg">
                   3
                 </div>
                 <div>
@@ -121,7 +121,7 @@ export function MattressComfortLayers() {
         <div className="mt-20">
           <div className="text-center mb-8">
             <div className="inline-flex items-center space-x-2 mb-4">
-              <Bed className="w-6 h-6 text-blue-600" />
+              <Bed className="w-6 h-6 text-orange-600" />
               <h3 className="text-2xl font-bold text-gray-900">Firmness Scale</h3>
             </div>
           </div>
@@ -130,7 +130,7 @@ export function MattressComfortLayers() {
             <div className="relative">
               {/* Scale Bar */}
               <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-blue-200 via-blue-300 to-blue-400 rounded-full"></div>
+                <div className="h-full bg-gradient-to-r from-orange-200 via-orange-300 to-orange-400 rounded-full"></div>
               </div>
               
               {/* Scale Markers */}
@@ -148,9 +148,9 @@ export function MattressComfortLayers() {
                   <div className="text-xs text-gray-600">Medium</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-medium text-blue-700 font-bold">6-8</div>
-                  <div className="text-xs text-blue-600 font-semibold">Medium-Firm</div>
-                  <div className="w-16 h-1 bg-blue-600 rounded-full mx-auto mt-1"></div>
+                  <div className="text-sm font-medium text-orange-700 font-bold">6-8</div>
+                  <div className="text-xs text-orange-600 font-semibold">Medium-Firm</div>
+                  <div className="w-16 h-1 bg-orange-600 rounded-full mx-auto mt-1"></div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm font-medium text-gray-700">8-9</div>

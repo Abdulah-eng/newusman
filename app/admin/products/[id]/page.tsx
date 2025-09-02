@@ -1,258 +1,885 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
+import React, { useState, useEffect, use } from 'react'
+import Link from 'next/link'
 import { AdminNav } from '@/components/admin/admin-nav'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { getFeatureCardsForCategory } from '@/lib/feature-cards'
+import { getFeaturesForCategory } from '@/lib/category-features'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { ArrowLeft, Save, Trash2, Upload, X } from 'lucide-react'
-import Link from 'next/link'
 
-interface Product {
+type VariantRow = {
   id: string
-  name: string
-  category: {
-    id: string
-    name: string
-    slug: string
-  }
-  rating: number | null
-  headline: string | null
-  long_description: string | null
-  created_at: string
-  updated_at: string
-  variants: Array<{
-    id: string
-    sku: string
-    current_price: number
-    original_price: number
-    size: string
-    color: string
-    depth: string
-    firmness: string
-  }>
-  images: Array<{
-    id: string
-    image_url: string
-  }>
+  sku: string
+  color?: string
+  depth?: string
+  firmness?: string
+  size?: string
+  length?: string
+  width?: string
+  height?: string
+  availability: boolean
+  originalPrice?: number
+  currentPrice?: number
+  variant_image?: string
 }
 
-export default function EditProductPage({ params }: { params: { id: string } }) {
-  const router = useRouter()
-  const [product, setProduct] = useState<Product | null>(null)
+export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: productId } = use(params)
+  const [product, setProduct] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string }>>([])
-  const [newImage, setNewImage] = useState('')
-  const [newVariant, setNewVariant] = useState({
-    sku: '',
-    size: '',
-    color: '',
-    depth: '',
-    firmness: '',
-    originalPrice: '',
-    currentPrice: ''
+  const [error, setError] = useState<string | null>(null)
+
+  // Form state
+  const [variants, setVariants] = useState<VariantRow[]>([])
+  const [useColor, setUseColor] = useState<boolean>(false)
+  const [useDepth, setUseDepth] = useState<boolean>(false)
+  const [useSize, setUseSize] = useState<boolean>(false)
+  const [useFirmness, setUseFirmness] = useState<boolean>(false)
+  const [name, setName] = useState('')
+  const [category, setCategory] = useState('')
+  const [rating, setRating] = useState(0)
+  const [headline, setHeadline] = useState('')
+  const [longDescription, setLongDescription] = useState('')
+  const [warrantyDeliveryLine, setWarrantyDeliveryLine] = useState('10-Year Warranty • Free Delivery • 100-Night Trial')
+  const [careInstructions, setCareInstructions] = useState('')
+  const [trialInformation, setTrialInformation] = useState('Try your mattress risk-free for 100 nights. If you are not completely satisfied, return it for a full refund. No questions asked.')
+  const [descriptionParagraphs, setDescriptionParagraphs] = useState([
+    { heading: 'Comfort & Support', content: 'Experience exceptional comfort with our premium materials...', image: '' },
+    { heading: 'Quality Materials', content: 'Crafted with the finest materials for lasting durability...', image: '' },
+    { heading: 'Sleep Benefits', content: 'Wake up feeling refreshed and well-rested...', image: '' }
+  ])
+  const [faqs, setFaqs] = useState([
+    { question: 'What is the warranty period?', answer: 'This mattress comes with a 10-year warranty...' },
+    { question: 'How long does delivery take?', answer: 'Standard delivery takes 3-5 business days...' }
+  ])
+  const [newFaq, setNewFaq] = useState({ question: '', answer: '' })
+  const [warrantySections, setWarrantySections] = useState([
+    { heading: 'Coverage', content: 'Comprehensive coverage for manufacturing defects...' },
+    { heading: 'Terms', content: 'Warranty terms and conditions apply...' },
+    { heading: 'Support', content: 'Dedicated customer support for warranty claims...' }
+  ])
+  const [dimensions, setDimensions] = useState({
+    height: '25 cm',
+    length: 'L 190cm',
+    width: '135cm',
+    mattressSize: '135cm x L 190cm cm',
+    maxHeight: '25 cm',
+    weightCapacity: '200 kg',
+    pocketSprings: '1000 count',
+    comfortLayer: '8 cm',
+    supportLayer: '17 cm',
+    dimensionDisclaimer: 'All measurements are approximate and may vary slightly.'
   })
+  const [importantNotices, setImportantNotices] = useState<Array<{
+    id: string
+    noticeText: string
+    sortOrder: number
+  }>>([])
+  const [newNotice, setNewNotice] = useState('')
+  const [firmnessScale, setFirmnessScale] = useState<'Soft' | 'Soft-Medium' | 'Medium' | 'Medium-Firm' | 'Firm' | 'Extra-firm'>('Medium')
+  const [supportLevel, setSupportLevel] = useState<'Low' | 'Medium' | 'High'>('Medium')
+  const [pressureReliefLevel, setPressureReliefLevel] = useState<'Low' | 'Medium' | 'High'>('Medium')
+  const [airCirculationLevel, setAirCirculationLevel] = useState<'Low' | 'Medium' | 'High'>('Medium')
+  const [durabilityLevel, setDurabilityLevel] = useState<'Low' | 'Medium' | 'High'>('High')
+  const [badges, setBadges] = useState<Array<{ type: 'sale' | 'new_in' | 'free_gift'; enabled: boolean }>>([
+    { type: 'sale', enabled: false },
+    { type: 'new_in', enabled: false },
+    { type: 'free_gift', enabled: false }
+  ])
+  const [selectedPopularCategories, setSelectedPopularCategories] = useState<string[]>([])
+  const [selectedRecommendedProducts, setSelectedRecommendedProducts] = useState<any[]>([])
+  const [reasonsToBuy, setReasonsToBuy] = useState<string[]>([])
+  const [newReason, setNewReason] = useState('')
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([])
+  const [selectedReasonsToLove, setSelectedReasonsToLove] = useState<Array<{reason: string, description: string, smalltext?: string, icon?: string}>>([])
+  const [newLoveReason, setNewLoveReason] = useState('')
+  const [newLoveDescription, setNewLoveDescription] = useState('')
+  const [newLoveSmalltext, setNewLoveSmalltext] = useState('')
+  const [images, setImages] = useState<Array<{ id: string; url: string; file?: File }>>([])
+  const [newImage, setNewImage] = useState<string>('')
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [mainImage, setMainImage] = useState('')
+  const [uploadingMainImage, setUploadingMainImage] = useState(false)
 
+  // Categories
+  const categories = [
+    { value: 'mattresses', label: 'Mattresses' },
+    { value: 'beds', label: 'Beds' },
+    { value: 'sofas', label: 'Sofas' },
+    { value: 'pillows', label: 'Pillows' },
+    { value: 'toppers', label: 'Toppers' },
+    { value: 'bunkbeds', label: 'Bunk Beds' }
+  ]
+
+  // Fetch product data on component mount
   useEffect(() => {
-    fetchProduct()
-    fetchCategories()
-  }, [params.id])
+    if (productId) {
+      fetchProduct(productId)
+    }
+  }, [productId])
 
-  const fetchProduct = async () => {
+  const fetchProduct = async (productId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          id,
-          name,
-          category:categories(id, name, slug),
-          rating,
-          headline,
-          long_description,
-          created_at,
-          updated_at,
-          variants:product_variants(id, sku, current_price, original_price, size, color, depth, firmness),
-          images:product_images(id, image_url)
-        `)
-        .eq('id', params.id)
-        .single()
-
-      if (error) {
-        console.error('Error fetching product:', error)
-        alert('Failed to fetch product')
-        return
+      setLoading(true)
+      setError(null)
+      
+      const response = await fetch(`/api/products/${productId}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch product')
       }
-
-      setProduct(data)
-    } catch (error) {
-      console.error('Error fetching product:', error)
-      alert('Failed to fetch product')
+      
+      const data = await response.json()
+      const productData = data.product
+      
+      // Debug logging for fetched data
+      console.log('Fetched product data:', {
+        selectedFeatures: productData.selectedFeatures,
+        reasonsToBuy: productData.reasonsToBuy,
+        selectedReasonsToLove: productData.selectedReasonsToLove,
+        selectedPopularCategories: productData.selectedPopularCategories
+      })
+      
+      console.log('Raw product data:', productData)
+      
+      // Populate form with fetched data
+      setName(productData.name || '')
+      setCategory(productData.category || '')
+      setRating(productData.rating || 0)
+      setHeadline(productData.headline || '')
+      setLongDescription(productData.longDescription || '')
+      setWarrantyDeliveryLine(productData.warrantyDeliveryLine || '')
+      setCareInstructions(productData.careInstructions || '')
+      setTrialInformation(productData.trialInformation || '')
+      setFirmnessScale(productData.firmnessScale || 'Medium')
+      setSupportLevel(productData.supportLevel || 'Medium')
+      setPressureReliefLevel(productData.pressureReliefLevel || 'Medium')
+      setAirCirculationLevel(productData.airCirculationLevel || 'Medium')
+      setDurabilityLevel(productData.durabilityLevel || 'High')
+      setVariants(productData.variants || [])
+      
+      // Set main image
+      if (productData.main_image) {
+        setMainImage(productData.main_image)
+      }
+      
+      // Set attribute flags based on variants
+      if (productData.variants && productData.variants.length > 0) {
+        setUseColor(productData.variants.some((v: any) => v.color))
+        setUseDepth(productData.variants.some((v: any) => v.depth))
+        setUseSize(productData.variants.some((v: any) => v.size))
+        setUseFirmness(productData.variants.some((v: any) => v.firmness))
+      }
+      
+              // Set images
+        if (productData.images && productData.images.length > 0) {
+          setImages(productData.images.map((img: string, index: number) => ({
+            id: `img-${index}`,
+            url: img,
+            file: undefined
+          })))
+        }
+      
+      // Set description paragraphs
+      if (productData.descriptionParagraphs && productData.descriptionParagraphs.length > 0) {
+        setDescriptionParagraphs(productData.descriptionParagraphs)
+      }
+      
+      // Set FAQs
+      if (productData.faqs && productData.faqs.length > 0) {
+        setFaqs(productData.faqs)
+      }
+      
+      // Set warranty sections
+      if (productData.warrantySections && productData.warrantySections.length > 0) {
+        setWarrantySections(productData.warrantySections)
+      }
+      
+      // Set dimensions
+      if (productData.dimensions) {
+        setDimensions({
+          height: productData.dimensions.height || '25 cm',
+          length: productData.dimensions.length || 'L 190cm',
+          width: productData.dimensions.width || '135cm',
+          mattressSize: productData.dimensions.mattress_size || '135cm x L 190cm cm',
+          maxHeight: productData.dimensions.max_height || '25 cm',
+          weightCapacity: productData.dimensions.weight_capacity || '200 kg',
+          pocketSprings: productData.dimensions.pocket_springs || '1000 count',
+          comfortLayer: productData.dimensions.comfort_layer || '8 cm',
+          supportLayer: productData.dimensions.support_layer || '17 cm',
+          dimensionDisclaimer: productData.dimensions.dimension_disclaimer || 'All measurements are approximate and may vary slightly.'
+        })
+      }
+      
+      // Set important notices
+      if (productData.importantNotices && productData.importantNotices.length > 0) {
+        setImportantNotices(productData.importantNotices)
+      }
+      
+      // Set badges
+      if (productData.badges && productData.badges.length > 0) {
+        setBadges(productData.badges)
+      }
+      
+      // Set popular categories
+      setSelectedPopularCategories(productData.selectedPopularCategories || [])
+      
+      // Set reasons to buy
+      setReasonsToBuy(productData.reasonsToBuy || [])
+      
+      // Set selected features
+      setSelectedFeatures(productData.selectedFeatures || [])
+      
+      // Set selected reasons to love
+      setSelectedReasonsToLove(productData.selectedReasonsToLove || [])
+      
+      setProduct(productData)
+    } catch (err) {
+      console.error('Error fetching product:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch product')
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchCategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('id, name, slug')
-        .order('name')
+  // Variant management functions
+  const addVariant = () => {
+    setVariants(v => ([
+      ...v,
+      {
+        id: crypto.randomUUID(),
+        sku: '',
+        color: '',
+        depth: '',
+        firmness: '',
+        size: '',
+        length: '',
+        width: '',
+        height: '',
+        availability: true,
+        originalPrice: undefined,
+        currentPrice: undefined,
+        variant_image: '',
+      },
+    ]))
+  }
 
-      if (error) {
-        console.error('Error fetching categories:', error)
-        return
-      }
+  const updateVariant = (id: string, patch: Partial<VariantRow>) => {
+    setVariants(v => v.map(row => row.id === id ? { ...row, ...patch } : row))
+  }
 
-      setCategories(data || [])
-    } catch (error) {
-      console.error('Error fetching categories:', error)
+  const removeVariant = (id: string) => {
+    setVariants(v => v.filter(row => row.id !== id))
+  }
+
+  // Helper functions for managing sections
+  const addDescriptionParagraph = () => {
+    setDescriptionParagraphs(prev => [...prev, { heading: '', content: '', image: '' }])
+  }
+
+  const updateDescriptionParagraph = (index: number, field: 'heading' | 'content', value: string) => {
+    setDescriptionParagraphs(prev => prev.map((para, i) => 
+      i === index ? { ...para, [field]: value } : para
+    ))
+  }
+
+  const removeDescriptionParagraph = (index: number) => {
+    setDescriptionParagraphs(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const addFaq = () => {
+    if (newFaq.question.trim() && newFaq.answer.trim()) {
+      setFaqs(prev => [...prev, { ...newFaq }])
+      setNewFaq({ question: '', answer: '' })
     }
   }
 
-  const handleSave = async () => {
-    if (!product) return
+  const removeFaq = (index: number) => {
+    setFaqs(prev => prev.filter((_, i) => i !== index))
+  }
 
-    setSaving(true)
+  const addWarrantySection = () => {
+    setWarrantySections(prev => [...prev, { heading: '', content: '' }])
+  }
+
+  const updateWarrantySection = (index: number, field: 'heading' | 'content', value: string) => {
+    setWarrantySections(prev => prev.map((section, i) => 
+      i === index ? { ...section, [field]: value } : section
+    ))
+  }
+
+  const removeWarrantySection = (index: number) => {
+    setWarrantySections(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const addImportantNotice = () => {
+    if (newNotice.trim()) {
+      setImportantNotices(prev => [...prev, {
+        id: crypto.randomUUID(),
+        noticeText: newNotice,
+        sortOrder: prev.length
+      }])
+      setNewNotice('')
+    }
+  }
+
+  const removeImportantNotice = (id: string) => {
+    setImportantNotices(prev => prev.filter(notice => notice.id !== id))
+  }
+
+  // Badge management functions
+  const getBadgeStatus = (type: 'sale' | 'new_in' | 'free_gift') => {
+    return badges.find(badge => badge.type === type)?.enabled || false
+  }
+
+  const handleBadgeToggle = (type: 'sale' | 'new_in' | 'free_gift', enabled: boolean) => {
+    setBadges(prev => prev.map(badge => 
+      badge.type === type ? { ...badge, enabled } : badge
+    ))
+  }
+
+  // Popular categories management
+  const togglePopularCategory = (categoryName: string) => {
+    setSelectedPopularCategories(prev => 
+      prev.includes(categoryName) 
+        ? prev.filter(cat => cat !== categoryName)
+        : [...prev, categoryName]
+    )
+  }
+
+  // Popular categories data based on current product category (match add form)
+  const getPopularCategories = () => {
+    if (category === 'beds') {
+      return [
+        { name: 'Luxury Beds', filterKey: 'Bed Type', filterValue: 'Luxury' },
+        { name: 'Fabric Beds', filterKey: 'Bed Type', filterValue: 'Fabric' },
+        { name: 'Wooden Beds', filterKey: 'Bed Type', filterValue: 'Wooden' },
+        { name: 'Children Beds', filterKey: 'Bed Type', filterValue: 'Children' },
+        { name: 'Bunk Beds', filterKey: 'Bed Type', filterValue: 'Bunk' },
+        { name: 'Sofa Beds', filterKey: 'Bed Type', filterValue: 'Sofa' },
+        { name: 'Storage Beds', filterKey: 'Bed Type', filterValue: 'Storage' },
+        { name: 'Ottoman Beds', filterKey: 'Bed Type', filterValue: 'Ottoman' }
+      ]
+    } else if (category === 'sofas') {
+      return [
+        { name: 'L Shape Sofa', filterKey: 'Sofa Type', filterValue: 'L Shape' },
+        { name: '3 Seater Sofa', filterKey: 'Sofa Type', filterValue: '3 Seater' },
+        { name: 'Sofa Bed', filterKey: 'Sofa Type', filterValue: 'Sofa Bed' },
+        { name: '2 Seater Sofa', filterKey: 'Sofa Type', filterValue: '2 Seater' },
+        { name: 'Recliner Sofa', filterKey: 'Sofa Type', filterValue: 'Recliner' },
+        { name: 'Corner Sofa', filterKey: 'Sofa Type', filterValue: 'Corner' },
+        { name: 'Fabric Sofa', filterKey: 'Sofa Material', filterValue: 'Fabric' },
+        { name: 'Leather Sofa', filterKey: 'Sofa Material', filterValue: 'Leather' },
+        { name: 'New In', filterKey: 'Status', filterValue: 'New' },
+        { name: 'Sale', filterKey: 'Status', filterValue: 'Sale' },
+        { name: 'Clearance', filterKey: 'Status', filterValue: 'Clearance' }
+      ]
+    } else if (category === 'kids') {
+      return [
+        { name: 'Mattresses', filterKey: 'Kids Category', filterValue: 'Mattresses' },
+        { name: 'Beds', filterKey: 'Kids Category', filterValue: 'Beds' },
+        { name: 'Bunk Beds', filterKey: 'Kids Category', filterValue: 'Bunk Beds' },
+        { name: 'New In', filterKey: 'Kids Status', filterValue: 'New' },
+        { name: 'Clearance', filterKey: 'Kids Status', filterValue: 'Clearance' },
+        { name: 'Sale', filterKey: 'Kids Status', filterValue: 'Sale' }
+      ]
+    }
+    // Default mattress-centric set
+    return [
+      { name: 'Most Cooling', filterKey: 'Features', filterValue: 'Cooling' },
+      { name: 'Soft Comfort', filterKey: 'Firmness', filterValue: 'Soft' },
+      { name: 'Firm Comfort', filterKey: 'Firmness', filterValue: 'Firm' },
+      { name: 'Medium Comfort', filterKey: 'Firmness', filterValue: 'Medium' },
+      { name: 'Super Firm', filterKey: 'Features', filterValue: 'Heavy Duty' },
+      { name: 'Most Support', filterKey: 'Features', filterValue: 'Extra Support' },
+      { name: 'Luxury', filterKey: 'Mattress Type', filterValue: 'Luxury' },
+      { name: 'Hybrid', filterKey: 'Mattress Type', filterValue: 'Hybrid' },
+      { name: 'Pocket Sprung', filterKey: 'Mattress Type', filterValue: 'Pocket Sprung' },
+      { name: 'Coil Sprung', filterKey: 'Mattress Type', filterValue: 'Coil Sprung' },
+      { name: 'Kids', filterKey: 'Mattress Type', filterValue: 'Kids' },
+      { name: 'Bunk Beds', filterKey: 'Mattress Type', filterValue: 'Bunk Beds' },
+    ]
+  }
+
+  // Reasons to buy management
+  const addReasonToBuy = () => {
+    if (newReason.trim()) {
+      setReasonsToBuy(prev => [...prev, newReason.trim()])
+      setNewReason('')
+    }
+  }
+
+  const removeReasonToBuy = (index: number) => {
+    setReasonsToBuy(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // Features management
+  const addReasonToLove = (reason: string, description: string, smalltext: string, icon: string) => {
+    setSelectedReasonsToLove(prev => [...prev, { reason, description, smalltext, icon }])
+  }
+
+  const removeReasonToLove = (index: number) => {
+    setSelectedReasonsToLove(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const updateReasonToLoveDescription = (index: number, description: string) => {
+    setSelectedReasonsToLove(prev => prev.map((item, i) => 
+      i === index ? { ...item, description } : item
+    ))
+  }
+
+  const updateReasonToLoveSmalltext = (index: number, smalltext: string) => {
+    setSelectedReasonsToLove(prev => prev.map((item, i) => 
+      i === index ? { ...item, smalltext } : item
+    ))
+  }
+
+  // Helper function to get popular categories
+  // Removed simple list; using dynamic getPopularCategories() defined above to match add form
+
+
+
+  // getFeaturesForCategory is now centralized to keep parity with feature cards
+
+
+
+  // Removed local getFeatureCardsForCategory to use centralized list from lib/feature-cards
+
+  // Icon component mapping
+  const getIconComponentAdmin = (iconName: string) => {
+    const iconMap: { [key: string]: any } = {
+      springs: () => <div className="w-6 h-6 bg-orange-500 rounded-full" />,
+      brain: () => <div className="w-6 h-6 bg-blue-500 rounded-full" />,
+      'sliders-horizontal': () => <div className="w-6 h-6 bg-green-500 rounded-full" />,
+      shield: () => <div className="w-6 h-6 bg-purple-500 rounded-full" />,
+      thermometer: () => <div className="w-6 h-6 bg-red-500 rounded-full" />,
+      zap: () => <div className="w-6 h-6 bg-yellow-500 rounded-full" />,
+      package: () => <div className="w-6 h-6 bg-indigo-500 rounded-full" />,
+      crown: () => <div className="w-6 h-6 bg-pink-500 rounded-full" />,
+      square: () => <div className="w-6 h-6 bg-gray-500 rounded-full" />,
+      'refresh-cw': () => <div className="w-6 h-6 bg-teal-500 rounded-full" />,
+      'corner-down-left': () => <div className="w-6 h-6 bg-orange-500 rounded-full" />,
+      grid: () => <div className="w-6 h-6 bg-cyan-500 rounded-full" />,
+      snowflake: () => <div className="w-6 h-6 bg-blue-500 rounded-full" />,
+      leaf: () => <div className="w-6 h-6 bg-green-500 rounded-full" />
+    }
+    return iconMap[iconName] || (() => <div className="w-6 h-6 bg-gray-500 rounded-full" />)
+  }
+
+  // Image upload functions
+  const handleImageUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+
     try {
-      // Update main product
-      const { error: productError } = await supabase
-        .from('products')
-        .update({
-          name: product.name,
-          category_id: product.category.id,
-          rating: product.rating ? parseFloat(product.rating.toString()) : null,
-          headline: product.headline,
-          long_description: product.long_description,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', product.id)
+      setUploadingImage(true)
+      
+      // Collect upload results for summary alert
+      const uploadResults: Array<{
+        fileName: string
+        originalSize: number
+        optimizedSize: number
+        savingsPercent: string
+        success: boolean
+        error?: string
+      }> = []
+      
+      const uploadPromises = Array.from(files).map(async (file) => {
+        try {
+          // Use optimized upload API for additional images
+          const formData = new FormData()
+          formData.append('file', file)
+          formData.append('preset', 'medium') // Use medium preset for additional images
+          
+          const response = await fetch('/api/upload-optimized', {
+            method: 'POST',
+            body: formData
+          })
+          
+          if (response.ok) {
+            const result = await response.json()
+            
+            // Collect result for summary
+            uploadResults.push({
+              fileName: file.name,
+              originalSize: file.size,
+              optimizedSize: result.optimizedSize * 1024, // Convert KB to bytes for comparison
+              savingsPercent: result.compressionRatio,
+              success: true
+            })
+            
+            console.log('[Edit Form] Additional image optimized upload result:', result)
+            return { id: crypto.randomUUID(), url: result.url, file: undefined }
+          } else {
+            const error = await response.json()
+            console.error('[Edit Form] Additional image optimized upload error:', error)
+            
+            // Fallback to regular upload
+            const fallbackFormData = new FormData()
+            fallbackFormData.append('file', file)
+            
+            const res = await fetch('/api/upload', {
+              method: 'POST',
+              body: fallbackFormData,
+            })
 
-      if (productError) {
-        console.error('Error updating product:', productError)
-        alert('Failed to update product')
-        return
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}))
+              throw new Error(err.error || 'Upload failed')
+            }
+
+            const json = await res.json()
+            
+            uploadResults.push({
+              fileName: file.name,
+              originalSize: file.size,
+              optimizedSize: file.size,
+              savingsPercent: '0',
+              success: false,
+              error: 'Fallback upload (no optimization)'
+            })
+            
+            return { id: crypto.randomUUID(), url: json.url, file: undefined }
+          }
+        } catch (error) {
+          console.error('[Edit Form] Additional image upload error:', error)
+          
+          // Final fallback to regular upload
+          const fallbackFormData = new FormData()
+          fallbackFormData.append('file', file)
+          
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: fallbackFormData,
+          })
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(err.error || 'Upload failed')
+          }
+
+          const json = await res.json()
+          
+          uploadResults.push({
+            fileName: file.name,
+            originalSize: file.size,
+            optimizedSize: file.size,
+            savingsPercent: '0',
+            success: false,
+            error: 'Upload failed'
+          })
+          
+          return { id: crypto.randomUUID(), url: json.url, file: undefined }
+        }
+      })
+
+      const uploadedImages = await Promise.all(uploadPromises)
+      setImages(prev => [...prev, ...uploadedImages])
+      
+      // Show summary alert for additional images
+      if (uploadResults.length > 0) {
+        const successfulUploads = uploadResults.filter(r => r.success)
+        const failedUploads = uploadResults.filter(r => !r.success)
+        
+        let alertMessage = `📸 Additional Images Upload Summary\n\n`
+        
+        if (successfulUploads.length > 0) {
+          const totalOriginalSize = successfulUploads.reduce((sum, r) => sum + r.originalSize, 0)
+          const totalOptimizedSize = successfulUploads.reduce((sum, r) => sum + r.optimizedSize, 0)
+          const totalSavings = ((totalOriginalSize - totalOptimizedSize) / totalOriginalSize * 100).toFixed(1)
+          
+          alertMessage += `✅ Successfully Optimized: ${successfulUploads.length} images\n`
+          alertMessage += `📏 Total Original Size: ${(totalOriginalSize / 1024 / 1024).toFixed(2)} MB\n`
+          alertMessage += `🔄 Total Optimized Size: ${(totalOptimizedSize / 1024 / 1024).toFixed(2)} MB\n`
+          alertMessage += `💾 Total Savings: ${totalSavings}%\n\n`
+          
+          // Add individual file details
+          successfulUploads.forEach(result => {
+            const originalMB = (result.originalSize / 1024 / 1024).toFixed(2)
+            const optimizedMB = (result.optimizedSize / 1024 / 1024).toFixed(2)
+            alertMessage += `📁 ${result.fileName}: ${originalMB} MB → ${optimizedMB} MB (${result.savingsPercent}% saved)\n`
+          })
+        }
+        
+        if (failedUploads.length > 0) {
+          alertMessage += `\n❌ Failed/Unoptimized: ${failedUploads.length} images\n`
+          failedUploads.forEach(result => {
+            const sizeMB = (result.originalSize / 1024 / 1024).toFixed(2)
+            alertMessage += `📁 ${result.fileName}: ${sizeMB} MB (${result.error})\n`
+          })
+        }
+        
+        alertMessage += `\n🎯 Images converted to WebP format for better performance!`
+        
+        alert(alertMessage)
+      }
+    } catch (error: any) {
+      console.error('Image upload error:', error)
+      alert(error?.message || 'Upload failed')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleMainImageUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+
+    try {
+      setUploadingMainImage(true)
+      const file = files[0]
+      
+      try {
+        // Use optimized upload API for main image
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('preset', 'large') // Use large preset for main product image
+        
+        const response = await fetch('/api/upload-optimized', {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          setMainImage(result.url)
+          
+          // Show size comparison alert for main image
+          const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
+          const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
+          const savingsPercent = result.compressionRatio
+          
+          alert(`Main product image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
+          
+          console.log('[Edit Form] Main image optimized upload result:', result)
+        } else {
+          const error = await response.json()
+          console.error('[Edit Form] Main image optimized upload error:', error)
+          
+          // Fallback to regular upload
+          const fallbackFormData = new FormData()
+          fallbackFormData.append('file', file)
+          
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: fallbackFormData,
+          })
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(err.error || 'Upload failed')
+          }
+
+          const json = await res.json()
+          setMainImage(json.url)
+          alert('Main image uploaded successfully (fallback mode)')
+        }
+      } catch (error) {
+        console.error('[Edit Form] Main image upload error:', error)
+        // Final fallback to regular upload
+        const fallbackFormData = new FormData()
+        fallbackFormData.append('file', file)
+        
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: fallbackFormData,
+        })
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.error || 'Upload failed')
+        }
+
+        const json = await res.json()
+        setMainImage(json.url)
+      }
+    } catch (error: any) {
+      console.error('Main image upload error:', error)
+      alert(error?.message || 'Upload failed')
+    } finally {
+      setUploadingMainImage(false)
+    }
+  }
+
+  const handleDescriptionFileUpload = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (files && files[0]) {
+      const file = files[0]
+      
+      try {
+        // Use optimized upload API for description images
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('preset', 'medium') // Use medium preset for description images
+        
+        const response = await fetch('/api/upload-optimized', {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          
+          // Show size comparison alert for description image
+          const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
+          const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
+          const savingsPercent = result.compressionRatio
+          
+          alert(`Description image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
+          
+          // Update the description paragraph with the optimized image URL
+          const newParagraphs = [...descriptionParagraphs]
+          newParagraphs[index].image = result.url
+          setDescriptionParagraphs(newParagraphs)
+          
+          console.log('[Edit Form] Description image optimized upload result:', result)
+        } else {
+          const error = await response.json()
+          console.error('[Edit Form] Description image optimized upload error:', error)
+          
+          // Fallback to regular upload
+          const fallbackFormData = new FormData()
+          fallbackFormData.append('file', file)
+          
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: fallbackFormData,
+          })
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(err.error || 'Upload failed')
+          }
+
+          const json = await res.json()
+          
+          // Update the description paragraph with the fallback image URL
+          const newParagraphs = [...descriptionParagraphs]
+          newParagraphs[index].image = json.url
+          setDescriptionParagraphs(newParagraphs)
+          
+          alert('Description image uploaded successfully (fallback mode)')
+        }
+      } catch (error) {
+        console.error('[Edit Form] Description image upload error:', error)
+        alert('Failed to upload description image')
+      }
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    
+    try {
+      const payload: any = {
+        name,
+        category,
+        rating,
+        headline,
+        longDescription,
+        warrantyDeliveryLine,
+        careInstructions,
+        trialInformation,
+        firmnessScale,
+        supportLevel,
+        pressureReliefLevel,
+        airCirculationLevel,
+        durabilityLevel,
+        main_image: mainImage,
+        images: images.map(img => img.url), // Extract URLs from image objects
+        descriptionParagraphs,
+        faqs,
+        warrantySections,
+        dimensions,
+        importantNotices,
+        badges,
+        // Send both for backward compatibility with API; prefer popularCategories (rich objects)
+        selectedPopularCategories,
+        popularCategories: getPopularCategories().filter(cat => selectedPopularCategories.includes(cat.name)),
+        reasonsToBuy,
+        selectedFeatures,
+        selectedReasonsToLove,
+        variants
       }
 
-      // Update variants
-      for (const variant of product.variants) {
-        const { error: variantError } = await supabase
-          .from('product_variants')
-          .update({
-            sku: variant.sku,
-            size: variant.size,
-            color: variant.color,
-            depth: variant.depth,
-            firmness: variant.firmness,
-            original_price: variant.original_price,
-            current_price: variant.current_price
-          })
-          .eq('id', variant.id)
+      // Omit empty arrays so API won't clear existing data unintentionally
+      if (Array.isArray(payload.selectedFeatures) && payload.selectedFeatures.length === 0) {
+        delete payload.selectedFeatures
+      }
+      if (Array.isArray(payload.reasonsToBuy) && payload.reasonsToBuy.length === 0) {
+        delete payload.reasonsToBuy
+      }
+      if (Array.isArray(payload.selectedReasonsToLove) && payload.selectedReasonsToLove.length === 0) {
+        delete payload.selectedReasonsToLove
+      }
+      if (Array.isArray(payload.selectedPopularCategories) && payload.selectedPopularCategories.length === 0) {
+        delete payload.selectedPopularCategories
+      }
 
-        if (variantError) {
-          console.error('Error updating variant:', variantError)
-        }
+      // Debug logging
+      console.log('Frontend payload being sent:', {
+        selectedFeatures,
+        reasonsToBuy,
+        selectedReasonsToLove,
+        selectedPopularCategories
+      })
+      
+      console.log('Full payload being sent:', payload)
+
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update product')
       }
 
       alert('Product updated successfully!')
-      router.push('/admin/products')
     } catch (error) {
       console.error('Error updating product:', error)
-      alert('Failed to update product')
+      alert(`Error updating product: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setSaving(false)
     }
   }
 
-  const addVariant = () => {
-    if (!product) return
-
-    const variant = {
-      id: crypto.randomUUID(),
-      sku: newVariant.sku,
-      size: newVariant.size,
-      color: newVariant.color,
-      depth: newVariant.depth,
-      firmness: newVariant.firmness,
-      original_price: parseFloat(newVariant.originalPrice) || 0,
-      current_price: parseFloat(newVariant.currentPrice) || 0
-    }
-
-    setProduct({
-      ...product,
-      variants: [...product.variants, variant]
-    })
-
-    // Reset form
-    setNewVariant({
-      sku: '',
-      size: '',
-      color: '',
-      depth: '',
-      firmness: '',
-      originalPrice: '',
-      currentPrice: ''
-    })
-  }
-
-  const removeVariant = (variantId: string) => {
-    if (!product) return
-
-    setProduct({
-      ...product,
-      variants: product.variants.filter(v => v.id !== variantId)
-    })
-  }
-
-  const addImage = () => {
-    if (!product || !newImage.trim()) return
-
-    const image = {
-      id: crypto.randomUUID(),
-      image_url: newImage.trim()
-    }
-
-    setProduct({
-      ...product,
-      images: [...product.images, image]
-    })
-
-    setNewImage('')
-  }
-
-  const removeImage = (imageId: string) => {
-    if (!product) return
-
-    setProduct({
-      ...product,
-      images: product.images.filter(img => img.id !== imageId)
-    })
-  }
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading product...</p>
+      <div className="min-h-screen bg-gray-50">
+        <AdminNav />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading product...</p>
+          </div>
         </div>
       </div>
     )
   }
 
-  if (!product) {
+  if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Product Not Found</h2>
-          <Link href="/admin/products">
-            <Button>Back to Products</Button>
-          </Link>
+      <div className="min-h-screen bg-gray-50">
+        <AdminNav />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              <strong>Error:</strong> {error}
+            </div>
+            <Link href="/admin/products">
+              <Button variant="outline">Back to Products</Button>
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -262,286 +889,1185 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     <div className="min-h-screen bg-gray-50">
       <AdminNav />
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Link href="/admin/products">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Products
-              </Button>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <Link href="/admin/products" className="text-orange-600 hover:text-orange-700 mb-2 inline-block">
+              ← Back to Products
             </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Edit Product</h1>
-              <p className="text-gray-600 mt-2">Update product information and variants</p>
-            </div>
+            <h1 className="text-3xl font-bold text-gray-900">Edit Product: {name}</h1>
           </div>
-          <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
-            <Save className="w-4 h-4 mr-2" />
+          <Button onClick={handleSubmit} disabled={saving} className="bg-orange-600 hover:bg-orange-700">
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Basic Info */}
-          <div className="space-y-6">
-            {/* Basic Information */}
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Product Name</Label>
-                  <Input
-                    id="name"
-                    value={product.name}
-                    onChange={(e) => setProduct({ ...product, name: e.target.value })}
-                    placeholder="Product name"
-                  />
-                </div>
+        <form onSubmit={handleSubmit}>
+          <Tabs defaultValue="basic" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-8">
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsTrigger value="images">Images</TabsTrigger>
+              <TabsTrigger value="variants">Variants</TabsTrigger>
+              <TabsTrigger value="content">Content</TabsTrigger>
+              <TabsTrigger value="description">Description</TabsTrigger>
+              <TabsTrigger value="features">Features</TabsTrigger>
+              <TabsTrigger value="dimensions">Dimensions</TabsTrigger>
+              <TabsTrigger value="warranty">Warranty</TabsTrigger>
+            </TabsList>
 
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <select
-                    id="category"
-                    value={product.category.id}
-                    onChange={(e) => {
-                      const category = categories.find(c => c.id === e.target.value)
-                      if (category) {
-                        setProduct({ ...product, category })
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
+            {/* Basic Info Tab */}
+            <TabsContent value="basic" className="space-y-6">
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="name">Product Name</Label>
+                    <Input
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter product name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="category">Category</Label>
+                    <select
+                      id="category"
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                    >
+                      {categories.map((cat) => (
+                        <option key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="rating">Rating</Label>
+                    <Input
+                      id="rating"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="5"
+                      value={rating}
+                      onChange={(e) => setRating(parseFloat(e.target.value))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="headline">Headline</Label>
+                    <Input
+                      id="headline"
+                      value={headline}
+                      onChange={(e) => setHeadline(e.target.value)}
+                      placeholder="Enter product headline"
+                    />
+                  </div>
                 </div>
-
-                <div>
-                  <Label htmlFor="headline">Headline</Label>
-                  <Input
-                    id="headline"
-                    value={product.headline || ''}
-                    onChange={(e) => setProduct({ ...product, headline: e.target.value })}
-                    placeholder="Product headline"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="rating">Rating</Label>
-                  <Input
-                    id="rating"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="5"
-                    value={product.rating || ''}
-                    onChange={(e) => setProduct({ ...product, rating: e.target.value ? parseFloat(e.target.value) : null })}
-                    placeholder="4.5"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Description</Label>
+                <div className="mt-4">
+                  <Label htmlFor="longDescription">Long Description</Label>
                   <Textarea
-                    id="description"
-                    value={product.long_description || ''}
-                    onChange={(e) => setProduct({ ...product, long_description: e.target.value })}
-                    placeholder="Product description"
+                    id="longDescription"
+                    value={longDescription}
+                    onChange={(e) => setLongDescription(e.target.value)}
+                    placeholder="Enter detailed product description"
                     rows={4}
                   />
                 </div>
-              </div>
-            </Card>
-
-            {/* Images */}
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Product Images</h2>
-              <div className="space-y-4">
-                <div className="flex space-x-2">
-                  <Input
-                    placeholder="Image URL"
-                    value={newImage}
-                    onChange={(e) => setNewImage(e.target.value)}
-                  />
-                  <Button onClick={addImage} size="sm">
-                    <Upload className="w-4 h-4 mr-1" />
-                    Add
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  {product.images.map((image) => (
-                    <div key={image.id} className="relative group">
-                      <img
-                        src={image.image_url}
-                        alt="Product"
-                        className="w-full h-32 object-cover rounded-lg"
-                      />
-                      <button
-                        onClick={() => removeImage(image.id)}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Right Column - Variants */}
-          <div className="space-y-6">
-            {/* Variants */}
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Product Variants</h2>
-              <div className="space-y-4">
-                {/* Add New Variant Form */}
-                <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <Label htmlFor="newSku">SKU</Label>
-                    <Input
-                      id="newSku"
-                      value={newVariant.sku}
-                      onChange={(e) => setNewVariant({ ...newVariant, sku: e.target.value })}
-                      placeholder="SKU"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="newSize">Size</Label>
-                    <Input
-                      id="newSize"
-                      value={newVariant.size}
-                      onChange={(e) => setNewVariant({ ...newVariant, size: e.target.value })}
-                      placeholder="Size"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="newColor">Color</Label>
-                    <Input
-                      id="newColor"
-                      value={newVariant.color}
-                      onChange={(e) => setNewVariant({ ...newVariant, color: e.target.value })}
-                      placeholder="Color"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="newDepth">Depth</Label>
-                    <Input
-                      id="newDepth"
-                      value={newVariant.depth}
-                      onChange={(e) => setNewVariant({ ...newVariant, depth: e.target.value })}
-                      placeholder="Depth"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="newFirmness">Firmness</Label>
-                    <Input
-                      id="newFirmness"
-                      value={newVariant.firmness}
-                      onChange={(e) => setNewVariant({ ...newVariant, firmness: e.target.value })}
-                      placeholder="Firmness"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="newOriginalPrice">Original Price</Label>
-                    <Input
-                      id="newOriginalPrice"
-                      type="number"
-                      step="0.01"
-                      value={newVariant.originalPrice}
-                      onChange={(e) => setNewVariant({ ...newVariant, originalPrice: e.target.value })}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="newCurrentPrice">Current Price</Label>
-                    <Input
-                      id="newCurrentPrice"
-                      type="number"
-                      step="0.01"
-                      value={newVariant.currentPrice}
-                      onChange={(e) => setNewVariant({ ...newVariant, currentPrice: e.target.value })}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Button onClick={addVariant} className="w-full">
-                      Add Variant
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Existing Variants */}
-                <div className="space-y-3">
-                  {product.variants.map((variant) => (
-                    <div key={variant.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium">Variant {variant.sku || variant.id.slice(0, 8)}</h4>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeVariant(variant.id)}
-                          className="text-red-600 border-red-600 hover:bg-red-50"
+                
+                {/* Main Image Section */}
+                <div className="mt-6">
+                  <Label className="text-lg font-semibold mb-4 block">Main Product Image</Label>
+                  <div className="space-y-4">
+                    {/* Current Main Image Display */}
+                    {mainImage && (
+                      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                        <img 
+                          src={mainImage} 
+                          alt="Main product image" 
+                          className="w-24 h-24 object-cover rounded"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                          }}
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-600">Current main image</p>
+                          <p className="text-xs text-gray-500 truncate">{mainImage}</p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => setMainImage('')}
+                          className="text-red-600 hover:text-red-700"
                         >
-                          <Trash2 className="w-4 h-4 mr-1" />
                           Remove
                         </Button>
                       </div>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
+                    )}
+                    
+                    {/* Main Image Upload */}
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Upload New Main Image (converted to WebP)</Label>
+                      <Input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={(e) => handleMainImageUpload(e.target.files)}
+                        className="file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+                      {uploadingMainImage && (
+                        <div className="mt-2 text-sm text-blue-600">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 inline-block mr-2"></div>
+                          Uploading and optimizing main image...
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1">
+                        Main image will be automatically converted to WebP format for better performance
+                      </p>
+                    </div>
+                    
+                    {/* Main Image URL Input */}
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Or Enter Main Image URL</Label>
+                      <div className="flex gap-2">
+                        <Input 
+                          placeholder="https://..." 
+                          value={mainImage} 
+                          onChange={(e) => setMainImage(e.target.value)} 
+                        />
+                        <Button 
+                          variant="outline"
+                          onClick={() => setMainImage('')}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+
+            {/* Images Tab */}
+            <TabsContent value="images" className="space-y-6">
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Product Images</h2>
+                <div className="space-y-4">
+                                      <div>
+                      <Label>Add Images</Label>
+                      <div className="space-y-4">
+                        {/* File Upload */}
                         <div>
-                          <span className="font-medium">Size:</span> {variant.size || 'N/A'}
+                          <Label className="text-sm font-medium mb-2 block">Upload Images (converted to WebP)</Label>
+                          <Input 
+                            type="file" 
+                            accept="image/*" 
+                            multiple
+                            onChange={(e) => handleImageUpload(e.target.files)}
+                            className="file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          />
+                          {uploadingImage && (
+                            <div className="mt-2 text-sm text-blue-600">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 inline-block mr-2"></div>
+                              Uploading and optimizing images...
+                            </div>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            Images will be automatically converted to WebP format for better performance
+                          </p>
+                        </div>
+
+                        {/* URL Input */}
+                        <div>
+                          <Label className="text-sm font-medium mb-2 block">Or Add Image URLs</Label>
+                          <div className="flex gap-2">
+                            <Input 
+                              placeholder="https://..." 
+                              value={newImage} 
+                              onChange={e => setNewImage(e.target.value)} 
+                            />
+                            <Button 
+                              onClick={() => { 
+                                if (newImage.trim()) { 
+                                  setImages(imgs => [...imgs, { id: crypto.randomUUID(), url: newImage.trim(), file: undefined }]); 
+                                  setNewImage('') 
+                                } 
+                              }}
+                            >
+                              Add URL
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Display Images */}
+                        {images.length > 0 && (
+                          <div>
+                            <Label className="text-sm font-medium mb-2 block">Current Images ({images.length})</Label>
+                            <ul className="space-y-2">
+                              {images.map((image, idx) => (
+                                <li key={image.id} className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded">
+                                  <div className="flex items-center gap-2">
+                                    <img 
+                                      src={image.url} 
+                                      alt={`Product image ${idx + 1}`} 
+                                      className="w-12 h-12 object-cover rounded"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement
+                                        target.style.display = 'none'
+                                      }}
+                                    />
+                                    <span className="truncate text-sm text-gray-700">{image.url}</span>
+                                  </div>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => setImages(imgs => imgs.filter((_, i) => i !== idx))}
+                                  >
+                                    Remove
+                                  </Button>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                </div>
+              </Card>
+            </TabsContent>
+
+            {/* Variants Tab */}
+            <TabsContent value="variants" className="space-y-6">
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Product Variants</h2>
+                <div className="mb-4">
+                  <Button onClick={addVariant} className="bg-blue-600 hover:bg-blue-700">
+                    Add New Variant
+                  </Button>
+                </div>
+                <div className="space-y-4">
+                  {variants.map((variant, index) => (
+                    <div key={variant.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-medium">Variant {index + 1}</h3>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => removeVariant(variant.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                          <Label>SKU</Label>
+                          <Input
+                            value={variant.sku || ''}
+                            onChange={(e) => updateVariant(variant.id, { sku: e.target.value })}
+                            placeholder="SKU"
+                          />
+                        </div>
+                        {useSize && (
+                          <div>
+                            <Label>Size</Label>
+                            <Input
+                              value={variant.size || ''}
+                              onChange={(e) => updateVariant(variant.id, { size: e.target.value })}
+                              placeholder="Size"
+                            />
+                          </div>
+                        )}
+                        {useColor && (
+                          <div>
+                            <Label>Color</Label>
+                            <Input
+                              value={variant.color || ''}
+                              onChange={(e) => updateVariant(variant.id, { color: e.target.value })}
+                              placeholder="Color"
+                            />
+                          </div>
+                        )}
+                        {useDepth && (
+                          <div>
+                            <Label>Depth</Label>
+                            <Input
+                              value={variant.depth || ''}
+                              onChange={(e) => updateVariant(variant.id, { depth: e.target.value })}
+                              placeholder="Depth"
+                            />
+                          </div>
+                        )}
+                        {useFirmness && (
+                          <div>
+                            <Label>Firmness</Label>
+                            <Input
+                              value={variant.firmness || ''}
+                              onChange={(e) => updateVariant(variant.id, { firmness: e.target.value })}
+                              placeholder="Firmness"
+                            />
+                          </div>
+                        )}
+                        <div>
+                          <Label>Length</Label>
+                          <Input
+                            value={variant.length || ''}
+                            onChange={(e) => updateVariant(variant.id, { length: e.target.value })}
+                            placeholder="Length"
+                          />
                         </div>
                         <div>
-                          <span className="font-medium">Color:</span> {variant.color || 'N/A'}
+                          <Label>Width</Label>
+                          <Input
+                            value={variant.width || ''}
+                            onChange={(e) => updateVariant(variant.id, { width: e.target.value })}
+                            placeholder="Width"
+                          />
                         </div>
                         <div>
-                          <span className="font-medium">Depth:</span> {variant.depth || 'N/A'}
+                          <Label>Height</Label>
+                          <Input
+                            value={variant.height || ''}
+                            onChange={(e) => updateVariant(variant.id, { height: e.target.value })}
+                            placeholder="Height"
+                          />
                         </div>
                         <div>
-                          <span className="font-medium">Firmness:</span> {variant.firmness || 'N/A'}
+                          <Label>Availability</Label>
+                          <select
+                            value={variant.availability ? 'true' : 'false'}
+                            onChange={(e) => updateVariant(variant.id, { availability: e.target.value === 'true' })}
+                            className="w-full p-2 border border-gray-300 rounded-md"
+                          >
+                            <option value="true">Available</option>
+                            <option value="false">Not Available</option>
+                          </select>
                         </div>
-                                                 <div>
-                           <span className="font-medium">Original Price:</span> £{variant.original_price?.toFixed(2) || '0.00'}
-                         </div>
-                         <div>
-                           <span className="font-medium">Current Price:</span> £{variant.current_price?.toFixed(2) || '0.00'}
-                         </div>
+                        <div>
+                          <Label>Original Price</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={variant.originalPrice || ''}
+                            onChange={(e) => updateVariant(variant.id, { originalPrice: parseFloat(e.target.value) })}
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div>
+                          <Label>Current Price</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={variant.currentPrice || ''}
+                            onChange={(e) => updateVariant(variant.id, { currentPrice: parseFloat(e.target.value) })}
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div>
+                          <Label>Variant Image</Label>
+                          <Input
+                            value={variant.variant_image || ''}
+                            onChange={(e) => updateVariant(variant.id, { variant_image: e.target.value })}
+                            placeholder="Image URL"
+                          />
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </TabsContent>
 
-            {/* Product Stats */}
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Product Statistics</h2>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium text-gray-600">Created:</span>
-                  <p className="text-gray-900">{new Date(product.created_at).toLocaleDateString()}</p>
+            {/* Content Tab */}
+            <TabsContent value="content" className="space-y-6">
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Content & Media</h2>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="warrantyDeliveryLine">Warranty & Delivery Line</Label>
+                    <Input
+                      id="warrantyDeliveryLine"
+                      value={warrantyDeliveryLine}
+                      onChange={(e) => setWarrantyDeliveryLine(e.target.value)}
+                      placeholder="e.g., 10-Year Warranty • Free Delivery • 100-Night Trial"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="careInstructions">Care Instructions</Label>
+                    <Textarea
+                      id="careInstructions"
+                      value={careInstructions}
+                      onChange={(e) => setCareInstructions(e.target.value)}
+                      placeholder="Enter care instructions"
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="trialInformation">Trial Information</Label>
+                    <Textarea
+                      id="trialInformation"
+                      value={trialInformation}
+                      onChange={(e) => setTrialInformation(e.target.value)}
+                      placeholder="Enter trial information"
+                      rows={3}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <span className="font-medium text-gray-600">Last Updated:</span>
-                  <p className="text-gray-900">{new Date(product.updated_at).toLocaleDateString()}</p>
+              </Card>
+
+
+
+              {/* Important Notices */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Important Notices</h2>
+                  <Button onClick={addImportantNotice} variant="outline" size="sm">
+                    Add Notice
+                  </Button>
                 </div>
-                <div>
-                  <span className="font-medium text-gray-600">Total Variants:</span>
-                  <p className="text-gray-900">{product.variants.length}</p>
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter important notice"
+                      value={newNotice}
+                      onChange={(e) => setNewNotice(e.target.value)}
+                    />
+                    <Button onClick={addImportantNotice}>Add</Button>
+                  </div>
+                  {importantNotices.map((notice) => (
+                    <div key={notice.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm">{notice.noticeText}</span>
+                      <Button 
+                        onClick={() => removeImportantNotice(notice.id)}
+                        variant="ghost" 
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <span className="font-medium text-gray-600">Total Images:</span>
-                  <p className="text-gray-900">{product.images.length}</p>
+              </Card>
+            </TabsContent>
+
+            {/* Description Tab */}
+            <TabsContent value="description" className="space-y-6">
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Product Description</h2>
+                  <Button onClick={addDescriptionParagraph} variant="outline" size="sm">
+                    Add Paragraph
+                  </Button>
                 </div>
-              </div>
-            </Card>
-          </div>
-        </div>
+                <p className="text-sm text-gray-600 mb-4">Add 3 description paragraphs with images for the product page.</p>
+                <div className="space-y-4">
+                  {descriptionParagraphs.map((para, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-medium">Paragraph {index + 1} Heading</h3>
+                        <Button 
+                          onClick={() => removeDescriptionParagraph(index)}
+                          variant="ghost" 
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <Label>Heading</Label>
+                          <Input
+                            value={para.heading}
+                            onChange={(e) => updateDescriptionParagraph(index, 'heading', e.target.value)}
+                            placeholder="Enter heading"
+                          />
+                        </div>
+                        <div>
+                          <Label>Content</Label>
+                          <Textarea
+                            value={para.content}
+                            onChange={(e) => updateDescriptionParagraph(index, 'content', e.target.value)}
+                            placeholder="Enter content"
+                            rows={3}
+                          />
+                        </div>
+                        <div>
+                          <Label>Image</Label>
+                          <div className="space-y-2">
+                            <Input
+                              placeholder="Image URL"
+                              value={para.image}
+                              onChange={(e) => {
+                                const newParagraphs = [...descriptionParagraphs]
+                                newParagraphs[index].image = e.target.value
+                                setDescriptionParagraphs(newParagraphs)
+                              }}
+                            />
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleDescriptionFileUpload(index, e)}
+                                  className="text-sm"
+                                />
+                                <span className="text-sm text-gray-500">Upload image (converted to WebP)</span>
+                              </div>
+                              {para.image && (
+                                <div className="flex items-center gap-2">
+                                  <img 
+                                    src={para.image} 
+                                    alt={`Description ${index + 1}`} 
+                                    className="w-16 h-16 object-cover rounded"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement
+                                      target.style.display = 'none'
+                                    }}
+                                  />
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => {
+                                      const newParagraphs = [...descriptionParagraphs]
+                                      newParagraphs[index].image = ''
+                                      setDescriptionParagraphs(newParagraphs)
+                                    }}
+                                  >
+                                    Remove Image
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </TabsContent>
+
+            {/* Features Tab */}
+            <TabsContent value="features" className="space-y-6">
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Product Features</h2>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Firmness Scale</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {([
+                        'Soft',
+                        'Soft-Medium',
+                        'Medium',
+                        'Medium-Firm',
+                        'Firm',
+                        'Extra-firm',
+                      ] as const).map((val) => (
+                        <label key={val} className={`px-3 py-1 rounded border cursor-pointer text-sm ${firmnessScale===val ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
+                          <input type="radio" name="firmness" className="mr-1" checked={firmnessScale===val} onChange={() => setFirmnessScale(val)} />{val}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Support</Label>
+                      <div className="flex gap-2 mt-2">
+                        {(['Low','Medium','High'] as const).map(l => (
+                          <label key={`support-${l}`} className={`px-3 py-1 rounded border cursor-pointer text-sm ${supportLevel===l ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
+                            <input type="radio" name="support" className="mr-1" checked={supportLevel===l} onChange={() => setSupportLevel(l)} />{l}
+                          </label>
+                        ))}
+                      </div>
+                      <Label className="mt-3 block">Pressure Relief</Label>
+                      <div className="flex gap-2 mt-2">
+                        {(['Low','Medium','High'] as const).map(l => (
+                          <label key={`pressure-${l}`} className={`px-3 py-1 rounded border cursor-pointer text-sm ${pressureReliefLevel===l ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
+                            <input type="radio" name="pressure" className="mr-1" checked={pressureReliefLevel===l} onChange={() => setPressureReliefLevel(l)} />{l}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Air Circulation</Label>
+                      <div className="flex gap-2 mt-2">
+                        {(['Low','Medium','High'] as const).map(l => (
+                          <label key={`air-${l}`} className={`px-3 py-1 rounded border cursor-pointer text-sm ${airCirculationLevel===l ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
+                            <input type="radio" name="air" className="mr-1" checked={airCirculationLevel===l} onChange={() => setAirCirculationLevel(l)} />{l}
+                          </label>
+                        ))}
+                      </div>
+                      <Label className="mt-3 block">Durability</Label>
+                      <div className="flex gap-2 mt-2">
+                        {(['Low','Medium','High'] as const).map(l => (
+                          <label key={`durability-${l}`} className={`px-3 py-1 rounded border cursor-pointer text-sm ${durabilityLevel===l ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
+                            <input type="radio" name="durability" className="mr-1" checked={durabilityLevel===l} onChange={() => setDurabilityLevel(l)} />{l}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Product Badges Section */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Product Badges</h3>
+                <div className="space-y-3">
+                  {/* Sale Badge */}
+                  <label className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={getBadgeStatus('sale')}
+                        onChange={(e) => handleBadgeToggle('sale', e.target.checked)}
+                        className="mr-3 h-5 w-5 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                      />
+                      <span className="text-base font-medium text-gray-700">Sale Badge</span>
+                      <Badge className="ml-3 bg-orange-500 text-white text-sm">Sale</Badge>
+                    </div>
+                    <span className="text-sm text-gray-500">Shows when product is on sale</span>
+                  </label>
+
+                  {/* New In Badge */}
+                  <label className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={getBadgeStatus('new_in')}
+                        onChange={(e) => handleBadgeToggle('new_in', e.target.checked)}
+                        className="mr-3 h-5 w-5 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                      />
+                      <span className="text-base font-medium text-gray-700">New In Badge</span>
+                      <Badge className="ml-3 bg-blue-500 text-white text-sm">New In</Badge>
+                    </div>
+                    <span className="text-sm text-gray-500">Shows for new products</span>
+                  </label>
+
+                  {/* Free Gift Badge */}
+                  <label className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={getBadgeStatus('free_gift')}
+                        onChange={(e) => handleBadgeToggle('free_gift', e.target.checked)}
+                        className="mr-3 h-5 w-5 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                      />
+                      <span className="text-base font-medium text-gray-700">Free Gift Badge</span>
+                      <Badge className="ml-3 bg-green-500 text-white text-sm">Free Gift</Badge>
+                    </div>
+                    <span className="text-sm text-gray-500">Shows when product comes with free gift</span>
+                  </label>
+                </div>
+              </Card>
+
+              {/* Mattress Features Section */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Features & Reasons</h3>
+                <div className="mb-4">
+                  <div className="font-semibold mb-2">{categories.find(c => c.value === category)?.label} features</div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {getFeaturesForCategory(category).map((feature, index) => (
+                      <label key={`${feature}-${index}`} className={`flex items-center gap-2 rounded border p-2 cursor-pointer ${selectedFeatures.includes(feature) ? 'border-orange-400 bg-orange-50' : 'border-gray-200 bg-white'}`}>
+                        <input 
+                          type="checkbox" 
+                          className="h-4 w-4" 
+                          checked={selectedFeatures.includes(feature)} 
+                          onChange={() => {
+                            const exists = selectedFeatures.includes(feature)
+                            setSelectedFeatures(exists ? selectedFeatures.filter(f => f !== feature) : [...selectedFeatures, feature])
+                          }} 
+                        />
+                        <span className="text-sm text-gray-800">{feature}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+
+              {/* Popular Categories Section */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Popular Categories</h3>
+                <p className="text-sm text-gray-600 mb-4">Select which popular categories this product should appear in. These categories are shown on the product pages.</p>
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {getPopularCategories().map((category) => (
+                    <label key={category.name} className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input 
+                        type="checkbox" 
+                        className="h-4 w-4" 
+                        checked={selectedPopularCategories.includes(category.name)} 
+                        onChange={() => togglePopularCategory(category.name)} 
+                      />
+                      <span className="text-sm font-medium">{category.name}</span>
+                    </label>
+                  ))}
+                </div>
+                
+                {selectedPopularCategories.length > 0 && (
+                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <strong>Selected:</strong> {selectedPopularCategories.join(', ')}
+                    </p>
+                  </div>
+                )}
+              </Card>
+
+              {/* Features You Will Love Section */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">
+                  Features You Will Love - Select from available {categories.find(c => c.value === category)?.label?.toLowerCase()} features:
+                </h3>
+                
+                {/* Feature Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                  {getFeatureCardsForCategory(category).map((feature) => {
+                    const isSelected = selectedReasonsToLove.some(item => item.reason === feature.title)
+                    const IconComponent = getIconComponentAdmin(feature.icon)
+                    
+                    return (
+                      <div
+                        key={feature.id}
+                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all duration-200 ${
+                          isSelected
+                            ? 'border-orange-500 bg-orange-50 shadow-md'
+                            : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                        }`}
+                        onClick={() => {
+                          if (isSelected) {
+                            // Remove if already selected
+                            const index = selectedReasonsToLove.findIndex(item => item.reason === feature.title)
+                            if (index !== -1) {
+                              removeReasonToLove(index)
+                            }
+                          } else {
+                            // Add if not selected
+                            addReasonToLove(feature.title, feature.description, '', feature.icon)
+                          }
+                        }}
+                      >
+                        <div className="text-center">
+                          <div className="w-12 h-12 mx-auto mb-3 text-orange-500 flex items-center justify-center">
+                            <IconComponent />
+                          </div>
+                          <h3 className="text-sm font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                          <p className="text-xs text-gray-600 leading-relaxed">{feature.description}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                
+                {/* Display selected features with custom description inputs */}
+                {selectedReasonsToLove.length > 0 && (
+                  <div className="mt-4 space-y-3">
+                    <Label className="text-sm font-medium">Customize descriptions for selected features (optional):</Label>
+                    {selectedReasonsToLove.map((item, index) => (
+                      <div key={index} className="p-3 border rounded-lg bg-gray-50">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-sm">{item.reason}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => removeReasonToLove(index)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                        <Textarea
+                          placeholder="Customize the description or leave as default..."
+                          value={item.description}
+                          onChange={(e) => updateReasonToLoveDescription(index, e.target.value)}
+                          rows={2}
+                          className="w-full"
+                        />
+                        <div className="mt-3">
+                          <Label className="text-sm font-medium mb-2 block">Small Text (displayed below icon)</Label>
+                          <Input
+                            placeholder="Enter small descriptive text..."
+                            value={item.smalltext || ''}
+                            onChange={(e) => updateReasonToLoveSmalltext(index, e.target.value)}
+                            className="w-full"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            This text will appear below the icon in the feature card on the product page.
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Leave empty to use the default description, or customize it for this specific product.
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Create a custom feature card */}
+                <div className="mt-6 p-4 border rounded-lg">
+                  <h4 className="text-sm font-semibold mb-3">Add a custom feature card</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-xs">Title</Label>
+                      <Input
+                        placeholder="e.g., Breathable Cover"
+                        value={newLoveReason}
+                        onChange={(e) => setNewLoveReason(e.target.value)}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label className="text-xs">Description</Label>
+                      <Input
+                        placeholder="Short description that appears in the card"
+                        value={newLoveDescription}
+                        onChange={(e) => setNewLoveDescription(e.target.value)}
+                      />
+                    </div>
+                    <div className="md:col-span-3">
+                      <Label className="text-xs">Small Text (optional)</Label>
+                      <Input
+                        placeholder="Small subtext displayed under the icon"
+                        value={newLoveSmalltext}
+                        onChange={(e) => setNewLoveSmalltext(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const title = newLoveReason.trim()
+                        if (!title) return
+                        addReasonToLove(title, newLoveDescription.trim(), newLoveSmalltext.trim(), 'check')
+                        setNewLoveReason('')
+                        setNewLoveDescription('')
+                        setNewLoveSmalltext('')
+                      }}
+                    >
+                      Add Feature Card
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Reasons to Buy Section */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Reasons to Buy (add as many as needed)</h3>
+                <div className="flex gap-2 mb-4">
+                  <Input 
+                    placeholder="Add a reason to buy" 
+                    value={newReason} 
+                    onChange={e => setNewReason(e.target.value)} 
+                  />
+                  <Button onClick={addReasonToBuy}>Add</Button>
+                </div>
+                {reasonsToBuy.length > 0 && (
+                  <ul className="list-disc pl-6 space-y-2">
+                    {reasonsToBuy.map((reason, i) => (
+                      <li key={`${reason}-${i}`} className="flex items-center justify-between gap-2">
+                        <span>{reason}</span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => removeReasonToBuy(i)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Card>
+            </TabsContent>
+
+            {/* Dimensions Tab */}
+            <TabsContent value="dimensions" className="space-y-6">
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Dimensions & Specifications</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Height</Label>
+                    <Input
+                      value={dimensions.height}
+                      onChange={(e) => setDimensions({...dimensions, height: e.target.value})}
+                      placeholder="25 cm"
+                    />
+                  </div>
+                  <div>
+                    <Label>Length</Label>
+                    <Input
+                      value={dimensions.length}
+                      onChange={(e) => setDimensions({...dimensions, length: e.target.value})}
+                      placeholder="L 190cm"
+                    />
+                  </div>
+                  <div>
+                    <Label>Width</Label>
+                    <Input
+                      value={dimensions.width}
+                      onChange={(e) => setDimensions({...dimensions, width: e.target.value})}
+                      placeholder="135cm"
+                    />
+                  </div>
+                  <div>
+                    <Label>Mattress Size</Label>
+                    <Input
+                      value={dimensions.mattressSize}
+                      onChange={(e) => setDimensions({...dimensions, mattressSize: e.target.value})}
+                      placeholder="135cm x L 190cm cm"
+                    />
+                  </div>
+                  <div>
+                    <Label>Max Height</Label>
+                    <Input
+                      value={dimensions.maxHeight}
+                      onChange={(e) => setDimensions({...dimensions, maxHeight: e.target.value})}
+                      placeholder="25 cm"
+                    />
+                  </div>
+                  <div>
+                    <Label>Weight Capacity</Label>
+                    <Input
+                      value={dimensions.weightCapacity}
+                      onChange={(e) => setDimensions({...dimensions, weightCapacity: e.target.value})}
+                      placeholder="200 kg"
+                    />
+                  </div>
+                  <div>
+                    <Label>Pocket Springs</Label>
+                    <Input
+                      value={dimensions.pocketSprings}
+                      onChange={(e) => setDimensions({...dimensions, pocketSprings: e.target.value})}
+                      placeholder="1000 count"
+                    />
+                  </div>
+                  <div>
+                    <Label>Comfort Layer</Label>
+                    <Input
+                      value={dimensions.comfortLayer}
+                      onChange={(e) => setDimensions({...dimensions, comfortLayer: e.target.value})}
+                      placeholder="8 cm"
+                    />
+                  </div>
+                  <div>
+                    <Label>Support Layer</Label>
+                    <Input
+                      value={dimensions.supportLayer}
+                      onChange={(e) => setDimensions({...dimensions, supportLayer: e.target.value})}
+                      placeholder="17 cm"
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              {/* Dimension Disclaimer */}
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Dimension Disclaimer</h2>
+                <div>
+                  <Label htmlFor="dimensionDisclaimer">Disclaimer Text</Label>
+                  <Textarea
+                    id="dimensionDisclaimer"
+                    value={dimensions.dimensionDisclaimer}
+                    onChange={(e) => setDimensions({...dimensions, dimensionDisclaimer: e.target.value})}
+                    placeholder="e.g., All measurements are approximate and may vary slightly."
+                    rows={2}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">This disclaimer will appear below the dimension specifications on the product page.</p>
+                </div>
+              </Card>
+
+              {/* Important Notices */}
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4">Important Notices</h2>
+                <p className="text-sm text-gray-600 mb-4">Add important notices that will appear in the Dimensions section of the product page. These notices will be displayed as bullet points below the technical specifications.</p>
+                
+                <div className="mb-4">
+                  <Button onClick={addImportantNotice} variant="outline" size="sm">
+                    Add Notice
+                  </Button>
+                </div>
+                
+                {importantNotices.length > 0 && (
+                  <div className="space-y-3">
+                    {importantNotices.map((notice, index) => (
+                      <div key={notice.id} className="flex items-start gap-3 p-3 border rounded-lg bg-gray-50">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm font-medium text-gray-700">Notice {index + 1}</span>
+                            <Input 
+                              value={notice.noticeText} 
+                              onChange={(e) => {
+                                const newNotices = [...importantNotices]
+                                newNotices[index].noticeText = e.target.value
+                                setImportantNotices(newNotices)
+                              }}
+                              placeholder="Enter important notice text..."
+                              className="flex-1"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Label className="text-xs text-gray-600">Sort Order:</Label>
+                            <Input 
+                              type="number"
+                              value={notice.sortOrder} 
+                              onChange={(e) => {
+                                const newNotices = [...importantNotices]
+                                newNotices[index].sortOrder = parseInt(e.target.value) || 0
+                                setImportantNotices(newNotices)
+                              }}
+                              className="w-20 text-xs"
+                            />
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeImportantNotice(notice.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {importantNotices.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No important notices added yet.</p>
+                    <p className="text-sm">Click "Add Notice" to create your first important notice.</p>
+                  </div>
+                )}
+              </Card>
+            </TabsContent>
+
+            {/* Warranty Tab */}
+            <TabsContent value="warranty" className="space-y-6">
+              {/* FAQs */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Frequently Asked Questions</h2>
+                  <Button onClick={addFaq} variant="outline" size="sm">
+                    Add FAQ
+                  </Button>
+                </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <Label>Question</Label>
+                      <Input
+                        placeholder="Enter question"
+                        value={newFaq.question}
+                        onChange={(e) => setNewFaq({...newFaq, question: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Answer</Label>
+                      <Input
+                        placeholder="Enter answer"
+                        value={newFaq.answer}
+                        onChange={(e) => setNewFaq({...newFaq, answer: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <Button onClick={addFaq}>Add FAQ</Button>
+                  
+                  {faqs.map((faq, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-medium">FAQ {index + 1}</h3>
+                        <Button 
+                          onClick={() => removeFaq(index)}
+                          variant="ghost" 
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <Label>Question</Label>
+                          <Input
+                            value={faq.question}
+                            onChange={(e) => {
+                              const newFaqs = [...faqs]
+                              newFaqs[index].question = e.target.value
+                              setFaqs(newFaqs)
+                            }}
+                            placeholder="Enter question"
+                          />
+                        </div>
+                        <div>
+                          <Label>Answer</Label>
+                          <Textarea
+                            value={faq.answer}
+                            onChange={(e) => {
+                              const newFaqs = [...faqs]
+                              newFaqs[index].answer = e.target.value
+                              setFaqs(newFaqs)
+                            }}
+                            placeholder="Enter answer"
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Warranty Sections */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Warranty Information</h2>
+                  <Button onClick={addWarrantySection} variant="outline" size="sm">
+                    Add Section
+                  </Button>
+                </div>
+                <div className="space-y-4">
+                  {warrantySections.map((section, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-medium">Section {index + 1}</h3>
+                        <Button 
+                          onClick={() => removeWarrantySection(index)}
+                          variant="ghost" 
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <Label>Heading</Label>
+                          <Input
+                            value={section.heading}
+                            onChange={(e) => updateWarrantySection(index, 'heading', e.target.value)}
+                            placeholder="Enter heading"
+                          />
+                        </div>
+                        <div>
+                          <Label>Content</Label>
+                          <Textarea
+                            value={section.content}
+                            onChange={(e) => updateWarrantySection(index, 'content', e.target.value)}
+                            placeholder="Enter content"
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </form>
       </div>
     </div>
   )

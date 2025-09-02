@@ -1,37 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(req: NextRequest) {
-  const envVars = {
-    // Stripe
-    hasStripeSecretKey: !!process.env.STRIPE_SECRET_KEY,
-    hasStripeWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
-    hasStripePublishableKey: !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
-    
+export async function GET() {
+  const requiredVars = {
     // Supabase
-    hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    hasSupabaseAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    hasSupabaseServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL,
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    'SUPABASE_SERVICE_ROLE_KEY': process.env.SUPABASE_SERVICE_ROLE_KEY,
+    
+    // Stripe
+    'STRIPE_SECRET_KEY': process.env.STRIPE_SECRET_KEY,
+    'STRIPE_WEBHOOK_SECRET': process.env.STRIPE_WEBHOOK_SECRET,
+    'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY': process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     
     // Email
-    hasSmtpHost: !!process.env.SMTP_HOST,
-    hasSmtpPort: !!process.env.SMTP_PORT,
-    hasSmtpUser: !!process.env.SMTP_USER,
-    hasSmtpPass: !!process.env.SMTP_PASS,
-    hasMailFrom: !!process.env.MAIL_FROM,
-    hasAdminEmail: !!process.env.ADMIN_EMAIL,
+    'SMTP_HOST': process.env.SMTP_HOST,
+    'SMTP_PORT': process.env.SMTP_PORT,
+    'SMTP_USER': process.env.SMTP_USER,
+    'SMTP_PASS': process.env.SMTP_PASS,
+    'MAIL_FROM': process.env.MAIL_FROM,
+    'ADMIN_EMAIL': process.env.ADMIN_EMAIL,
     
     // Site
-    hasSiteUrl: !!process.env.NEXT_PUBLIC_SITE_URL,
+    'NEXT_PUBLIC_SITE_URL': process.env.NEXT_PUBLIC_SITE_URL
   }
   
-  const missingVars = Object.entries(envVars)
-    .filter(([key, hasValue]) => !hasValue)
+  const missingVars = Object.entries(requiredVars)
+    .filter(([key, value]) => !value)
     .map(([key]) => key)
   
+  const status = missingVars.length === 0 ? 'OK' : 'MISSING_VARIABLES'
+  
   return NextResponse.json({
-    message: 'Environment variables check',
-    allSet: missingVars.length === 0,
-    missing: missingVars,
-    summary: envVars
+    status,
+    message: missingVars.length === 0 
+      ? 'All required environment variables are set' 
+      : `${missingVars.length} environment variables are missing`,
+    environment: {
+      nodeEnv: process.env.NODE_ENV,
+      missing: missingVars,
+      present: Object.entries(requiredVars)
+        .filter(([key, value]) => value)
+        .map(([key]) => key)
+    },
+    recommendations: {
+      orders: missingVars.length === 0 ? 'Ready to process orders' : 'Fix missing variables first',
+      stripe: process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET ? 'Ready for payments' : 'Stripe not configured',
+      email: process.env.SMTP_HOST && process.env.SMTP_USER ? 'Ready to send emails' : 'Email not configured'
+    }
   })
 }

@@ -1,102 +1,301 @@
 "use client"
 
+import { useState, useEffect } from 'react'
 import { useCart } from "@/lib/cart-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronDown, MessageCircle, Shield, Truck, Clock, Star, Heart, CreditCard, Lock } from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { 
+  ShoppingCart, 
+  Truck, 
+  Shield, 
+  Clock, 
+  Star, 
+  CreditCard, 
+  Lock,
+  Trash2,
+  Plus,
+  Minus,
+  CheckCircle,
+  X
+} from "lucide-react"
 
 export default function CheckoutPage() {
-  const { state } = useCart()
+  const { state, dispatch, updateQuantity } = useCart()
+  const [customerInfo, setCustomerInfo] = useState({
+    firstName: 'John',
+    lastName: 'Smith',
+    email: 'test@example.com',
+    phone: '07123456789',
+    address: '123 Oxford Street',
+    city: 'London',
+    postcode: 'W1D 1BS',
+    country: 'GB'
+  })
+  const [deliveryOption, setDeliveryOption] = useState('standard')
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [paymentSuccess, setPaymentSuccess] = useState(false)
+  const [paymentCanceled, setPaymentCanceled] = useState(false)
 
-  if (state.itemCount === 0) {
+  // Check for payment success/canceled from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const success = urlParams.get('success')
+    const canceled = urlParams.get('canceled')
+    const sessionId = urlParams.get('session_id')
+
+    if (success === '1' && sessionId) {
+      setPaymentSuccess(true)
+      // Clear the cart after successful payment
+      dispatch({ type: 'CLEAR_CART' })
+      
+      // Process the order immediately since webhook might not work in development
+      processOrderSuccess(sessionId)
+    } else if (canceled === '1') {
+      setPaymentCanceled(true)
+    }
+  }, [dispatch])
+
+  // Function to process order success
+  const processOrderSuccess = async (sessionId: string) => {
+    try {
+      console.log('Payment successful, checking if order already exists...')
+      console.log('Session ID:', sessionId)
+      
+      // Check if order already exists to prevent duplicates
+      const checkOrderResponse = await fetch(`/api/orders?stripe_session_id=${sessionId}`)
+      
+      if (checkOrderResponse.ok) {
+        const existingOrders = await checkOrderResponse.json()
+        if (existingOrders.orders && existingOrders.orders.length > 0) {
+          console.log('Order already exists, skipping creation')
+          return
+        }
+      }
+      
+      console.log('Creating new order in database...')
+      
+      // Get cart items from state before clearing
+      const cartItems = state.items
+      const customerData = customerInfo
+      
+      // Create order in database (for development - webhooks don't work locally)
+      const orderResponse = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderData: {
+            order_number: `ORD-${Date.now()}`,
+            customer_email: customerData.email,
+            customer_name: `${customerData.firstName} ${customerData.lastName}`,
+            total_amount: Number(state.total || 0),
+            status: 'pending',
+            stripe_session_id: sessionId,
+            shipping_address: `${customerData.address}, ${customerData.city}, ${customerData.postcode}`,
+            billing_address: `${customerData.address}, ${customerData.city}, ${customerData.postcode}`
+          },
+          items: cartItems.map(item => ({
+            ...item,
+            currentPrice: Number(item.currentPrice || item.price || 0),
+            price: Number(item.price || 0)
+          }))
+        })
+      })
+
+      if (orderResponse.ok) {
+        const orderResult = await orderResponse.json()
+        console.log('Order created successfully:', orderResult)
+        
+        // Send confirmation email to customer
+        await fetch('/api/send-order-confirmation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: orderResult.orderId,
+            customerEmail: customerData.email,
+            customerName: `${customerData.firstName} ${customerData.lastName}`,
+            items: cartItems,
+            total: state.total || 0
+          })
+        })
+
+        // Send notification email to admin
+        await fetch('/api/send-admin-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: orderResult.orderId,
+            customerEmail: customerData.email,
+            customerName: `${customerData.firstName} ${customerData.lastName}`,
+            items: cartItems,
+            total: state.total || 0
+          })
+        })
+      } else {
+        console.error('Failed to create order:', await orderResponse.text())
+      }
+      
+    } catch (error) {
+      console.error('Error processing order success:', error)
+    }
+  }
+
+  // Show success message
+  if (paymentSuccess) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50 py-8">
         <div className="container mx-auto px-4">
           <div className="text-center py-12">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Your cart is empty</h1>
-            <p className="text-lg text-gray-600 mb-8">Please add items to your cart before checkout.</p>
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Payment Successful!</h1>
+            <p className="text-lg text-gray-600 mb-4">Thank you for your order. You will receive a confirmation email shortly.</p>
+            <p className="text-sm text-gray-500 mb-8">Your cart has been cleared and your order is being processed.</p>
+            <Button 
+              onClick={() => window.location.href = '/'} 
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Continue Shopping
+            </Button>
           </div>
         </div>
       </div>
     )
   }
 
+  // Show canceled message
+  if (paymentCanceled) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Promotional Banner */}
-      <div className="bg-yellow-400 text-gray-900 py-2 text-center text-sm font-medium">
-        🎉 TODAY ONLY - Summer Holiday Daily Deals | ENDS IN 19 HOURS 46 MINS 46 SECS
-      </div>
-
-      {/* Main Header */}
-      <div className="bg-white border-b border-gray-200 py-4">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50 py-8">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <Input 
-                placeholder="Search for your bedroom upgrade...." 
-                className="max-w-md"
-              />
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <X className="h-8 w-8 text-red-600" />
             </div>
-            <div className="text-center">
-              <h1 className="text-3xl font-bold text-blue-800 font-serif">MattressKing™</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Payment Canceled</h1>
+            <p className="text-lg text-gray-600 mb-8">Your payment was canceled. Your cart items are still available.</p>
+            <Button 
+              onClick={() => setPaymentCanceled(false)} 
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Try Again
+            </Button>
             </div>
-            <div className="flex-1 flex justify-end items-center space-x-4">
-              <div className="text-sm text-blue-800">
-                <div>Track Order</div>
-                <div>My Account</div>
-                <div>Sign In / Register</div>
               </div>
-              <Button variant="outline" className="border-blue-800 text-blue-800">
-                Build Your Own Bed
-              </Button>
-              <Button className="bg-blue-800 hover:bg-blue-900 text-white relative">
-                <MessageCircle className="h-5 w-5 mr-2" />
-                <div className="flex flex-col items-start">
-                  <span className="text-xs">BASKET</span>
-                  <span className="font-medium">£{(state.total || 0).toFixed(2)}</span>
                 </div>
-                {state.itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {state.itemCount}
-                  </span>
-                )}
+    )
+  }
+
+  if (state.itemCount === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50 py-8">
+        <div className="container mx-auto px-4">
+          <div className="text-center py-12">
+            <ShoppingCart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Your cart is empty</h1>
+            <p className="text-lg text-gray-600 mb-8">Please add items to your cart before checkout.</p>
+            <Button 
+              onClick={() => window.history.back()} 
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Continue Shopping
               </Button>
             </div>
           </div>
         </div>
-      </div>
+    )
+  }
 
-      {/* Category Navigation */}
-      <div className="bg-blue-800 text-white">
+  const handleQuantityChange = (itemId: string, newQuantity: number) => {
+    if (newQuantity > 0) {
+      updateQuantity(itemId, newQuantity)
+    }
+  }
+
+  const handleRemoveItem = (itemId: string) => {
+    dispatch({ type: 'REMOVE_ITEM', payload: itemId })
+  }
+
+  const handleInputChange = (field: string, value: string) => {
+    setCustomerInfo(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleCheckout = async () => {
+    setIsProcessing(true)
+    
+    // Debug logging
+    console.log('Cart state:', state)
+    console.log('Customer info:', customerInfo)
+    console.log('Items being sent to checkout:', state.items)
+    
+    try {
+      // Create checkout session
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: state.items,
+          customer: customerInfo
+        })
+      })
+
+      if (response.ok) {
+        const { url } = await response.json()
+        window.location.href = url
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Checkout failed')
+      }
+    } catch (error) {
+      console.error('Checkout error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Checkout failed. Please try again.'
+      alert(`Checkout failed: ${errorMessage}`)
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const subtotal = state.total || 0
+  const deliveryCost = deliveryOption === 'express' ? 15 : 0
+  const vat = subtotal * 0.2
+  const total = subtotal + deliveryCost + vat
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 py-6">
         <div className="container mx-auto px-4">
-          <nav className="flex items-center space-x-8 py-3 overflow-x-auto">
-            <a href="/beds" className="hover:text-gray-200 font-medium py-2">Beds</a>
-            <a href="/mattresses" className="hover:text-gray-200 font-medium py-2">Mattresses</a>
-            <a href="/kids" className="hover:text-gray-200 font-medium py-2">Kids</a>
-            <a href="/bedroom-furniture" className="hover:text-gray-200 font-medium py-2">Bedroom Furniture</a>
-            <a href="/headboards" className="hover:text-gray-200 font-medium py-2">Headboards</a>
-            <a href="/bedding" className="hover:text-gray-200 font-medium py-2">Bedding</a>
-            <a href="/build-your-own-bed" className="hover:text-gray-200 font-medium py-2">Build Your Own Bed</a>
-            <a href="/new-in" className="hover:text-gray-200 font-medium py-2">New In</a>
-            <a href="/sale" className="bg-red-600 px-3 py-1 rounded font-medium">Sales & Offers</a>
-            <a href="/help-advice" className="hover:text-gray-200 font-medium py-2">Help & Advice</a>
-          </nav>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Checkout</h1>
+            <p className="text-gray-600">Complete your purchase securely</p>
+          </div>
         </div>
       </div>
 
-      {/* Trust Banner */}
-      <div className="bg-pink-100 py-3">
+      {/* Trust Indicators */}
+      <div className="bg-white border-b border-gray-200 py-3">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between text-sm text-gray-700">
+          <div className="flex items-center justify-center space-x-8 text-sm text-gray-600">
             <div className="flex items-center">
-              <Star className="h-4 w-4 text-yellow-500 mr-1" />
-              <span>Trustpilot ★★★★ Rated Excellent</span>
+              <Shield className="h-4 w-4 text-orange-500 mr-2" />
+              <span>Secure Checkout</span>
             </div>
-            <div>Buy today, delivered tomorrow</div>
-            <div>Klarna. Buy now & pay later available</div>
-            <div>5 Year manufacturer's guarantee</div>
+            <div className="flex items-center">
+              <Truck className="h-4 w-4 text-orange-500 mr-2" />
+              <span>Free Delivery</span>
+            </div>
+            <div className="flex items-center">
+              <Clock className="h-4 w-4 text-orange-500 mr-2" />
+              <span>100-Night Trial</span>
+            </div>
+            <div className="flex items-center">
+              <Star className="h-4 w-4 text-orange-500 mr-2" />
+              <span>10-Year Warranty</span>
+            </div>
           </div>
         </div>
       </div>
@@ -104,209 +303,321 @@ export default function CheckoutPage() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Section - Cart Items */}
+          {/* Left Section - Customer Information & Cart */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Cart Item */}
-            <Card className="bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0"></div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">Rome Oak Wooden Bed</h3>
-                    <p className="text-gray-600">King Size (5' x 6'6")</p>
-                    <p className="text-lg font-bold text-blue-800">£{(state.total || 0).toFixed(2)}</p>
+            {/* Customer Information */}
+            <Card className="bg-white border-orange-200">
+                             <CardHeader>
+                 <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
+                   <CreditCard className="h-5 w-5 mr-2 text-orange-600" />
+                   Customer Information
+                 </CardTitle>
+                 <p className="text-sm text-gray-600 mt-2">
+                   💡 Form is pre-filled with test data. You can modify or use as-is for testing.
+                 </p>
+               </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="firstName">First Name *</Label>
+                    <Input
+                      id="firstName"
+                      value={customerInfo.firstName}
+                      onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      className="border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      required
+                    />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" className="w-8 h-8 p-0">-</Button>
-                    <span className="w-12 text-center">1</span>
-                    <Button variant="outline" size="sm" className="w-8 h-8 p-0">+</Button>
+                  <div>
+                    <Label htmlFor="lastName">Last Name *</Label>
+                    <Input
+                      id="lastName"
+                      value={customerInfo.lastName}
+                      onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      className="border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      required
+                    />
                   </div>
-                  <Button variant="ghost" className="text-red-600 hover:text-red-700">Delete</Button>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Promotional Offer */}
-            <div className="bg-red-600 text-white p-6 rounded-lg">
-              <div className="flex items-center justify-between">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h3 className="text-xl font-bold mb-2">LAST CHANCE</h3>
-                  <p className="text-lg">SAVE 10% on a mattress when you buy a bed</p>
+                    <Label htmlFor="email">Email Address *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={customerInfo.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className="border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      required
+                    />
                 </div>
-                <Button className="bg-white text-red-600 hover:bg-gray-100">
-                  Choose Mattress
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
+                  <div>
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={customerInfo.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      className="border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                    />
               </div>
             </div>
 
-            {/* Upsell Product */}
-            <Card className="bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0"></div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">Add a Universal White Bedside table</h4>
-                    <div className="flex items-center space-x-4 text-sm text-gray-600">
-                      <span>RRP FROM £219.99</span>
-                      <span className="text-green-600 font-semibold">Now: £159.99</span>
+                <div>
+                  <Label htmlFor="address">Address *</Label>
+                  <Textarea
+                    id="address"
+                    value={customerInfo.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    className="border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                    rows={3}
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="city">City *</Label>
+                    <Input
+                      id="city"
+                      value={customerInfo.city}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      className="border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      required
+                    />
                     </div>
+                  <div>
+                    <Label htmlFor="postcode">Postcode *</Label>
+                                         <Input
+                       id="postcode"
+                       value={customerInfo.postcode}
+                       onChange={(e) => handleInputChange('postcode', e.target.value)}
+                       className="border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                       placeholder="e.g., W1D 1BS"
+                       required
+                     />
+                     <p className="text-xs text-gray-500 mt-1">
+                       Use valid UK format: A1A 1AA or A1 1AA
+                     </p>
                   </div>
-                  <div className="flex flex-col space-y-2">
-                    <Button variant="ghost" className="text-blue-800 hover:text-blue-700">View info</Button>
-                    <Button className="bg-blue-800 hover:bg-blue-900 text-white">Add</Button>
+                  <div>
+                    <Label htmlFor="country">Country</Label>
+                    <Select value={customerInfo.country} onValueChange={(value) => handleInputChange('country', value)}>
+                      <SelectTrigger className="border-gray-300 focus:border-orange-500 focus:ring-orange-500">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="GB">United Kingdom</SelectItem>
+                        <SelectItem value="US">United States</SelectItem>
+                        <SelectItem value="CA">Canada</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Add Bed Recycling */}
-            <Card className="bg-white">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center">
-                    <div className="text-green-600 text-2xl">♻️</div>
+            {/* Delivery Options */}
+            <Card className="bg-white border-orange-200">
+              <CardHeader>
+                <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
+                  <Truck className="h-5 w-5 mr-2 text-orange-600" />
+                  Delivery Options
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="delivery"
+                      value="standard"
+                      checked={deliveryOption === 'standard'}
+                      onChange={(e) => setDeliveryOption(e.target.value)}
+                      className="text-orange-600 focus:ring-orange-500"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">Standard Delivery (3-5 business days)</div>
+                      <div className="text-sm text-gray-600">Free delivery on orders over £50</div>
                   </div>
+                    <div className="text-lg font-bold text-gray-900">Free</div>
+                  </label>
+                  
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="delivery"
+                      value="express"
+                      checked={deliveryOption === 'express'}
+                      onChange={(e) => setDeliveryOption(e.target.value)}
+                      className="text-orange-600 focus:ring-orange-500"
+                    />
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">Add Bed Recycling</h4>
-                    <p className="text-sm text-gray-600">Environmentally friendly disposal</p>
+                      <div className="font-medium text-gray-900">Express Delivery (1-2 business days)</div>
+                      <div className="text-sm text-gray-600">Priority handling and tracking</div>
                   </div>
-                  <div className="flex flex-col space-y-2">
-                    <Button variant="ghost" className="text-blue-800 hover:text-blue-700">View info</Button>
-                    <Button className="bg-green-600 hover:bg-green-700 text-white">Add</Button>
-                  </div>
+                    <div className="text-lg font-bold text-gray-900">£15.00</div>
+                  </label>
                 </div>
               </CardContent>
             </Card>
 
-            <div className="text-center">
-              <Button variant="ghost" className="text-blue-800 hover:text-blue-700">
-                View More Offers
+            {/* Cart Items */}
+            <Card className="bg-white border-orange-200">
+              <CardHeader>
+                <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
+                  <ShoppingCart className="h-5 w-5 mr-2 text-orange-600" />
+                  Your Items ({state.itemCount})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                                 {state.items.map((item, index) => (
+                   <div key={`${item.id}-${item.size || 'standard'}-${item.color || 'default'}-${index}`} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
+                    <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center">
+                      {item.image ? (
+                        <img 
+                          src={item.image} 
+                          alt={item.name} 
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="text-gray-400 text-xs text-center">No Image</div>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                      {item.size && <p className="text-sm text-gray-600">{item.size}</p>}
+                      <p className="text-lg font-bold text-orange-600">£{item.currentPrice || item.price}</p>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-8 h-8 p-0 border-gray-300 hover:border-orange-500"
+                        onClick={() => handleQuantityChange(item.id, (item.quantity || 1) - 1)}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="w-12 text-center font-medium">{item.quantity || 1}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-8 h-8 p-0 border-gray-300 hover:border-orange-500"
+                        onClick={() => handleQuantityChange(item.id, (item.quantity || 1) + 1)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleRemoveItem(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
               </Button>
             </div>
+                ))}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Right Section - Order Summary */}
           <div className="space-y-6">
-            {/* Summary Card */}
-            <Card className="bg-white">
+            <Card className="bg-white border-orange-200 sticky top-6">
               <CardHeader>
-                <CardTitle className="text-xl font-bold text-gray-900">Summary</CardTitle>
+                <CardTitle className="text-xl font-bold text-gray-900">Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Delivery Info */}
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-blue-800">Quick delivery options available at checkout.</p>
-                </div>
-
-                {/* Accordion Sections */}
+                {/* Price Breakdown */}
                 <div className="space-y-3">
-                  <div className="border border-gray-200 rounded-lg">
-                    <button className="w-full p-3 text-left flex items-center justify-between hover:bg-gray-50">
-                      <span className="font-medium">Apply Discount Code</span>
-                      <ChevronDown className="h-4 w-4" />
-                    </button>
-                  </div>
-                  
-                  <div className="border border-gray-200 rounded-lg">
-                    <button className="w-full p-3 text-left flex items-center justify-between hover:bg-gray-50">
-                      <span className="font-medium">Charity Donation</span>
-                      <ChevronDown className="h-4 w-4" />
-                    </button>
-                  </div>
-                  
-                  <div className="border border-gray-200 rounded-lg">
-                    <button className="w-full p-3 text-left flex items-center justify-between hover:bg-gray-50">
-                      <span className="font-medium">Item Summary</span>
-                      <ChevronDown className="h-4 w-4" />
-                    </button>
-                    <div className="p-3 border-t border-gray-200 space-y-2 text-sm">
-                      <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                         <span>Subtotal</span>
-                        <span>£{(state.total || 0).toFixed(2)}</span>
+                    <span>£{subtotal.toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>VAT</span>
-                        <span>£{((state.total || 0) * 0.2).toFixed(2)}</span>
+                  <div className="flex justify-between text-sm">
+                    <span>Delivery</span>
+                    <span>{deliveryCost === 0 ? 'Free' : `£${deliveryCost.toFixed(2)}`}</span>
                       </div>
-                      <div className="flex justify-between font-semibold text-base">
-                        <span>Total inc VAT</span>
-                        <span>£{((state.total || 0) * 1.2).toFixed(2)}</span>
+                  <div className="flex justify-between text-sm">
+                    <span>VAT (20%)</span>
+                    <span>£{vat.toFixed(2)}</span>
                       </div>
+                  <div className="border-t border-gray-200 pt-3">
+                    <div className="flex justify-between text-lg font-bold text-gray-900">
+                      <span>Total</span>
+                      <span>£{total.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Checkout Button */}
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-4 text-lg font-semibold">
-                  Proceed to Checkout
+                <Button 
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 text-lg font-semibold"
+                  onClick={handleCheckout}
+                  disabled={isProcessing || !customerInfo.firstName || !customerInfo.email || !customerInfo.address}
+                >
+                  {isProcessing ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Processing...
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <Lock className="h-5 w-5 mr-2" />
+                      Secure Checkout
+                    </div>
+                  )}
                 </Button>
 
+                {/* Security Notice */}
+                <div className="text-center text-xs text-gray-500">
+                  <div className="flex items-center justify-center mb-2">
+                    <Shield className="h-4 w-4 mr-1" />
+                    <span>256-bit SSL encryption</span>
+                  </div>
+                  <p>Your payment information is secure and encrypted</p>
+                </div>
+
                 {/* Payment Methods */}
-                <div className="flex items-center justify-center space-x-2 text-xs text-gray-500">
-                  <span>Klarna</span>
-                  <span>•</span>
-                  <span>Powered by Stripe</span>
-                  <span>•</span>
+                <div className="border-t border-gray-200 pt-4">
+                  <p className="text-sm text-gray-600 mb-2">We accept:</p>
+                  <div className="flex items-center justify-center space-x-3 text-xs text-gray-500">
                   <span>Visa</span>
                   <span>•</span>
                   <span>Mastercard</span>
                   <span>•</span>
-                  <span>Maestro</span>
+                    <span>American Express</span>
                   <span>•</span>
                   <span>PayPal</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Live Chat Button */}
-            <div className="fixed bottom-6 right-6">
-              <Button className="w-14 h-14 rounded-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 shadow-lg">
-                <MessageCircle className="h-6 w-6" />
-              </Button>
+            {/* Trust Badges */}
+            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+              <CardContent className="p-6 text-center">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center">
+                    <CheckCircle className="h-8 w-8 text-orange-600 mr-2" />
+                    <span className="font-semibold text-gray-900">100-Night Trial</span>
             </div>
+                  <div className="flex items-center justify-center">
+                    <Shield className="h-8 w-8 text-orange-600 mr-2" />
+                    <span className="font-semibold text-gray-900">10-Year Warranty</span>
           </div>
+                  <div className="flex items-center justify-center">
+                    <Truck className="h-8 w-8 text-orange-600 mr-2" />
+                    <span className="font-semibold text-gray-900">Free Delivery</span>
         </div>
       </div>
-
-      {/* Your Happy Guarantee Banner */}
-      <div className="bg-blue-800 text-white py-12">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-8">Your MattressKing Guarantee</h2>
-          <div className="grid md:grid-cols-4 gap-8">
-            <div className="flex flex-col items-center">
-              <Shield className="h-12 w-12 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">5-Year Manufacturer Guarantee</h3>
-            </div>
-            <div className="flex flex-col items-center">
-              <Truck className="h-12 w-12 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Speedy Delivery</h3>
-            </div>
-            <div className="flex flex-col items-center">
-              <Clock className="h-12 w-12 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">14 Day No-Hassle Returns</h3>
-            </div>
-            <div className="flex flex-col items-center">
-              <Star className="h-12 w-12 text-orange-500 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Rated Excellent on Trustpilot</h3>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Newsletter Signup */}
-      <div className="bg-blue-800 text-white py-12">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl font-bold mb-4">Sign up to receive exclusive offers direct to your inbox!</h2>
-          <p className="text-lg mb-6">Get your dose of MattressKing News, offers, inspo and more.</p>
-          <div className="flex max-w-md mx-auto space-x-2">
-            <Input 
-              placeholder="Enter email" 
-              className="flex-1 text-gray-900"
-            />
-            <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-              Subscribe
-            </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

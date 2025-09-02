@@ -150,10 +150,10 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     if (typeof value === 'number') {
       return value
     }
-    
+
     if (typeof value === 'string') {
       const lowerValue = value.toLowerCase()
-      
+
       switch (type) {
         case 'support':
         case 'durability':
@@ -181,7 +181,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           break
       }
     }
-    
+
     // Default values
     const defaultValue = (() => {
       switch (type) {
@@ -193,7 +193,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
         default: return 6
       }
     })()
-    
+
     return defaultValue
   }
 
@@ -238,7 +238,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       
       // Only continue sequential flow if we're in Add to Basket mode
       if (isSequentialFlow) {
-        setTimeout(() => {
+      setTimeout(() => {
           const { hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
           
           // Check color next
@@ -283,15 +283,15 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           )
           
           const payload: any = {
-            id: String(product.id),
-            name: product.name,
-            brand: product.brand,
-            image: selectedImage || product.image,
+                  id: String(product.id),
+                  name: product.name,
+                  brand: product.brand,
+                  image: selectedImage || product.image,
             currentPrice: currentVariantPrice,
-            originalPrice: product.originalPrice,
+                  originalPrice: product.originalPrice,
             size: selectedSizeData?.name || 'Standard',
-            color: selectedColor
-          }
+                  color: selectedColor
+                }
           
           if (hasFreeGift) {
             const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
@@ -302,14 +302,14 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
             })
           }
           
-          dispatch({
-            type: 'ADD_ITEM',
+            dispatch({
+              type: 'ADD_ITEM',
             payload
           })
           
-          setBasketSidebarOpen(true)
-        }, 100)
-      }
+            setBasketSidebarOpen(true)
+          }, 100)
+        }
       // If not in sequential flow, just close the popup (individual variant selection)
       
     } else if (type === 'color') {
@@ -318,7 +318,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       
       // Only continue sequential flow if we're in Add to Basket mode
       if (isSequentialFlow) {
-        setTimeout(() => {
+      setTimeout(() => {
           const { hasDepths, hasFirmness } = getAvailableVariantOptions()
           
           // Check other variants
@@ -357,12 +357,12 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           )
           
           const payload: any = {
-            id: String(product.id),
-            name: product.name,
-            brand: product.brand,
-            image: selectedImage || product.image,
+                  id: String(product.id),
+                  name: product.name,
+                  brand: product.brand,
+                  image: selectedImage || product.image,
             currentPrice: currentVariantPrice,
-            originalPrice: product.originalPrice,
+                  originalPrice: product.originalPrice,
             size: selectedSizeData?.name || 'Standard',
             color: selectedColor
           }
@@ -376,14 +376,14 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
             })
           }
           
-          dispatch({
-            type: 'ADD_ITEM',
+            dispatch({
+              type: 'ADD_ITEM',
             payload
           })
           
-          setBasketSidebarOpen(true)
-        }, 100)
-      }
+            setBasketSidebarOpen(true)
+          }, 100)
+        }
       // If not in sequential flow, just close the popup (individual variant selection)
     }
   }
@@ -443,7 +443,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
         Icon: getFeatureIconLocal(label) 
       }))
     }
-    
+
     // Fallback to category-specific features if no database features (EXACTLY same as product card)
     if (product.category === 'mattresses') {
       return [
@@ -609,14 +609,14 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
         return product.currentPrice || 0
       }
-      
+
       // Find variant that matches selected size and color
       const matchingVariant = (product as any).variants.find((variant: any) => {
         const sizeMatch = hasSizes ? variant.size === selectedSize : true
         const colorMatch = !selectedColor || variant.color === selectedColor
         return sizeMatch && colorMatch
       })
-      
+
       return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
     })()
 
@@ -644,15 +644,15 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     if (hasOnlyOneVariant && singleVariant) {
       // Prepare payload with free gift details if available
       const payload: any = {
-        id: String(product.id),
-        name: product.name,
-        brand: product.brand,
-        image: selectedImage || product.image,
-        currentPrice: singleVariant.currentPrice || singleVariant.originalPrice || product.currentPrice || 0,
-        originalPrice: singleVariant.originalPrice || product.originalPrice,
-        size: singleVariant.size || 'Standard',
-        color: singleVariant.color || 'Standard'
-      }
+          id: String(product.id),
+          name: product.name,
+          brand: product.brand,
+          image: selectedImage || product.image,
+          currentPrice: singleVariant.currentPrice || singleVariant.originalPrice || product.currentPrice || 0,
+          originalPrice: singleVariant.originalPrice || product.originalPrice,
+          size: singleVariant.size || 'Standard',
+          color: singleVariant.color || 'Standard'
+        }
 
       // Add free gift details if available
       if (hasFreeGift) {
@@ -727,17 +727,17 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     // All required variants are selected, proceed to add to cart
 
     // Add to cart logic here
-    
+
     // Prepare payload with free gift details if available
     const payload: any = {
-      id: String(product.id),
-      name: product.name,
-      brand: product.brand,
-      image: selectedImage || product.image,
-      currentPrice: currentVariantPrice,
-      originalPrice: product.originalPrice,
-      size: selectedSizeData?.name || 'Standard',
-      color: selectedColor
+        id: String(product.id),
+        name: product.name,
+        brand: product.brand,
+        image: selectedImage || product.image,
+        currentPrice: currentVariantPrice,
+        originalPrice: product.originalPrice,
+        size: selectedSizeData?.name || 'Standard',
+        color: selectedColor
     }
 
     // Add free gift details if available
@@ -778,7 +778,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   const buttonRef = useRef<HTMLDivElement>(null)
-  
+
   // Dynamic size data from variants (data-driven)
   const sizeData = useMemo(() => {
     if (Array.isArray((product as any).variants) && (product as any).variants.length > 0) {
@@ -823,12 +823,12 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     // If no sizes exist, return an empty list to indicate size is not applicable
     return []
   }, [(product as any).variants, (product as any).inStock])
-  
+
   // Ensure we have valid prices
   const originalPrice = product.originalPrice || product.currentPrice || 0
   const currentPrice = product.currentPrice || product.originalPrice || 0
   const hasValidPrices = originalPrice > 0 && currentPrice > 0
-  
+
   const [selectedSize, setSelectedSize] = useState<string>("")
   // Smart variant selection logic
   const getAvailableVariantOptions = useCallback(() => {
@@ -989,7 +989,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
     window.addEventListener('scroll', handleScroll)
     window.addEventListener('resize', handleResize)
-    
+
     return () => {
       window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('resize', handleResize)
@@ -1023,7 +1023,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
         }
       `}</style>
       <div className="bg-white border border-gray-100 rounded-xl p-3 sm:p-4 lg:p-4 pb-20 sm:pb-24 lg:pb-4">
-      
+
       {/* Mobile: Product Details First */}
       <div className="lg:hidden mb-8 bg-white border-b border-gray-200">
         {/* Product Details Section for Mobile */}
@@ -1064,7 +1064,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                     </div>
                   </div>
                 </div>
-              
+
             {/* Size and Pricing Section */}
             {/* Product Info Card - Shows pricing when size is selected, otherwise shows base product pricing */}
             {selectedSizeData ? (
@@ -1074,19 +1074,19 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                 <div className="flex-1 min-w-0">
                   {/* Size Name */}
                   <div className="font-black text-lg sm:text-xl lg:text-2xl text-black mb-3 break-words">{selectedSizeData.name}</div>
-                  
+
                   {/* Pricing - Now under the size name */}
                   <div className="space-y-1">
                     <div className="text-sm text-gray-500 line-through">Was £{selectedSizeData.wasPrice > 0 ? selectedSizeData.wasPrice.toFixed(2) : '0.00'}</div>
                     <div className="text-2xl font-black text-orange-600">£{selectedSizeData.currentPrice > 0 ? selectedSizeData.currentPrice.toFixed(2) : '0.00'}</div>
                   </div>
                 </div>
-                
+
                 {/* Right Side: Dimensions and Availability */}
                 <div className="text-left sm:text-right sm:ml-4 min-w-0">
                   {/* Dimensions */}
                   <div className="font-semibold text-base sm:text-lg lg:text-xl text-gray-800 mb-3 break-words">{selectedSizeData.dimensions}</div>
-                  
+
                   {/* Variant Dimensions */}
                   {(selectedSizeData.length || selectedSizeData.width || selectedSizeData.height) && (
                     <div className="mb-4">
@@ -1108,7 +1108,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                     </div>
 
                   )}
-                  
+
                   {/* Availability Status */}
                   <div className="flex items-center gap-2">
                     {selectedSizeData.inStock ? (
@@ -1143,7 +1143,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                           ? Math.min(...vars.map((v: any) => Number(v.currentPrice || v.originalPrice || 0)))
                           : product.currentPrice || 0
                         const originalPrice = product.originalPrice || 0
-                        
+
                         return (
                           <>
                             {originalPrice > lowestPrice && (
@@ -1155,14 +1155,14 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                       })()}
                     </div>
                   </div>
-                  
+
                   {/* Right Side: Size Selection Prompt and Base Dimensions */}
                   <div className="text-left sm:text-right sm:ml-4 min-w-0">
 
                     {(!(product as any).variants || (product as any).variants.length <= 1) ? null : (
                       <>
-                        <div className="text-lg font-semibold text-gray-600 mb-2">Choose options to see related prices</div>
-                        <div className="text-sm text-gray-500">Choose from available sizes below</div>
+                        <div className="text-lg font-semibold text-gray-600 mb-2">View details</div>
+                        <div className="text-sm text-gray-500">Choose colour and other options</div>
                       </>
                     )}
 
@@ -1187,7 +1187,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
             </div>
 
             )}
-              
+
               {/* Product Features - Display features saved from Mattresses features section */}
               {productFeatures.length > 0 && (
                 <div className="space-y-3">
@@ -1207,7 +1207,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
 
 
-            </div>
+                  </div>
 
 
 
@@ -1697,9 +1697,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                 </div>
 
                 {product.headline && (
-                  <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent">
+                <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent">
                     {product.headline}
-                  </h2>
+                </h2>
                 )}
 
               </div>
@@ -2808,7 +2808,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                         ) : (
                           <div className="text-center py-8">
                             <p className="text-gray-500 text-sm italic">No description content available</p>
-                          </div>
+                              </div>
                         )}
 
                         
@@ -3096,9 +3096,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                             
 
                             {product.dimensions?.dimension_disclaimer && (
-                              <div className="text-sm text-gray-500 italic">
+                            <div className="text-sm text-gray-500 italic">
                                 {product.dimensions.dimension_disclaimer}
-                              </div>
+                            </div>
                             )}
 
                           </div>
@@ -3363,7 +3363,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                         {/* Important Notices */}
                         {product.importantNotices && product.importantNotices.length > 0 && (
-                          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                             <h4 className="text-lg font-semibold text-gray-900 mb-3">
                               {(() => {
                                 const category = product.category || 'mattresses'
@@ -3383,15 +3383,15 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                                 }
                               })()}
                             </h4>
-                            <div className="space-y-2 text-sm text-gray-700">
+                          <div className="space-y-2 text-sm text-gray-700">
                               {product.importantNotices
                                 .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
                                 .map((notice, index) => (
                                   <p key={index}>• {notice.noticeText}</p>
                                 ))
                               }
-                            </div>
                           </div>
+                        </div>
                         )}
 
                       </div>
@@ -3637,16 +3637,16 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                             <div className="space-y-3">
                               {product.warrantyInfo.map((warranty: any, index: number) => (
                                 <div key={index} className="bg-green-50 border border-green-200 rounded-lg p-4">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-                                    </svg>
+                              <div className="flex items-center gap-2 mb-2">
+                                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                                </svg>
                                     <span className="font-semibold text-green-800">{warranty.heading}</span>
-                                  </div>
+                              </div>
                                   <p className="text-green-700 text-sm">{warranty.content}</p>
-                                </div>
-                              ))}
                             </div>
+                              ))}
+                              </div>
                           ) : (
                             <div className="text-gray-500 text-sm italic">No warranty information available</div>
                           )}
@@ -3680,14 +3680,14 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                         {/* Trial Period */}
                         {product.trialInformation && (
-                          <div>
-                            <h4 className="text-lg font-semibold text-gray-900 mb-3">100-Night Trial</h4>
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                              <p className="text-blue-800 text-sm">
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-900 mb-3">100-Night Trial</h4>
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <p className="text-blue-800 text-sm">
                                 {product.trialInformation}
                               </p>
-                            </div>
                           </div>
+                        </div>
                         )}
 
                       </div>
@@ -3939,8 +3939,8 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                     {(!(product as any).variants || (product as any).variants.length <= 1) ? null : (
                       <>
-                        <div className="text-lg font-semibold text-gray-600 mb-2">Choose options to see related prices</div>
-                        <div className="text-sm text-gray-500">Choose from available sizes below</div>
+                        <div className="text-lg font-semibold text-gray-600 mb-2">View details</div>
+                        <div className="text-sm text-gray-500">Choose colour and other options</div>
                       </>
                     )}
 

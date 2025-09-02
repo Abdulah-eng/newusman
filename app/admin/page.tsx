@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 import { AdminNav } from '@/components/admin/admin-nav'
@@ -56,7 +56,7 @@ import {
   Waves,
   RefreshCw 
 } from 'lucide-react'
-import { getIconComponent } from '../../lib/icon-mapping'
+import { getIconComponent } from '@/lib/icon-mapping'
 
 type VariantRow = {
   id: string
@@ -1796,27 +1796,27 @@ function ProductForm() {
   // Trial information
   const [trialInformation, setTrialInformation] = useState('Try your mattress risk-free for 100 nights. If you are not completely satisfied, return it for a full refund. No questions asked.')
   
-      // Dimensions and specifications
-    const [dimensions, setDimensions] = useState({
-      height: '25 cm',
-      length: 'L 190cm',
-      width: '135cm',
-      mattressSize: '135cm x L 190cm cm',
-      maxHeight: '25 cm',
-      weightCapacity: '200 kg',
-      pocketSprings: '1000 count',
-      comfortLayer: '8 cm',
-      supportLayer: '17 cm',
-      // Editable headings
-      mattressSizeHeading: 'Mattress Size',
+  // Dimensions and specifications
+  const [dimensions, setDimensions] = useState({
+    height: '25 cm',
+    length: 'L 190cm',
+    width: '135cm',
+    mattressSize: '135cm x L 190cm cm',
+    maxHeight: '25 cm',
+    weightCapacity: '200 kg',
+    pocketSprings: '1000 count',
+    comfortLayer: '8 cm',
+    supportLayer: '17 cm',
+    // Editable headings
+    mattressSizeHeading: 'Mattress Size',
       maximumHeightHeading: 'Maximum Height',
-      weightCapacityHeading: 'Weight Capacity',
-      pocketSpringsHeading: 'Pocket Springs',
-      comfortLayerHeading: 'Comfort Layer',
+    weightCapacityHeading: 'Weight Capacity',
+    pocketSpringsHeading: 'Pocket Springs',
+    comfortLayerHeading: 'Comfort Layer',
       supportLayerHeading: 'Support Layer',
       // Dimension disclaimer
       dimensionDisclaimer: 'All measurements are approximate and may vary slightly.'
-    })
+  })
 
   // Important notices state
   const [importantNotices, setImportantNotices] = useState<Array<{
@@ -3436,6 +3436,52 @@ function ProductForm() {
             </ul>
           )}
         </div>
+
+        {/* Create a custom feature card */}
+        <div className="mt-6 p-4 border rounded-lg">
+          <h4 className="text-sm font-semibold mb-3">Add a custom feature card</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <Label className="text-xs">Title</Label>
+              <Input
+                placeholder="e.g., Breathable Cover"
+                value={newReason}
+                onChange={(e) => setNewReason(e.target.value)}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label className="text-xs">Description</Label>
+              <Input
+                placeholder="Short description that appears in the card"
+                value={headline}
+                onChange={(e) => setHeadline(e.target.value)}
+              />
+            </div>
+            <div className="md:col-span-3">
+              <Label className="text-xs">Small Text (optional)</Label>
+              <Input
+                placeholder="Small subtext displayed under the icon"
+                value={trialInformation}
+                onChange={(e) => setTrialInformation(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="mt-3">
+            <Button
+              type="button"
+              onClick={() => {
+                const title = newReason.trim()
+                if (!title) return
+                setSelectedReasonsToLove(prev => [...prev, { reason: title, description: headline.trim(), smalltext: trialInformation.trim(), icon: 'check' }])
+                setNewReason('')
+                setHeadline('')
+                setTrialInformation('')
+              }}
+            >
+              Add Feature Card
+            </Button>
+          </div>
+        </div>
       </Card>
 
       {/* Description Paragraphs with Images */}
@@ -3609,7 +3655,7 @@ function ProductForm() {
             placeholder="e.g., Rotate your mattress every 3-6 months, use a mattress protector, and clean spills immediately. The bamboo cover is removable and machine washable."
             rows={4}
           />
-        </div>
+          </div>
       </Card>
 
       {/* Trial Information */}
@@ -3617,15 +3663,15 @@ function ProductForm() {
         <h2 className="text-xl font-semibold mb-4">Trial Information</h2>
         <p className="text-sm text-gray-600 mb-4">Enter the trial period information that will appear in the Warranty & Care section.</p>
         
-        <div>
+                    <div>
           <Label className="text-sm font-medium mb-2 block">Trial Information</Label>
           <Textarea 
             value={trialInformation} 
             onChange={e => setTrialInformation(e.target.value)}
             placeholder="e.g., Try your mattress risk-free for 100 nights. If you are not completely satisfied, return it for a full refund. No questions asked."
             rows={3}
-          />
-        </div>
+                      />
+                    </div>
       </Card>
 
       {/* Dimensions & Specifications */}

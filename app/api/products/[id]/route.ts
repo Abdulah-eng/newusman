@@ -218,12 +218,20 @@ export async function GET(
         // Add variant image
         variant_image: variant.variant_image
       })) || [],
-      features: product.product_features?.map((feature: any) => feature.feature_name) || [],
-      reasonsToLove: product.product_reasons_to_love?.map((reason: any) => reason.reason_text) || [],
-      reasonsToLoveSmalltext: product.product_reasons_to_love?.map((reason: any) => reason.smalltext) || [],
-      reasonsToLoveIcons: product.product_reasons_to_love?.map((reason: any) => reason.icon) || [],
-      product_reasons_to_love: product.product_reasons_to_love || [],
-      customReasons: product.product_custom_reasons?.map((reason: any) => reason.reason_text) || [],
+              features: product.product_features?.map((feature: any) => feature.feature_name) || [],
+        selectedFeatures: product.product_features?.map((feature: any) => feature.feature_name) || [],
+        reasonsToLove: product.product_reasons_to_love?.map((reason: any) => reason.reason_text) || [],
+        reasonsToLoveSmalltext: product.product_reasons_to_love?.map((reason: any) => reason.smalltext) || [],
+        reasonsToLoveIcons: product.product_reasons_to_love?.map((reason: any) => reason.icon) || [],
+        product_reasons_to_love: product.product_reasons_to_love || [],
+        selectedReasonsToLove: product.product_reasons_to_love?.map((reason: any) => ({
+          reason: reason.reason_text || '',
+          description: reason.reason_text || '',
+          smalltext: reason.smalltext || '',
+          icon: reason.icon || ''
+        })) || [],
+        customReasons: product.product_custom_reasons?.map((reason: any) => reason.reason_text) || [],
+        reasonsToBuy: product.product_custom_reasons?.map((reason: any) => reason.reason_text) || [],
       descriptionParagraphs: product.product_description_paragraphs?.map((para: any) => ({
         heading: para.heading,
         content: para.content,
@@ -272,7 +280,8 @@ export async function GET(
         fileType: img.file_type,
         sortOrder: img.sort_order
       })).filter((img: any) => img.imageUrl) || [],
-      popularCategories: product.product_popular_categories?.map((cat: any) => cat.popular_category_name) || [],
+              popularCategories: product.product_popular_categories?.map((cat: any) => cat.popular_category_name) || [],
+        selectedPopularCategories: product.product_popular_categories?.map((cat: any) => cat.popular_category_name) || [],
       // Add basic product info
       brand: 'Premium Brand', // Default brand
       currentPrice: Number.isFinite(minCurrentPrice) ? minCurrentPrice : (product.product_variants?.[0]?.current_price || 0),
@@ -330,6 +339,562 @@ export async function GET(
 
   } catch (error) {
     console.error('Error in product API:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+
+    // Debug logging for specific fields
+    console.log('Debug - Fields received:', {
+      selectedFeatures: body.selectedFeatures,
+      reasonsToBuy: body.reasonsToBuy,
+      selectedReasonsToLove: body.selectedReasonsToLove,
+      selectedPopularCategories: body.selectedPopularCategories
+    })
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(id)) {
+      return NextResponse.json(
+        { error: 'Invalid product ID format. Product ID must be a valid UUID.' },
+        { status: 400 }
+      )
+    }
+
+    // Get category ID from the database
+    const { data: categoryData, error: categoryError } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('slug', body.category)
+      .single()
+
+    if (categoryError || !categoryData) {
+      return NextResponse.json(
+        { error: 'Invalid category' },
+        { status: 400 }
+      )
+    }
+
+    // Update the main product - only update fields that definitely exist
+    const updateData: any = {
+      category_id: categoryData.id,
+      name: body.name,
+      rating: body.rating ? parseFloat(body.rating) : null,
+      headline: body.headline,
+      long_description: body.longDescription || null,
+      updated_at: new Date().toISOString()
+    }
+
+    // Only add fields if they exist in the database schema
+    // These fields are added by migrations, so we'll add them conditionally
+    if (body.warrantyDeliveryLine !== undefined) {
+      updateData.warranty_delivery_line = body.warrantyDeliveryLine
+    }
+    if (body.careInstructions !== undefined) {
+      updateData.care_instructions = body.careInstructions
+    }
+    if (body.trialInformation !== undefined) {
+      updateData.trial_information = body.trialInformation
+    }
+    if (body.firmnessScale !== undefined) {
+      updateData.firmness_scale = body.firmnessScale
+    }
+    if (body.supportLevel !== undefined) {
+      updateData.support_level = body.supportLevel
+    }
+    if (body.pressureReliefLevel !== undefined) {
+      updateData.pressure_relief_level = body.pressureReliefLevel
+    }
+    if (body.airCirculationLevel !== undefined) {
+      updateData.air_circulation_level = body.airCirculationLevel
+    }
+    if (body.durabilityLevel !== undefined) {
+      updateData.durability_level = body.durabilityLevel
+    }
+    if (body.badges !== undefined) {
+      updateData.badges = body.badges
+    }
+
+    console.log('Updating product with data:', updateData)
+
+    const { data: productData, error: productError } = await supabase
+      .from('products')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (productError) {
+      console.error('Product update error:', productError)
+      console.error('Product update error details:', {
+        message: productError.message,
+        details: productError.details,
+        hint: productError.hint,
+        code: productError.code
+      })
+      return NextResponse.json(
+        { error: `Failed to update product: ${productError.message}` },
+        { status: 500 }
+      )
+    }
+
+    // Update product images if provided
+    if (body.images) {
+      // Always delete existing images first
+      const { error: deleteImagesError } = await supabase
+        .from('product_images')
+        .delete()
+        .eq('product_id', id)
+
+      if (deleteImagesError) {
+        console.error('Error deleting existing images:', deleteImagesError)
+      }
+
+      // Insert new images if any provided
+      if (body.images.length > 0) {
+        const imageData = body.images.map((imageUrl: string, index: number) => ({
+          product_id: id,
+          image_url: imageUrl,
+          sort_order: index,
+          is_main_image: index === 0, // First image becomes main image
+          file_name: imageUrl.split('/').pop() || `image_${index}.jpg`,
+          file_size: null,
+          file_type: 'image/jpeg'
+        }))
+
+        const { error: imageError } = await supabase
+          .from('product_images')
+          .insert(imageData)
+
+        if (imageError) {
+          console.error('Image update error:', imageError)
+        }
+      }
+    }
+
+    // Handle main image separately if provided
+    if (body.main_image) {
+      // If main_image is provided, ensure it's the first image and marked as main
+      if (body.images && body.images.length > 0) {
+        // Update the first image to be the main image
+        const { error: updateMainImageError } = await supabase
+          .from('product_images')
+          .update({ is_main_image: true })
+          .eq('product_id', id)
+          .eq('sort_order', 0)
+
+        if (updateMainImageError) {
+          console.error('Error updating main image flag:', updateMainImageError)
+        }
+      } else {
+        // If no images array but main_image is provided, insert it as the main image
+        const { error: insertMainImageError } = await supabase
+          .from('product_images')
+          .insert({
+            product_id: id,
+            image_url: body.main_image,
+            sort_order: 0,
+            is_main_image: true,
+            file_name: body.main_image.split('/').pop() || 'main_image.jpg',
+            file_size: null,
+            file_type: 'image/jpeg'
+          })
+
+        if (insertMainImageError) {
+          console.error('Error inserting main image:', insertMainImageError)
+        }
+      }
+    }
+
+    // Update product variants if provided
+    if (body.variants && body.variants.length > 0) {
+      // First, delete existing variants
+      const { error: deleteError } = await supabase
+        .from('product_variants')
+        .delete()
+        .eq('product_id', id)
+
+      if (deleteError) {
+        console.error('Error deleting existing variants:', deleteError)
+      }
+
+      // Insert new variants
+      const variantData = body.variants.map((variant: any) => ({
+        product_id: id,
+        sku: variant.sku || null,
+        original_price: Number.isFinite(parseFloat(variant.originalPrice)) ? parseFloat(variant.originalPrice) : 0,
+        current_price: Number.isFinite(parseFloat(variant.currentPrice)) ? parseFloat(variant.currentPrice) : 0,
+        color: variant.color || null,
+        depth: variant.depth || null,
+        firmness: variant.firmness || null,
+        size: variant.size || null,
+        length: variant.length || null,
+        width: variant.width || null,
+        height: variant.height || null,
+        availability: variant.availability !== false,
+        variant_image: variant.variant_image || null
+      }))
+
+      const { error: variantError } = await supabase
+        .from('product_variants')
+        .insert(variantData)
+
+      if (variantError) {
+        console.error('Variant update error:', variantError)
+      }
+    }
+
+    // Update product dimensions if provided
+    if (body.dimensions) {
+      // Always delete existing dimensions first
+      const { error: deleteDimensionsError } = await supabase
+        .from('product_dimensions')
+        .delete()
+        .eq('product_id', id)
+
+      if (deleteDimensionsError) {
+        console.error('Error deleting existing dimensions:', deleteDimensionsError)
+      }
+
+      // Insert new dimensions if any provided
+      if (Object.values(body.dimensions).some(value => value && value !== '')) {
+        const dimensionData = {
+          product_id: id,
+          height: body.dimensions.height || null,
+          length: body.dimensions.length || null,
+          width: body.dimensions.width || null,
+          mattress_size: body.dimensions.mattressSize || null,
+          maximum_height: body.dimensions.maxHeight || null,
+          weight_capacity: body.dimensions.weightCapacity || null,
+          pocket_springs: body.dimensions.pocketSprings || null,
+          comfort_layer: body.dimensions.comfortLayer || null,
+          support_layer: body.dimensions.supportLayer || null,
+          dimension_disclaimer: body.dimensions.dimensionDisclaimer || null
+        }
+
+        const { error: dimensionError } = await supabase
+          .from('product_dimensions')
+          .insert(dimensionData)
+
+        if (dimensionError) {
+          console.error('Dimension update error:', dimensionError)
+        }
+      }
+    }
+
+    // Update important notices if provided
+    if (body.importantNotices) {
+      // Always delete existing important notices first
+      const { error: deleteNoticesError } = await supabase
+        .from('product_important_notices')
+        .delete()
+        .eq('product_id', id)
+
+      if (deleteNoticesError) {
+        console.error('Error deleting existing important notices:', deleteNoticesError)
+      }
+
+      // Insert new important notices if any provided
+      if (body.importantNotices.length > 0) {
+        const noticeData = body.importantNotices.map((notice: any) => ({
+          product_id: id,
+          notice_text: notice.noticeText || '',
+          sort_order: notice.sortOrder || 0
+        }))
+
+        const { error: noticeError } = await supabase
+          .from('product_important_notices')
+          .insert(noticeData)
+
+        if (noticeError) {
+          console.error('Important notices update error:', noticeError)
+        }
+      }
+    }
+
+    // Update description paragraphs if provided
+    if (body.descriptionParagraphs) {
+      // Always delete existing description paragraphs first
+      const { error: deleteParagraphsError } = await supabase
+        .from('product_description_paragraphs')
+        .delete()
+        .eq('product_id', id)
+
+      if (deleteParagraphsError) {
+        console.error('Error deleting existing description paragraphs:', deleteParagraphsError)
+      }
+
+      // Insert new description paragraphs if any provided
+      if (body.descriptionParagraphs.length > 0) {
+        const paragraphData = body.descriptionParagraphs.map((para: any, index: number) => ({
+          product_id: id,
+          heading: para.heading || '',
+          content: para.content || '',
+          image_url: para.image || null,
+          sort_order: index
+        }))
+
+        const { error: paragraphError } = await supabase
+          .from('product_description_paragraphs')
+          .insert(paragraphData)
+
+        if (paragraphError) {
+          console.error('Description paragraphs update error:', paragraphError)
+        }
+      }
+    }
+
+    // Update FAQs if provided
+    if (body.faqs) {
+      // Always delete existing FAQs first
+      const { error: deleteFaqsError } = await supabase
+        .from('product_faqs')
+        .delete()
+        .eq('product_id', id)
+
+      if (deleteFaqsError) {
+        console.error('Error deleting existing FAQs:', deleteFaqsError)
+      }
+
+      // Insert new FAQs if any provided
+      if (body.faqs.length > 0) {
+        const faqData = body.faqs.map((faq: any, index: number) => ({
+          product_id: id,
+          question: faq.question || '',
+          answer: faq.answer || '',
+          sort_order: index
+        }))
+
+        const { error: faqError } = await supabase
+          .from('product_faqs')
+          .insert(faqData)
+
+        if (faqError) {
+          console.error('FAQs update error:', faqError)
+        }
+      }
+    }
+
+    // Update warranty sections if provided
+    if (body.warrantySections) {
+      // Always delete existing warranty sections first
+      const { error: deleteWarrantyError } = await supabase
+        .from('product_warranty_sections')
+        .delete()
+        .eq('product_id', id)
+
+      if (deleteWarrantyError) {
+        console.error('Error deleting existing warranty sections:', deleteWarrantyError)
+      }
+
+      // Insert new warranty sections if any provided
+      if (body.warrantySections.length > 0) {
+        const warrantyData = body.warrantySections.map((warranty: any, index: number) => ({
+          product_id: id,
+          heading: warranty.heading || '',
+          content: warranty.content || '',
+          sort_order: index
+        }))
+
+        const { error: warrantyError } = await supabase
+          .from('product_warranty_sections')
+          .insert(warrantyData)
+
+        if (warrantyError) {
+          console.error('Warranty sections update error:', warrantyError)
+        }
+      }
+    }
+
+    // Update popular categories if provided
+    if (body.selectedPopularCategories) {
+      // Always delete existing popular categories first
+      const { error: deleteCategoriesError } = await supabase
+        .from('product_popular_categories')
+        .delete()
+        .eq('product_id', id)
+
+      if (deleteCategoriesError) {
+        console.error('Error deleting existing popular categories:', deleteCategoriesError)
+      }
+
+      // Insert new popular categories if any provided
+      if (body.selectedPopularCategories.length > 0) {
+        const withOrder = body.selectedPopularCategories.map((categoryName: string, index: number) => ({
+          product_id: id,
+          popular_category_name: categoryName,
+          sort_order: index as any
+        }))
+
+        try {
+          const { error } = await supabase
+            .from('product_popular_categories')
+            .insert(withOrder as any)
+          if (error) throw error
+        } catch (e) {
+          const noOrder = body.selectedPopularCategories.map((categoryName: string) => ({
+            product_id: id,
+            popular_category_name: categoryName
+          }))
+          const { error: categoryError } = await supabase
+            .from('product_popular_categories')
+            .insert(noOrder)
+          if (categoryError) {
+            console.error('Popular categories update error:', categoryError)
+          }
+        }
+      }
+    }
+
+    // Normalize aliases from create form
+    if (Array.isArray(body.customReasonsToBuy) && (!Array.isArray(body.reasonsToBuy) || body.reasonsToBuy.length === 0)) {
+      body.reasonsToBuy = body.customReasonsToBuy
+    }
+
+    // Update reasons to buy if provided
+    if (body.reasonsToBuy) {
+      // Always delete existing reasons to buy first
+      const { error: deleteReasonsError } = await supabase
+        .from('product_custom_reasons')
+        .delete()
+        .eq('product_id', id)
+
+      if (deleteReasonsError) {
+        console.error('Error deleting existing reasons to buy:', deleteReasonsError)
+      }
+
+      // Insert new reasons to buy if any provided
+      if (body.reasonsToBuy.length > 0) {
+        // Try with optional columns
+        const reasonDataWithExtras = body.reasonsToBuy.map((reason: string, index: number) => ({
+          product_id: id,
+          reason_text: reason,
+          description: null as any,
+          sort_order: index as any
+        }))
+
+        try {
+          const { error } = await supabase
+            .from('product_custom_reasons')
+            .insert(reasonDataWithExtras as any)
+          if (error) throw error
+        } catch (e) {
+          // Fallback to minimal columns
+          const legacyReasonData = body.reasonsToBuy.map((reason: string) => ({
+            product_id: id,
+            reason_text: reason
+          }))
+          const { error: legacyError } = await supabase
+            .from('product_custom_reasons')
+            .insert(legacyReasonData)
+          if (legacyError) {
+            console.error('Reasons to buy legacy insert error:', legacyError)
+          }
+        }
+      }
+    }
+
+    // Update selected features if provided
+    if (body.selectedFeatures) {
+      // Always delete existing features first
+      const { error: deleteFeaturesError } = await supabase
+        .from('product_features')
+        .delete()
+        .eq('product_id', id)
+
+      if (deleteFeaturesError) {
+        console.error('Error deleting existing features:', deleteFeaturesError)
+      }
+
+      // Insert new features if any provided
+      if (body.selectedFeatures.length > 0) {
+        const featureDataWithOrder = body.selectedFeatures.map((featureName: string, index: number) => ({
+          product_id: id,
+          feature_name: featureName,
+          sort_order: index as any
+        }))
+
+        try {
+          const { error: featureError } = await supabase
+            .from('product_features')
+            .insert(featureDataWithOrder as any)
+          if (featureError) throw featureError
+        } catch (e) {
+          const featureData = body.selectedFeatures.map((featureName: string) => ({
+            product_id: id,
+            feature_name: featureName
+          }))
+          const { error: featureError } = await supabase
+            .from('product_features')
+            .insert(featureData)
+          if (featureError) {
+            console.error('Features update error:', featureError)
+          }
+        }
+      }
+    }
+
+    // Update selected reasons to love if provided
+    if (body.selectedReasonsToLove) {
+      // Always delete existing reasons to love first
+      const { error: deleteReasonsToLoveError } = await supabase
+        .from('product_reasons_to_love')
+        .delete()
+        .eq('product_id', id)
+
+            if (deleteReasonsToLoveError) {
+        console.error('Error deleting existing reasons to love:', deleteReasonsToLoveError)
+      }
+
+      // Insert new reasons to love if any provided
+      if (body.selectedReasonsToLove.length > 0) {
+        const withExtras = body.selectedReasonsToLove.map((reason: any, index: number) => ({
+          product_id: id,
+          reason_text: reason.reason || '',
+          description: reason.description || null,
+          smalltext: reason.smalltext || null,
+          icon: reason.icon || null,
+          sort_order: index as any
+        }))
+
+        try {
+          const { error } = await supabase
+            .from('product_reasons_to_love')
+            .insert(withExtras as any)
+          if (error) throw error
+        } catch (e) {
+          // Fallback: legacy minimal insert
+          const legacy = body.selectedReasonsToLove.map((reason: any) => ({
+            product_id: id,
+            reason_text: reason.reason || ''
+          }))
+          const { error: legacyError } = await supabase
+            .from('product_reasons_to_love')
+            .insert(legacy)
+          if (legacyError) {
+            console.error('Reasons to love legacy insert error:', legacyError)
+          }
+        }
+      }
+    }
+
+    return NextResponse.json({
+      message: 'Product updated successfully',
+      product: productData
+    })
+
+  } catch (error) {
+    console.error('Error in product update API:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
