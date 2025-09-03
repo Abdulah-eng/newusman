@@ -82,12 +82,12 @@ export function ColorSelectionModal({
     if (!variants || variants.length === 0) return []
     const uniqueColors = [...new Set(variants.filter(v => v.color).map(v => v.color!))]
     return uniqueColors.map(color => {
-      // Find the first variant with this color to get its image
-      const variantWithImage = variants.find(v => v.color === color && v.variant_image)
+      // Use the color as hex value if it's already a hex code, otherwise use a default
+      const hexColor = color.startsWith('#') ? color : '#f3f4f6'
       return { 
         name: color, 
-        hex: '#f3f4f6', 
-        image: variantWithImage?.variant_image || undefined 
+        hex: hexColor, 
+        image: undefined // No longer using images for colors
       }
     })
   })()
@@ -283,28 +283,32 @@ export function ColorSelectionModal({
                   {localSelectedColor && (
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600 font-medium">Color:</span>
+                      <div className="flex items-center gap-2">
                       <span className="font-semibold text-gray-900">{localSelectedColor}</span>
                       {(() => {
                         if (!variants || !localSelectedColor) return null
                         
-                        // Find the variant image for the selected color
+                          // Find the variant color for the selected color
                         const selectedVariant = variants.find(v => 
                           v.color === localSelectedColor && 
                           (!selectedSize || v.size === selectedSize)
                         )
                         
-                        if (!selectedVariant?.variant_image) return null
+                          if (!selectedVariant?.color) return null
+                          
+                          // Use the color as hex value if it's a hex code
+                          const hexColor = selectedVariant.color.startsWith('#') 
+                            ? selectedVariant.color 
+                            : '#f3f4f6'
                         
                         return (
-                          <div className="w-8 h-8 rounded-md overflow-hidden border border-gray-300 shadow-sm ml-2">
-                            <img 
-                              src={selectedVariant.variant_image} 
-                              alt={`${localSelectedColor} variant`}
-                              className="w-full h-full object-cover"
+                            <div 
+                              className="w-8 h-8 rounded-md border border-gray-300 shadow-sm"
+                              style={{ backgroundColor: hexColor }}
                             />
-                          </div>
                         )
                       })()}
+                      </div>
                     </div>
                   )}
                   {!showOnlyColors && localSelectedDepth && (
@@ -419,44 +423,8 @@ export function ColorSelectionModal({
                         <div className="flex items-center gap-4">
                           {/* Color Swatch */}
                           <div className="flex-shrink-0">
-                            {(() => {
-                              // First try to find variant image for this color
-                              if (variants && variants.length > 0) {
-                                const variantWithImage = variants.find(v => 
-                                  v.color === color.name && 
-                                  (!selectedSize || v.size === selectedSize) &&
-                                  v.variant_image
-                                )
-                                
-                                if (variantWithImage?.variant_image) {
-                                  return (
-                                    <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200 shadow-lg">
-                                      <img 
-                                        src={variantWithImage.variant_image} 
-                                        alt={`${color.name} variant`}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                  )
-                                }
-                              }
-                              
-                              // Fallback to original color.image or color swatch
-                              if (color.image) {
-                                return (
-                                  <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200 shadow-lg">
-                                    <img 
-                                      src={color.image} 
-                                      alt={color.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                )
-                              }
-                              
-                              return (
-                                <div 
-                                  className="w-16 h-16 rounded-lg border-2 shadow-lg relative overflow-hidden"
+                            <div 
+                              className="w-16 h-16 rounded-lg border-2 shadow-lg relative overflow-hidden group"
                                   style={{ 
                                     backgroundColor: color.hex || '#f3f4f6',
                                     backgroundImage: color.hex ? 'none' : 'linear-gradient(45deg, #f3f4f6 25%, transparent 25%), linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f3f4f6 75%), linear-gradient(-45deg, transparent 75%, #f3f4f6 75%)',
@@ -465,9 +433,11 @@ export function ColorSelectionModal({
                                   }}
                                 >
                                   <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                              {/* Selection indicator overlay */}
+                              {localSelectedColor === color.name && (
+                                <div className="absolute inset-0 bg-orange-500/20 border-2 border-orange-500 rounded-lg"></div>
+                              )}
                                 </div>
-                              )
-                            })()}
                           </div>
                           
                           {/* Color Details */}
@@ -574,44 +544,8 @@ export function ColorSelectionModal({
                         <div className="flex items-center gap-4">
                           {/* Enhanced Color Swatch */}
                           <div className="flex-shrink-0">
-                            {(() => {
-                              // First try to find variant image for this color
-                              if (variants && variants.length > 0) {
-                                const variantWithImage = variants.find(v => 
-                                  v.color === color.name && 
-                                  (!selectedSize || v.size === selectedSize) &&
-                                  v.variant_image
-                                )
-                                
-                                if (variantWithImage?.variant_image) {
-                                  return (
-                                    <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg">
-                                      <img 
-                                        src={variantWithImage.variant_image} 
-                                        alt={`${color.name} variant`}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                  )
-                                }
-                              }
-                              
-                              // Fallback to original color.image or color swatch
-                              if (color.image) {
-                                return (
-                                  <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-gray-200 shadow-lg">
-                                    <img 
-                                      src={color.image} 
-                                      alt={color.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                )
-                              }
-                              
-                              return (
-                                <div 
-                                  className="w-16 h-16 rounded-xl border-2 shadow-lg relative overflow-hidden"
+                            <div 
+                              className="w-16 h-16 rounded-xl border-2 shadow-lg relative overflow-hidden group"
                                   style={{ 
                                     backgroundColor: color.hex || '#f3f4f6',
                                     backgroundImage: color.hex ? 'none' : 'linear-gradient(45deg, #f3f4f6 25%, transparent 25%), linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f3f4f6 75%), linear-gradient(-45deg, transparent 75%, #f3f4f6 75%)',
@@ -621,9 +555,11 @@ export function ColorSelectionModal({
                                 >
                                   {/* Subtle shine effect */}
                                   <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent"></div>
+                              {/* Selection indicator overlay */}
+                              {localSelectedColor === color.name && (
+                                <div className="absolute inset-0 bg-amber-500/20 border-2 border-amber-500 rounded-xl"></div>
+                              )}
                                 </div>
-                              )
-                            })()}
                           </div>
                           
                           {/* Enhanced Color Details */}

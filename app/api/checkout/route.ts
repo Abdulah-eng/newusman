@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Note: Emails and cart clearing will be handled by the webhook after successful payment
+    // Note: Order processing and emails will be handled by the frontend after successful payment
     // This ensures we only process successful payments, not abandoned checkouts
 
     return NextResponse.json({ id: session.id, url: session.url })

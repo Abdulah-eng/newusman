@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { ColorPicker } from "@/components/ui/color-picker"
 import { Plus, Edit, Trash2, Save, X, Package, Palette, Ruler, DollarSign, Hash } from 'lucide-react'
 import { toast } from "@/hooks/use-toast"
 
@@ -272,15 +273,14 @@ export function VariantManagement({ productId, category, productName, onVariants
 
           {/* Color */}
           <div className="space-y-2">
-            <Label htmlFor="color">Color *</Label>
-            <Input
-              id="color"
+            <ColorPicker
               value={variant.color}
-              onChange={(e) => isNew 
-                ? setNewVariant({ ...newVariant, color: e.target.value })
-                : setEditingVariant({ ...editingVariant!, color: e.target.value })
+              onChange={(color) => isNew 
+                ? setNewVariant({ ...newVariant, color })
+                : setEditingVariant({ ...editingVariant!, color })
               }
-              placeholder="e.g., Blue, White, Black"
+              label="Color *"
+              placeholder="Select a color"
             />
           </div>
 
@@ -361,101 +361,31 @@ export function VariantManagement({ productId, category, productName, onVariants
             />
           </div>
 
-          {/* Variant Image */}
+          {/* Color Preview */}
           <div className="space-y-2">
-            <Label htmlFor="variantImage">Variant Image</Label>
-            <div className="space-y-3">
-              {/* Image Preview */}
-              {variant.variant_image && (
-                <div className="relative w-32 h-32 border rounded-lg overflow-hidden">
-                  <img 
-                    src={variant.variant_image} 
-                    alt="Variant preview" 
-                    className="w-full h-full object-cover"
+            <Label>Color Preview</Label>
+            <div className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
+              {variant.color ? (
+                <>
+                  <div 
+                    className="w-16 h-16 rounded-lg border-2 border-gray-300 shadow-sm"
+                    style={{ backgroundColor: variant.color }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => isNew 
-                      ? setNewVariant({ ...newVariant, variant_image: '' })
-                      : setEditingVariant({ ...editingVariant!, variant_image: '' })
-                    }
-                    className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
-                  >
-                    ×
-                  </button>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {variant.color}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      This color will be displayed in the product selection
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Palette className="h-4 w-4" />
+                  <span className="text-sm">No color selected</span>
                 </div>
               )}
-              
-              {/* Upload Button */}
-              <div className="flex items-center gap-3">
-                <input
-                  type="file"
-                  id="variantImageUpload"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0]
-                    if (!file) return
-                    
-                    try {
-                      const formData = new FormData()
-                      formData.append('file', file)
-                      
-                      const response = await fetch('/api/upload', {
-                        method: 'POST',
-                        body: formData
-                      })
-                      
-                      if (response.ok) {
-                        const { url } = await response.json()
-                        if (isNew) {
-                          setNewVariant({ ...newVariant, variant_image: url })
-                        } else {
-                          setEditingVariant({ ...editingVariant!, variant_image: url })
-                        }
-                      } else {
-                        const error = await response.json()
-                        toast({
-                          title: "Upload Failed",
-                          description: error.error || 'Failed to upload image',
-                          variant: "destructive"
-                        })
-                      }
-                    } catch (error) {
-                      console.error('Upload error:', error)
-                      toast({
-                        title: "Upload Failed",
-                        description: 'Failed to upload image',
-                        variant: "destructive"
-                      })
-                    }
-                  }}
-                />
-                <label
-                  htmlFor="variantImageUpload"
-                  className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-                >
-                  <Package className="h-4 w-4 mr-2" />
-                  Upload Image
-                </label>
-                
-                {/* URL Input as fallback */}
-                <Input
-                  id="variantImage"
-                  value={variant.variant_image || ''}
-                  onChange={(e) => isNew 
-                    ? setNewVariant({ ...newVariant, variant_image: e.target.value })
-                    : setEditingVariant({ ...editingVariant!, variant_image: e.target.value })
-                  }
-                  placeholder="Or enter image URL directly"
-                  className="flex-1"
-                />
-              </div>
-              
-              <p className="text-xs text-gray-500">
-                Upload an image for this variant (recommended for color variants). 
-                Supported formats: JPG, PNG, GIF. Max size: 5MB.
-              </p>
             </div>
           </div>
 
@@ -578,7 +508,17 @@ export function VariantManagement({ productId, category, productName, onVariants
                     {/* Color */}
                     <div className="flex items-center gap-2">
                       <Palette className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm font-medium">{variant.color}</span>
+                      <div className="flex items-center gap-2">
+                        {variant.color && (
+                          <div 
+                            className="w-4 h-4 rounded border border-gray-300"
+                            style={{ backgroundColor: variant.color }}
+                          />
+                        )}
+                        <span className="text-sm font-medium">
+                          {variant.color || 'No color'}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Size */}

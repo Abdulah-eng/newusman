@@ -39,6 +39,7 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [paymentCanceled, setPaymentCanceled] = useState(false)
+  const [orderProcessed, setOrderProcessed] = useState(false)
 
   // Check for payment success/canceled from URL parameters
   useEffect(() => {
@@ -47,19 +48,99 @@ export default function CheckoutPage() {
     const canceled = urlParams.get('canceled')
     const sessionId = urlParams.get('session_id')
 
-    if (success === '1' && sessionId) {
+    if (success === '1' && sessionId && !orderProcessed) {
       setPaymentSuccess(true)
+      setOrderProcessed(true) // Prevent multiple processing
       // Clear the cart after successful payment
       dispatch({ type: 'CLEAR_CART' })
       
-      // Order processing is now handled entirely by Stripe webhook
-      // No need to process orders in frontend to prevent duplicates
+      // Process the order immediately since webhook might not work in development
+      processOrderSuccess(sessionId)
     } else if (canceled === '1') {
       setPaymentCanceled(true)
     }
-  }, [dispatch])
+  }, [dispatch, orderProcessed])
 
+  // Function to process order success - Simplified version without webhooks
+  const processOrderSuccess = async (sessionId: string) => {
+    try {
+      console.log('Payment successful, processing order...')
+      console.log('Session ID:', sessionId)
+      
+      // Get cart items from state before clearing
+      const cartItems = state.items
+      const customerData = customerInfo
+      
+      // Additional guard: Check if order already exists
+      const checkOrderResponse = await fetch(`/api/orders?stripe_session_id=${sessionId}`)
+      if (checkOrderResponse.ok) {
+        const existingOrders = await checkOrderResponse.json()
+        if (existingOrders.orders && existingOrders.orders.length > 0) {
+          console.log('Order already exists, skipping creation')
+          return
+        }
+      }
+      
+      // Create order in database with duplicate prevention
+      const orderResponse = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderData: {
+            order_number: `ORD-${Date.now()}`,
+            customer_email: customerData.email,
+            customer_name: `${customerData.firstName} ${customerData.lastName}`,
+            total_amount: Number(state.total || 0),
+            status: 'completed', // Mark as completed since payment succeeded
+            stripe_session_id: sessionId,
+            shipping_address: `${customerData.address}, ${customerData.city}, ${customerData.postcode}`,
+            billing_address: `${customerData.address}, ${customerData.city}, ${customerData.postcode}`
+          },
+          items: cartItems.map(item => ({
+            ...item,
+            currentPrice: Number(item.currentPrice || item.price || 0),
+            price: Number(item.price || 0)
+          }))
+        })
+      })
 
+      if (orderResponse.ok) {
+        const orderResult = await orderResponse.json()
+        console.log('Order created successfully:', orderResult)
+        
+        // Send confirmation email to customer
+        await fetch('/api/send-order-confirmation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: orderResult.orderId,
+            customerEmail: customerData.email,
+            customerName: `${customerData.firstName} ${customerData.lastName}`,
+            items: cartItems,
+            total: state.total || 0
+          })
+        })
+
+        // Send notification email to admin
+        await fetch('/api/send-admin-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: orderResult.orderId,
+            customerEmail: customerData.email,
+            customerName: `${customerData.firstName} ${customerData.lastName}`,
+            items: cartItems,
+            total: state.total || 0
+          })
+        })
+      } else {
+        console.error('Failed to create order:', await orderResponse.text())
+      }
+      
+    } catch (error) {
+      console.error('Error processing order success:', error)
+    }
+  }
 
   // Show success message
   if (paymentSuccess) {

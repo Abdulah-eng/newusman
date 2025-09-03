@@ -57,6 +57,7 @@ import {
   Waves,
   RefreshCw 
 } from 'lucide-react'
+import { ColorPicker } from '@/components/ui/color-picker'
 import { getIconComponent } from '@/lib/icon-mapping'
 
 type VariantRow = {
@@ -3172,7 +3173,7 @@ function ProductForm() {
                   <th className="p-2">Available</th>
                   <th className="p-2">Original Price</th>
                   <th className="p-2">Now Price</th>
-                  <th className="p-2">Image</th>
+                  <th className="p-2">Color</th>
                   <th className="p-2"></th>
                 </tr>
               </thead>
@@ -3201,112 +3202,23 @@ function ProductForm() {
                     <td className="p-2 min-w-[140px]"><Input type="number" value={v.currentPrice ?? ''} onChange={e => updateVariant(v.id, { currentPrice: e.target.value ? Number(e.target.value) : undefined })} placeholder="Now" /></td>
                     <td className="p-2 min-w-[200px]">
                       <div className="space-y-2">
-                        {/* Image Preview */}
-                        {v.variant_image && (
-                          <div className="relative w-16 h-16 border rounded overflow-hidden">
-                            <img 
-                              src={v.variant_image} 
-                              alt="Variant preview" 
-                              className="w-full h-full object-cover"
+                        {/* Color Picker */}
+                        <ColorPicker
+                          value={v.color || ''}
+                          onChange={(color) => updateVariant(v.id, { color })}
+                          placeholder="Select color"
+                        />
+                        
+                        {/* Color Preview */}
+                        {v.color && (
+                          <div className="flex items-center gap-2 p-2 border border-gray-200 rounded bg-gray-50">
+                            <div 
+                              className="w-8 h-8 rounded border border-gray-300"
+                              style={{ backgroundColor: v.color }}
                             />
-                            <button
-                              type="button"
-                              onClick={() => updateVariant(v.id, { variant_image: '' })}
-                              className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
-                            >
-                              ×
-                            </button>
+                            <span className="text-sm text-gray-600">{v.color}</span>
                           </div>
                         )}
-                        
-                        {/* Image Selection Options */}
-                        <div className="space-y-2">
-                          {/* Button to open image selector */}
-                          {(images.length > 0 || uploadedFiles.length > 0) && (
-                            <div className="flex items-center gap-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openImageSelector(v.id)}
-                                className="text-xs"
-                              >
-                                🖼️ Select Image
-                              </Button>
-                            </div>
-                          )}
-                          
-                          {/* Upload Button */}
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="file"
-                              id={`variantImageUpload-${v.id}`}
-                              accept="image/*"
-                              className="hidden"
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0]
-                                if (!file) return
-                                
-                                try {
-                                  const formData = new FormData()
-                                  formData.append('file', file)
-                                  formData.append('preset', 'medium') // Use medium preset for variant images
-                                  
-                                  const response = await fetch('/api/upload-optimized', {
-                                    method: 'POST',
-                                    body: formData
-                                  })
-                                  
-                                  if (response.ok) {
-                                    const result = await response.json()
-                                    updateVariant(v.id, { variant_image: result.url })
-                                    
-                                    // Show size comparison alert for variant image
-                                    const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
-                                    const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
-                                    const savingsPercent = result.compressionRatio
-                                    
-                                    alert(`Variant image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
-                                    
-                                    console.log('[Variant Upload] Optimized upload result:', result)
-                                  } else {
-                                    const error = await response.json()
-                                    console.error('[Variant Upload] Optimized upload error:', error)
-                                    
-                                    // Fallback to regular upload
-                                    const fallbackFormData = new FormData()
-                                    fallbackFormData.append('file', file)
-                                    
-                                    const fallbackResponse = await fetch('/api/upload', {
-                                      method: 'POST',
-                                      body: fallbackFormData
-                                    })
-                                    
-                                    if (fallbackResponse.ok) {
-                                      const { url } = await fallbackResponse.json()
-                                      updateVariant(v.id, { variant_image: url })
-                                      alert('Variant image uploaded successfully (fallback mode)')
-                                    } else {
-                                      const fallbackError = await fallbackResponse.json()
-                                      alert(`Upload failed: ${fallbackError.error || 'Failed to upload image'}`)
-                                    }
-                                  }
-                                } catch (error) {
-                                  console.error('Upload error:', error)
-                                  alert('Failed to upload image')
-                                }
-                              }}
-                            />
-                            <label
-                              htmlFor={`variantImageUpload-${v.id}`}
-                              className="cursor-pointer inline-flex items-center px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-                            >
-                              📷 Upload New
-                            </label>
-                            
-
-                          </div>
-                        </div>
                       </div>
                     </td>
                     <td className="p-2"><Button variant="ghost" onClick={() => removeVariant(v.id)}>Remove</Button></td>
