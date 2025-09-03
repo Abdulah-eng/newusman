@@ -7,25 +7,25 @@ const OPTIMIZATION_PRESETS = {
   thumbnail: {
     maxWidth: 300,
     maxHeight: 300,
-    quality: 70,
+    quality: 80, // Increased from 70 for better quality
     format: 'webp'
   },
   medium: {
     maxWidth: 800,
     maxHeight: 800,
-    quality: 80,
+    quality: 85, // Increased from 80 for better quality
     format: 'webp'
   },
   large: {
     maxWidth: 1200,
     maxHeight: 1200,
-    quality: 85,
+    quality: 90, // Increased from 85 for better quality
     format: 'webp'
   },
   original: {
     maxWidth: 2000,
     maxHeight: 2000,
-    quality: 90,
+    quality: 95, // High quality for original preset
     format: 'webp'
   }
 }
@@ -91,19 +91,35 @@ export async function POST(req: NextRequest) {
         targetWidth = Math.round((targetWidth * selectedPreset.maxHeight) / targetHeight)
       }
 
+      // Preserve original dimensions if no resizing is needed
+      if (targetWidth === 0 || targetHeight === 0) {
+        targetWidth = metadata.width || 0
+        targetHeight = metadata.height || 0
+      }
+
       // Start Sharp processing
       let sharpInstance = sharp(buffer)
-        .resize(targetWidth, targetHeight, {
+      
+      // Only resize if the image is actually larger than the target dimensions
+      if (metadata.width && metadata.height && 
+          (metadata.width > selectedPreset.maxWidth || metadata.height > selectedPreset.maxHeight)) {
+        sharpInstance = sharpInstance.resize(targetWidth, targetHeight, {
           fit: 'inside',
-          withoutEnlargement: true
+          withoutEnlargement: true,
+          kernel: sharp.kernel.lanczos3 // Better quality resampling
         })
+      }
 
       // Apply format-specific optimization
       switch (selectedPreset.format) {
         case 'webp':
           sharpInstance = sharpInstance.webp({ 
             quality: selectedPreset.quality,
-            effort: 6 // Higher effort = better compression but slower
+            effort: 4, // Reduced effort to prevent over-compression
+            lossless: false, // Explicitly set to false for lossy compression
+            nearLossless: false, // Disable near-lossless to avoid artifacts
+            smartSubsample: true, // Enable smart subsampling for better quality
+            reductionEffort: 0 // Disable reduction effort to preserve quality
           })
           break
         case 'jpeg':
