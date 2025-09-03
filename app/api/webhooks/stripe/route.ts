@@ -11,11 +11,8 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
 export async function POST(req: NextRequest) {
   try {
-    // Disable webhook in development to prevent duplicate orders
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Webhook disabled in development mode')
-      return NextResponse.json({ message: 'Webhook disabled in development' }, { status: 200 })
-    }
+    // Webhook now handles all order processing in both development and production
+    // Frontend order processing has been removed to prevent duplicates
     
     const body = await req.text()
     const signature = req.headers.get('stripe-signature')
@@ -54,6 +51,18 @@ export async function POST(req: NextRequest) {
       if (!customerEmail) {
         console.error('No customer email found in session')
         return NextResponse.json({ error: 'No customer email' }, { status: 400 })
+      }
+
+      // Prevent duplicate order creation for same session
+      const { data: existingOrder, error: existingError } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('stripe_session_id', session.id)
+        .limit(1)
+        .maybeSingle()
+
+      if (!existingError && existingOrder) {
+        return NextResponse.json({ received: true })
       }
 
       // Create order in database with full customer information

@@ -26,13 +26,13 @@ import {
 export default function CheckoutPage() {
   const { state, dispatch, updateQuantity } = useCart()
   const [customerInfo, setCustomerInfo] = useState({
-    firstName: 'John',
-    lastName: 'Smith',
-    email: 'test@example.com',
-    phone: '07123456789',
-    address: '123 Oxford Street',
-    city: 'London',
-    postcode: 'W1D 1BS',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    postcode: '',
     country: 'GB'
   })
   const [deliveryOption, setDeliveryOption] = useState('standard')
@@ -52,96 +52,14 @@ export default function CheckoutPage() {
       // Clear the cart after successful payment
       dispatch({ type: 'CLEAR_CART' })
       
-      // Process the order immediately since webhook might not work in development
-      processOrderSuccess(sessionId)
+      // Order processing is now handled entirely by Stripe webhook
+      // No need to process orders in frontend to prevent duplicates
     } else if (canceled === '1') {
       setPaymentCanceled(true)
     }
   }, [dispatch])
 
-  // Function to process order success
-  const processOrderSuccess = async (sessionId: string) => {
-    try {
-      console.log('Payment successful, checking if order already exists...')
-      console.log('Session ID:', sessionId)
-      
-      // Check if order already exists to prevent duplicates
-      const checkOrderResponse = await fetch(`/api/orders?stripe_session_id=${sessionId}`)
-      
-      if (checkOrderResponse.ok) {
-        const existingOrders = await checkOrderResponse.json()
-        if (existingOrders.orders && existingOrders.orders.length > 0) {
-          console.log('Order already exists, skipping creation')
-          return
-        }
-      }
-      
-      console.log('Creating new order in database...')
-      
-      // Get cart items from state before clearing
-      const cartItems = state.items
-      const customerData = customerInfo
-      
-      // Create order in database (for development - webhooks don't work locally)
-      const orderResponse = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderData: {
-            order_number: `ORD-${Date.now()}`,
-            customer_email: customerData.email,
-            customer_name: `${customerData.firstName} ${customerData.lastName}`,
-            total_amount: Number(state.total || 0),
-            status: 'pending',
-            stripe_session_id: sessionId,
-            shipping_address: `${customerData.address}, ${customerData.city}, ${customerData.postcode}`,
-            billing_address: `${customerData.address}, ${customerData.city}, ${customerData.postcode}`
-          },
-          items: cartItems.map(item => ({
-            ...item,
-            currentPrice: Number(item.currentPrice || item.price || 0),
-            price: Number(item.price || 0)
-          }))
-        })
-      })
 
-      if (orderResponse.ok) {
-        const orderResult = await orderResponse.json()
-        console.log('Order created successfully:', orderResult)
-        
-        // Send confirmation email to customer
-        await fetch('/api/send-order-confirmation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: orderResult.orderId,
-            customerEmail: customerData.email,
-            customerName: `${customerData.firstName} ${customerData.lastName}`,
-            items: cartItems,
-            total: state.total || 0
-          })
-        })
-
-        // Send notification email to admin
-        await fetch('/api/send-admin-notification', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: orderResult.orderId,
-            customerEmail: customerData.email,
-            customerName: `${customerData.firstName} ${customerData.lastName}`,
-            items: cartItems,
-            total: state.total || 0
-          })
-        })
-      } else {
-        console.error('Failed to create order:', await orderResponse.text())
-      }
-      
-    } catch (error) {
-      console.error('Error processing order success:', error)
-    }
-  }
 
   // Show success message
   if (paymentSuccess) {

@@ -4120,7 +4120,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                   <div className="flex items-center">
                     <span className="font-bold text-xl tracking-wide">
-                      {hasOnlyOneVariant ? 'Add to Basket' : 'Choose Options & Add to Basket'}
+                      Add to Basket
                     </span>
                   </div>
 

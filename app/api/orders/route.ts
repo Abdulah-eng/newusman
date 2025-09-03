@@ -59,6 +59,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order data and items are required' }, { status: 400 })
     }
     
+    // Guard against duplicate orders by stripe_session_id (if available)
+    if (orderData.stripe_session_id) {
+      const { data: existingBySession, error: existingCheckError } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('stripe_session_id', orderData.stripe_session_id)
+        .limit(1)
+        .maybeSingle()
+
+      if (!existingCheckError && existingBySession) {
+        return NextResponse.json({
+          success: true,
+          orderId: existingBySession.id,
+          message: 'Order already exists for this session'
+        })
+      }
+    }
+    
     // Create order
     const { data: order, error: orderError } = await supabase
       .from('orders')
