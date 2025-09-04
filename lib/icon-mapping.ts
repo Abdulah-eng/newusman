@@ -320,6 +320,26 @@ export const getSmartIcon = (text: string, size: 'sm' | 'md' | 'lg' = 'md') => {
     return getIconComponent('palette', size)
   }
   
+  // Sofas: additional mappings
+  if (lowerText.includes('space-saving') || lowerText.includes('space saving')) {
+    return getIconComponent('minimize', size)
+  }
+  if (lowerText.includes('versatile')) {
+    return getIconComponent('arrow-left-right', size)
+  }
+  if (lowerText.includes('ergonomic')) {
+    return getIconComponent('sliders', size)
+  }
+  if (lowerText.includes('dual function') || lowerText.includes('dual-function')) {
+    return getIconComponent('grid', size)
+  }
+  if (lowerText.includes('hidden storage')) {
+    return getIconComponent('package', size)
+  }
+  if (lowerText.includes('backrest') || lowerText.includes('armrest')) {
+    return getIconComponent('bed', size)
+  }
+
   // Easy assembly
   if (lowerText.includes('easy') && lowerText.includes('assembly')) {
     return getIconComponent('wrench', size)

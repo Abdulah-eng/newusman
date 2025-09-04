@@ -1629,7 +1629,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                           fill 
 
-                          className="object-cover"
+                          className="object-contain bg-white"
 
                         />
 
@@ -2974,9 +2974,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                                     <div className="flex items-center justify-between py-2 border-b border-gray-200">
 
-                                      <span className="font-medium text-gray-700">C: Width</span>
+                                      <span className="font-medium text-gray-700">C: {product.category === 'sofas' ? 'Depth' : 'Width'}</span>
 
-                                      <span className="text-gray-900 font-semibold">{product.dimensions?.width || '135cm'}</span>
+                                      <span className="text-gray-900 font-semibold">{(product.category === 'sofas' ? (product.dimensions as any)?.depth : product.dimensions?.width) || '135cm'}</span>
 
                                     </div>
                                   </>
@@ -3209,9 +3209,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                                        <span className="text-xs font-bold text-gray-700">C</span>
 
-                                       <span className="text-xs text-gray-600">{product.dimensions?.width || '135cm'}</span>
+                                       <span className="text-xs text-gray-600">{(product.category === 'sofas' ? (product.dimensions as any)?.depth : product.dimensions?.width) || '135cm'}</span>
 
-                                       <span className="text-xs text-gray-500">Width</span>
+                                       <span className="text-xs text-gray-500">{product.category === 'sofas' ? 'Depth' : 'Width'}</span>
 
                                      </div>
 

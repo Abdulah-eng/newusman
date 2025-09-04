@@ -121,7 +121,19 @@ export const HARDCODED_FEATURE_CARDS: Record<string, FeatureCard[]> = {
     { id: 'organic-cotton', title: 'Organic Cotton', description: 'Natural organic cotton for pure comfort.', icon: 'leaf' },
     { id: 'natural-linen', title: 'Natural Linen', description: 'Natural linen for breathable luxury.', icon: 'leaf' },
     { id: 'synthetic-blend', title: 'Synthetic Blend', description: 'Durable synthetic blend for lasting performance.', icon: 'layers' },
-    { id: 'performance-fabric', title: 'Performance Fabric', description: 'High-performance fabric for active lifestyles.', icon: 'zap' }
+    { id: 'performance-fabric', title: 'Performance Fabric', description: 'High-performance fabric for active lifestyles.', icon: 'zap' },
+    // Common sofa features requested
+    { id: 'durable-frame-construction', title: 'Durable Frame Construction', description: 'Solid, long-lasting frame for everyday use.', icon: 'wrench' },
+    { id: 'comfortable-backrest-armrest', title: 'Comfortable Backrest & Armrest', description: 'Ergonomic back and arm support for lounging.', icon: 'bed' },
+    { id: 'supportive-seating-base', title: 'Supportive Seating Base', description: 'Firm, supportive base for dependable comfort.', icon: 'support' },
+    { id: 'space-saving-design', title: 'Space-Saving Design', description: 'Compact footprint that fits smaller rooms.', icon: 'minimize' },
+    { id: 'stylish-modern-look', title: 'Stylish Modern Look', description: 'Clean, contemporary aesthetic.', icon: 'palette' },
+    { id: 'versatile-use', title: 'Versatile Use', description: 'Adaptable for living, guest, or office spaces.', icon: 'arrow-left-right' },
+    { id: 'ergonomic-design', title: 'Ergonomic Design', description: 'Designed for posture and long-sit comfort.', icon: 'sliders' },
+    { id: 'compact-dual-function', title: 'Compact Dual Function', description: 'Sitting by day, sleeping or lounging by night.', icon: 'grid' },
+    { id: 'hidden-storage', title: 'Hidden Storage', description: 'Discrete storage under or within the sofa.', icon: 'package' },
+    { id: 'easy-assembled', title: 'Easy Assembled', description: 'Quick assembly with minimal tools.', icon: 'easy-assembly' },
+    { id: 'delivery-flat-pack', title: 'Delivery Flat Pack', description: 'Ships flat-packed for easier handling.', icon: 'truck' }
   ],
   toppers: [
     { id: 'memory-foam-topper', title: 'Memory Foam', description: 'Contours to your body for personalized comfort.', icon: 'brain' },

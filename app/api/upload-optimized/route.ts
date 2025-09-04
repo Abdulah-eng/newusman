@@ -35,6 +35,10 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData()
     const file = formData.get('file') as File
     const preset = formData.get('preset') as string || 'large' // Default to large preset
+    const requestedFormat = (formData.get('format') as string) || 'webp'
+    const convertFlag = (formData.get('convert') as string) || 'true'
+    const qualityOverrideRaw = formData.get('quality') as string | null
+    const convertToFormat = convertFlag !== 'false'
     
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
@@ -56,6 +60,9 @@ export async function POST(req: NextRequest) {
     }
 
     const selectedPreset = OPTIMIZATION_PRESETS[preset as keyof typeof OPTIMIZATION_PRESETS]
+    // Allow overriding format/quality via request
+    const targetFormat = convertToFormat ? requestedFormat : 'original'
+    const qualityOverride = qualityOverrideRaw ? Math.max(1, Math.min(100, parseInt(qualityOverrideRaw, 10))) : undefined
 
     // Convert File to Buffer for Sharp processing
     const arrayBuffer = await file.arrayBuffer()
@@ -64,9 +71,10 @@ export async function POST(req: NextRequest) {
     // Generate unique filename
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 15)
-    const fileName = `optimized-images/${preset}/${timestamp}-${randomString}.${selectedPreset.format}`
+    const outputExtension = targetFormat === 'original' ? (file.name.split('.').pop() || 'bin') : targetFormat
+    const fileName = `optimized-images/${preset}/${timestamp}-${randomString}.${outputExtension}`
 
-    // Optimize image with Sharp
+    // Optimize image with Sharp (or pass-through original)
     let optimizedBuffer: Buffer
     let metadata: sharp.Metadata
     let targetWidth: number
@@ -97,55 +105,63 @@ export async function POST(req: NextRequest) {
         targetHeight = metadata.height || 0
       }
 
-      // Start Sharp processing
-      let sharpInstance = sharp(buffer)
-      
-      // Only resize if the image is actually larger than the target dimensions
-      if (metadata.width && metadata.height && 
-          (metadata.width > selectedPreset.maxWidth || metadata.height > selectedPreset.maxHeight)) {
-        sharpInstance = sharpInstance.resize(targetWidth, targetHeight, {
-          fit: 'inside',
-          withoutEnlargement: true,
-          kernel: sharp.kernel.lanczos3 // Better quality resampling
-        })
-      }
+      if (!convertToFormat || targetFormat === 'original') {
+        // No conversion requested → upload original file bytes
+        optimizedBuffer = buffer
+      } else {
+        // Start Sharp processing
+        let sharpInstance = sharp(buffer)
+        
+        // Only resize if the image is actually larger than the target dimensions
+        if (metadata.width && metadata.height && 
+            (metadata.width > selectedPreset.maxWidth || metadata.height > selectedPreset.maxHeight)) {
+          sharpInstance = sharpInstance.resize(targetWidth, targetHeight, {
+            fit: 'inside',
+            withoutEnlargement: true,
+            kernel: sharp.kernel.lanczos3 // Better quality resampling
+          })
+        }
 
-      // Apply format-specific optimization
-      switch (selectedPreset.format) {
-        case 'webp':
-          sharpInstance = sharpInstance.webp({ 
-            quality: selectedPreset.quality,
-            effort: 4, // Reduced effort to prevent over-compression
-            lossless: false, // Explicitly set to false for lossy compression
-            nearLossless: false, // Disable near-lossless to avoid artifacts
-            smartSubsample: true, // Enable smart subsampling for better quality
-            reductionEffort: 0 // Disable reduction effort to preserve quality
-          })
-          break
-        case 'jpeg':
-          sharpInstance = sharpInstance.jpeg({ 
-            quality: selectedPreset.quality,
-            progressive: true,
-            mozjpeg: true
-          })
-          break
-        case 'png':
-          sharpInstance = sharpInstance.png({ 
-            quality: selectedPreset.quality,
-            compressionLevel: 9,
-            progressive: true
-          })
-          break
-        case 'avif':
-          sharpInstance = sharpInstance.avif({ 
-            quality: selectedPreset.quality,
-            effort: 9
-          })
-          break
-      }
+        // Apply format-specific optimization
+        const effectiveQuality = qualityOverride ?? selectedPreset.quality
+        switch (targetFormat) {
+          case 'webp':
+            sharpInstance = sharpInstance.webp({ 
+              quality: effectiveQuality,
+              effort: 4,
+              lossless: false,
+              nearLossless: false,
+              smartSubsample: true
+            })
+            break
+          case 'jpeg':
+            sharpInstance = sharpInstance.jpeg({ 
+              quality: effectiveQuality,
+              progressive: true,
+              mozjpeg: true
+            })
+            break
+          case 'png':
+            // PNG is lossless; use compressionLevel only
+            sharpInstance = sharpInstance.png({ 
+              compressionLevel: 9
+            })
+            break
+          case 'avif':
+            sharpInstance = sharpInstance.avif({ 
+              quality: effectiveQuality,
+              effort: 9
+            })
+            break
+          default:
+            // Fallback to webp
+            sharpInstance = sharpInstance.webp({ quality: effectiveQuality })
+            break
+        }
 
-      // Process image
-      optimizedBuffer = await sharpInstance.toBuffer()
+        // Process image
+        optimizedBuffer = await sharpInstance.toBuffer()
+      }
 
       // Console log removed for performance: ${metadata.width}x${metadata.height} → ${targetWidth}x${targetHeight}`)
       // Console log removed for performance.toFixed(1)}KB → ${(optimizedBuffer.length / 1024).toFixed(1)}KB`)
@@ -161,7 +177,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await supabase.storage
       .from(bucketName)
       .upload(fileName, optimizedBuffer, {
-        contentType: `image/${selectedPreset.format}`,
+        contentType: convertToFormat && targetFormat !== 'original' ? `image/${targetFormat}` : (file.type || 'application/octet-stream'),
         cacheControl: '31536000', // 1 year cache
         upsert: false
       })
@@ -182,7 +198,7 @@ export async function POST(req: NextRequest) {
       preset: preset,
       originalSize: Math.round(buffer.length / 1024),
       optimizedSize: Math.round(optimizedBuffer.length / 1024),
-      format: selectedPreset.format,
+      format: convertToFormat && targetFormat !== 'original' ? targetFormat : (file.type.split('/')[1] || 'original'),
       dimensions: {
         original: { width: metadata.width, height: metadata.height },
         optimized: { width: targetWidth, height: targetHeight }

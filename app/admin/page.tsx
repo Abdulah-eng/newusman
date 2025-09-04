@@ -58,7 +58,10 @@ import {
   RefreshCw 
 } from 'lucide-react'
 import { ColorPicker } from '@/components/ui/color-picker'
+import { getHexForColorName } from '@/lib/utils'
 import { getIconComponent } from '@/lib/icon-mapping'
+import { getFeaturesForCategory as getFeaturesForCategoryLib } from '@/lib/category-features'
+import { getFeatureCardsForCategory as getFeatureCardsForCategoryLib } from '@/lib/feature-cards'
 
 type VariantRow = {
   id: string
@@ -1609,12 +1612,12 @@ const CATEGORY_REASONS_TO_LOVE = {
   ]
 }
 
-// Default to beds features if category not found
-const getFeaturesForCategory = (category: string) => ensureUnique(CATEGORY_FEATURES[category as keyof typeof CATEGORY_FEATURES] || CATEGORY_FEATURES.beds)
+// Default to centralized list for consistency across add/edit
+const getFeaturesForCategory = (category: string) => getFeaturesForCategoryLib(category)
 const getReasonsForCategory = (category: string) => ensureUnique(CATEGORY_REASONS_TO_LOVE[category as keyof typeof CATEGORY_REASONS_TO_LOVE] || CATEGORY_REASONS_TO_LOVE.mattresses)
 
-// Get hardcoded feature cards for a category
-const getFeatureCardsForCategory = (category: string) => HARDCODED_FEATURE_CARDS[category as keyof typeof HARDCODED_FEATURE_CARDS] || HARDCODED_FEATURE_CARDS.mattresses
+// Get feature cards for a category from centralized source
+const getFeatureCardsForCategory = (category: string) => getFeatureCardsForCategoryLib(category)
 
 // Get icon component based on icon name (now uses centralized mapping)
 const getIconComponentAdmin = (iconName: string) => {
@@ -3168,7 +3171,7 @@ function ProductForm() {
                   {useFirmness && <th className="p-2">Firmness</th>}
                   {useSize && <th className="p-2">Size</th>}
                   <th className="p-2">Length</th>
-                  <th className="p-2">Width</th>
+                  <th className="p-2">{(selectedCategory || '').toLowerCase() === 'sofas' ? 'Depth' : 'Width'}</th>
                   <th className="p-2">Height</th>
                   <th className="p-2">Available</th>
                   <th className="p-2">Original Price</th>
@@ -3181,12 +3184,54 @@ function ProductForm() {
                 {variants.map(v => (
                   <tr key={v.id} className="border-t">
                     <td className="p-2 min-w-[120px]"><Input value={v.sku} onChange={e => updateVariant(v.id, { sku: e.target.value })} placeholder="SKU" /></td>
-                    {useColor && <td className="p-2 min-w-[140px]"><Input value={v.color || ''} onChange={e => updateVariant(v.id, { color: e.target.value })} placeholder="Color" /></td>}
+                    {useColor && (
+                      <td className="p-2 min-w-[160px]">
+                        <select 
+                          value={v.color || ''} 
+                          onChange={e => updateVariant(v.id, { color: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        >
+                          <option value="">Select color</option>
+                          <option>GREY</option>
+                          <option>LIGHT GREY</option>
+                          <option>DARK GREY</option>
+                          <option>BROWN</option>
+                          <option>LIGHT BROWN</option>
+                          <option>DARK BROWN</option>
+                          <option>BLACK</option>
+                          <option>WHITE</option>
+                          <option>BEIGE</option>
+                          <option>LILAC</option>
+                          <option>CREAM</option>
+                          <option>RED</option>
+                          <option>ORANGE</option>
+                          <option>NAVY BLUE</option>
+                          <option>DARK BLUE</option>
+                          <option>LIGHT BLUE</option>
+                          <option>BLUE</option>
+                          <option>TEAL</option>
+                          <option>GREEN</option>
+                          <option>LIGHT GREEN</option>
+                          <option>DARK GREEN</option>
+                          <option>OLIVE GREEN</option>
+                          <option>YELLOW</option>
+                          <option>PINK</option>
+                          <option>PURPLE</option>
+                          <option>SOCCER BLUE</option>
+                          <option>SOCCER RED</option>
+                          <option>SOCCER BLACK</option>
+                          <option>TAUPE</option>
+                          <option>TORQUOISE</option>
+                          <option>AQUA BLUE</option>
+                          <option>LIME</option>
+                        </select>
+                      </td>
+                    )}
                     {useDepth && <td className="p-2 min-w-[120px]"><Input value={v.depth || ''} onChange={e => updateVariant(v.id, { depth: e.target.value })} placeholder="Depth" /></td>}
                     {useFirmness && <td className="p-2 min-w-[160px]"><Input value={v.firmness || ''} onChange={e => updateVariant(v.id, { firmness: e.target.value })} placeholder="Firmness" /></td>}
                     {useSize && <td className="p-2 min-w-[140px]"><Input value={v.size || ''} onChange={e => updateVariant(v.id, { size: e.target.value })} placeholder="Size" /></td>}
                     <td className="p-2 min-w-[100px]"><Input value={v.length || ''} onChange={e => updateVariant(v.id, { length: e.target.value })} placeholder="Length" /></td>
-                    <td className="p-2 min-w-[100px]"><Input value={v.width || ''} onChange={e => updateVariant(v.id, { width: e.target.value })} placeholder="Width" /></td>
+                    <td className="p-2 min-w-[100px]"><Input value={((selectedCategory || '').toLowerCase() === 'sofas' ? v.depth : v.width) || ''} onChange={e => ((selectedCategory || '').toLowerCase() === 'sofas' ? updateVariant(v.id, { depth: e.target.value }) : updateVariant(v.id, { width: e.target.value }))} placeholder={(selectedCategory || '').toLowerCase() === 'sofas' ? 'Depth' : 'Width'} /></td>
                     <td className="p-2 min-w-[100px]"><Input value={v.height || ''} onChange={e => updateVariant(v.id, { height: e.target.value })} placeholder="Height" /></td>
                     <td className="p-2 min-w-[100px]">
                       <select 
@@ -3214,7 +3259,7 @@ function ProductForm() {
                           <div className="flex items-center gap-2 p-2 border border-gray-200 rounded bg-gray-50">
                             <div 
                               className="w-8 h-8 rounded border border-gray-300"
-                              style={{ backgroundColor: v.color }}
+                              style={{ backgroundColor: getHexForColorName(v.color) || v.color }}
                             />
                             <span className="text-sm text-gray-600">{v.color}</span>
                           </div>

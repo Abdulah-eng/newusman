@@ -1225,11 +1225,13 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                           />
                         </div>
                         <div>
-                          <Label>Width</Label>
+                          <Label>{(product.category || '').toLowerCase() === 'sofas' ? 'Depth' : 'Width'}</Label>
                           <Input
-                            value={variant.width || ''}
-                            onChange={(e) => updateVariant(variant.id, { width: e.target.value })}
-                            placeholder="Width"
+                            value={((product.category || '').toLowerCase() === 'sofas' ? variant.depth : variant.width) || ''}
+                            onChange={(e) => (product.category || '').toLowerCase() === 'sofas' 
+                              ? updateVariant(variant.id, { depth: e.target.value }) 
+                              : updateVariant(variant.id, { width: e.target.value })}
+                            placeholder={(product.category || '').toLowerCase() === 'sofas' ? 'Depth' : 'Width'}
                           />
                         </div>
                         <div>

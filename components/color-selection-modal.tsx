@@ -82,8 +82,20 @@ export function ColorSelectionModal({
     if (!variants || variants.length === 0) return []
     const uniqueColors = [...new Set(variants.filter(v => v.color).map(v => v.color!))]
     return uniqueColors.map(color => {
-      // Use the color as hex value if it's already a hex code, otherwise use a default
-      const hexColor = color.startsWith('#') ? color : '#f3f4f6'
+      // Use mapping for known names; fall back to raw if hex; else neutral
+      const hexMap: Record<string, string> = {
+        'grey': '#808080','light grey': '#D3D3D3','dark grey': '#505050',
+        'brown': '#8B4513','light brown': '#B5651D','dark brown': '#5C3A21',
+        'black': '#000000','white': '#FFFFFF','beige': '#F5F5DC','lilac': '#C8A2C8',
+        'cream': '#FFFDD0','red': '#D32F2F','orange': '#FB8C00','navy blue': '#001F3F',
+        'dark blue': '#0D47A1','light blue': '#ADD8E6','blue': '#1976D2','teal': '#008080',
+        'green': '#2E7D32','light green': '#90EE90','dark green': '#006400','olive green': '#556B2F',
+        'yellow': '#FBC02D','pink': '#E91E63','purple': '#6A1B9A','soccer blue': '#0057B8',
+        'soccer red': '#C8102E','soccer black': '#111111','taupe': '#483C32','torquoise': '#40E0D0','turquoise': '#40E0D0',
+        'aqua blue': '#00FFFF','lime': '#32CD32'
+      }
+      const key = color.trim().toLowerCase()
+      const hexColor = color.startsWith('#') ? color : (hexMap[key] || '#f3f4f6')
       return { 
         name: color, 
         hex: hexColor, 

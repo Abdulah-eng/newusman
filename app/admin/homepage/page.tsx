@@ -397,11 +397,23 @@ export default function HomePageAdmin() {
 
   const handleImageUpload = async (file: File, setImageFunction: (url: string) => void) => {
     try {
+      // Ask user whether to convert and desired quality
+      const convert = window.confirm('Convert this image to WebP? Click Cancel to upload original format.')
+      let quality: number | undefined = undefined
+      if (convert) {
+        const q = window.prompt('Enter WebP quality (1-100). Higher = better quality, larger size.', '90')
+        const parsed = q ? parseInt(q, 10) : NaN
+        if (!isNaN(parsed)) quality = Math.max(1, Math.min(100, parsed))
+      }
+
       // Use optimized upload API for homepage images
       const formData = new FormData()
       formData.append('file', file)
       formData.append('preset', 'medium') // Use medium preset for homepage images
-      
+      formData.append('convert', String(convert))
+      formData.append('format', convert ? 'webp' : 'original')
+      if (typeof quality === 'number') formData.append('quality', String(quality))
+
       const response = await fetch('/api/upload-optimized', {
         method: 'POST',
         body: formData

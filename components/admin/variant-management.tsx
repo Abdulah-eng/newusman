@@ -271,17 +271,51 @@ export function VariantManagement({ productId, category, productName, onVariants
             </div>
           </div>
 
-          {/* Color */}
+          {/* Color - restricted list */}
           <div className="space-y-2">
-            <ColorPicker
+            <Label>Color *</Label>
+            <select
               value={variant.color}
-              onChange={(color) => isNew 
-                ? setNewVariant({ ...newVariant, color })
-                : setEditingVariant({ ...editingVariant!, color })
+              onChange={(e) => isNew 
+                ? setNewVariant({ ...newVariant, color: e.target.value })
+                : setEditingVariant({ ...editingVariant!, color: e.target.value })
               }
-              label="Color *"
-              placeholder="Select a color"
-            />
+              className="w-full p-2 border border-gray-300 rounded-md"
+            >
+              <option value="">Select color</option>
+              <option>GREY</option>
+              <option>LIGHT GREY</option>
+              <option>DARK GREY</option>
+              <option>BROWN</option>
+              <option>LIGHT BROWN</option>
+              <option>DARK BROWN</option>
+              <option>BLACK</option>
+              <option>WHITE</option>
+              <option>BEIGE</option>
+              <option>LILAC</option>
+              <option>CREAM</option>
+              <option>RED</option>
+              <option>ORANGE</option>
+              <option>NAVY BLUE</option>
+              <option>DARK BLUE</option>
+              <option>LIGHT BLUE</option>
+              <option>BLUE</option>
+              <option>TEAL</option>
+              <option>GREEN</option>
+              <option>LIGHT GREEN</option>
+              <option>DARK GREEN</option>
+              <option>OLIVE GREEN</option>
+              <option>YELLOW</option>
+              <option>PINK</option>
+              <option>PURPLE</option>
+              <option>SOCCER BLUE</option>
+              <option>SOCCER RED</option>
+              <option>SOCCER BLACK</option>
+              <option>TAUPE</option>
+              <option>TORQUOISE</option>
+              <option>AQUA BLUE</option>
+              <option>LIME</option>
+            </select>
           </div>
 
           {/* Size */}

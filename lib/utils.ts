@@ -138,3 +138,45 @@ export const cacheManager = {
     }
   }
 }
+
+// Map standardized color names used for variants to hex values for UI swatches
+export function getHexForColorName(colorName?: string): string | null {
+  if (!colorName) return null
+  const key = colorName.trim().toLowerCase()
+  const map: Record<string, string> = {
+    'grey': '#808080',
+    'light grey': '#D3D3D3',
+    'dark grey': '#505050',
+    'brown': '#8B4513',
+    'light brown': '#B5651D',
+    'dark brown': '#5C3A21',
+    'black': '#000000',
+    'white': '#FFFFFF',
+    'beige': '#F5F5DC',
+    'lilac': '#C8A2C8',
+    'cream': '#FFFDD0',
+    'red': '#D32F2F',
+    'orange': '#FB8C00',
+    'navy blue': '#001F3F',
+    'dark blue': '#0D47A1',
+    'light blue': '#ADD8E6',
+    'blue': '#1976D2',
+    'teal': '#008080',
+    'green': '#2E7D32',
+    'light green': '#90EE90',
+    'dark green': '#006400',
+    'olive green': '#556B2F',
+    'yellow': '#FBC02D',
+    'pink': '#E91E63',
+    'purple': '#6A1B9A',
+    'soccer blue': '#0057B8',
+    'soccer red': '#C8102E',
+    'soccer black': '#111111',
+    'taupe': '#483C32',
+    'torquoise': '#40E0D0',
+    'turquoise': '#40E0D0',
+    'aqua blue': '#00FFFF',
+    'lime': '#32CD32'
+  }
+  return map[key] || null
+}

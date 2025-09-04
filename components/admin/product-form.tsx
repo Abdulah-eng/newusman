@@ -234,6 +234,74 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
     }
   }, [])
 
+  // Auto-setup sofa-specific features when category is sofas
+  useEffect(() => {
+    const currentCategoryName = (categories.find((c: any) => c.id === formData.category_id)?.name || '').toLowerCase()
+    if (currentCategoryName !== 'sofas') return
+
+    const sofaFeatures = [
+      'Durable Frame Construction',
+      'Comfortable Backrest & Armrest',
+      'Supportive Seating Base',
+      'Space-Saving Design',
+      'Stylish Modern Look',
+      'Versatile Use',
+      'Ergonomic Design',
+      'Compact Dual Function',
+      'Hidden Storage',
+      'Easy Assembled',
+      'Delivery Flat Pack'
+    ]
+
+    const sofaIcons = [
+      'wrench',            // Durable Frame Construction
+      'bed',               // Comfortable Backrest & Armrest
+      'support',           // Supportive Seating Base
+      'minimize',          // Space-Saving Design
+      'palette',           // Stylish Modern Look
+      'arrow-left-right',  // Versatile Use
+      'sliders',           // Ergonomic Design
+      'grid',              // Compact Dual Function
+      'package',           // Hidden Storage
+      'easy-assembly',     // Easy Assembled
+      'truck'              // Delivery Flat Pack
+    ]
+
+    const sofaCategories = [
+      'Construction',
+      'Comfort',
+      'Support',
+      'Space',
+      'Design',
+      'Versatility',
+      'Ergonomics',
+      'Function',
+      'Storage',
+      'Assembly',
+      'Delivery'
+    ]
+
+    // Merge uniquely without duplicating existing features
+    const existing = new Set((formData.features || []).map((f) => f.toLowerCase()))
+    const mergedFeatures = [...(formData.features || [])]
+    const mergedIcons = [...(formData.feature_icons || [])]
+    const mergedCats = [...(formData.feature_categories || [])]
+
+    sofaFeatures.forEach((feat, idx) => {
+      if (!existing.has(feat.toLowerCase())) {
+        mergedFeatures.push(feat)
+        mergedIcons.push(sofaIcons[idx])
+        mergedCats.push(sofaCategories[idx])
+      }
+    })
+
+    if (mergedFeatures.length !== (formData.features || []).length) {
+      handleInputChange('features', mergedFeatures)
+      handleInputChange('feature_icons', mergedIcons)
+      handleInputChange('feature_categories', mergedCats)
+    }
+  }, [formData.category_id, categories])
+
   // Ensure badges are properly initialized
   useEffect(() => {
     if (!formData.badges || formData.badges.length === 0) {
@@ -1852,16 +1920,16 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
                         />
                       </div>
 
-                      {/* Width */}
+                      {/* Width/Depth (Sofas use Depth) */}
                       <div className="text-center">
                         <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
                           <span className="text-2xl font-bold text-orange-600">C</span>
                         </div>
-                        <h4 className="text-lg font-semibold text-gray-800 mb-2">Width</h4>
+                        <h4 className="text-lg font-semibold text-gray-800 mb-2">{(categories.find((c: any) => c.id === formData.category_id)?.name || '').toLowerCase() === 'sofas' ? 'Depth' : 'Width'}</h4>
                         <Input
                           value={formData.dimensions.width}
                           onChange={(e) => handleInputChange('dimensions', { ...formData.dimensions, width: e.target.value })}
-                          placeholder="e.g., 135cm"
+                          placeholder={(categories.find((c: any) => c.id === formData.category_id)?.name || '').toLowerCase() === 'sofas' ? 'e.g., 85cm' : 'e.g., 135cm'}
                           className="text-center border border-gray-300 focus:ring-2 focus:ring-orange-300"
                         />
                       </div>

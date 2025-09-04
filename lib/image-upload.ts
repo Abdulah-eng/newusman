@@ -3,6 +3,10 @@ import { supabase } from './supabaseClient'
 export interface UploadOptions {
   preset?: 'thumbnail' | 'medium' | 'large' | 'original'
   onProgress?: (progress: number) => void
+  convert?: boolean
+  format?: 'webp' | 'jpeg' | 'png' | 'avif' | 'original'
+  quality?: number // 1-100
+  promptUser?: boolean // if true, show confirm/prompt dialogs in browser
 }
 
 export interface UploadResult {
@@ -29,6 +33,24 @@ export async function uploadOptimizedImage(
 ): Promise<UploadResult> {
   const { preset = 'large', onProgress } = options
 
+  let convert = options.convert ?? true
+  let format = options.format ?? 'webp'
+  let quality = options.quality
+
+  if (options.promptUser && typeof window !== 'undefined') {
+    try {
+      const shouldConvert = window.confirm('Convert this image to WebP? Click Cancel to upload original format.')
+      convert = shouldConvert
+      if (shouldConvert) {
+        const qualityInput = window.prompt('Enter WebP quality (1-100). Higher = better quality, larger size.', (quality?.toString() || '90'))
+        const parsed = qualityInput ? parseInt(qualityInput, 10) : NaN
+        if (!isNaN(parsed)) {
+          quality = Math.max(1, Math.min(100, parsed))
+        }
+      }
+    } catch {}
+  }
+
   // Validate file
   if (!file) {
     throw new Error('No file provided')
@@ -46,6 +68,9 @@ export async function uploadOptimizedImage(
   const formData = new FormData()
   formData.append('file', file)
   formData.append('preset', preset)
+  if (typeof convert === 'boolean') formData.append('convert', String(convert))
+  if (format) formData.append('format', format)
+  if (typeof quality === 'number') formData.append('quality', String(Math.max(1, Math.min(100, quality))))
 
   // Simulate progress if callback provided
   if (onProgress) {

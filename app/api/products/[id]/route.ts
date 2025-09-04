@@ -226,7 +226,7 @@ export async function GET(
         product_reasons_to_love: product.product_reasons_to_love || [],
         selectedReasonsToLove: product.product_reasons_to_love?.map((reason: any) => ({
           reason: reason.reason_text || '',
-          description: reason.reason_text || '',
+          description: reason.description || '',
           smalltext: reason.smalltext || '',
           icon: reason.icon || ''
         })) || [],
@@ -862,7 +862,7 @@ export async function PUT(
 
       // Insert new reasons to love if any provided
       if (body.selectedReasonsToLove.length > 0) {
-        const withExtras = body.selectedReasonsToLove.map((reason: any, index: number) => ({
+        const withOrder = body.selectedReasonsToLove.map((reason: any, index: number) => ({
           product_id: id,
           reason_text: reason.reason || '',
           description: reason.description || null,
@@ -871,22 +871,26 @@ export async function PUT(
           sort_order: index as any
         }))
 
-        try {
-          const { error } = await supabase
-            .from('product_reasons_to_love')
-            .insert(withExtras as any)
-          if (error) throw error
-        } catch (e) {
-          // Fallback: legacy minimal insert
-          const legacy = body.selectedReasonsToLove.map((reason: any) => ({
+        // First try inserting with sort_order
+        const { error: insertWithOrderError } = await supabase
+          .from('product_reasons_to_love')
+          .insert(withOrder as any)
+
+        if (insertWithOrderError) {
+          console.warn('Insert with sort_order failed, retrying without sort_order:', insertWithOrderError)
+          // Retry without sort_order but KEEP description/smalltext/icon
+          const withoutOrder = body.selectedReasonsToLove.map((reason: any) => ({
             product_id: id,
-            reason_text: reason.reason || ''
+            reason_text: reason.reason || '',
+            description: reason.description || null,
+            smalltext: reason.smalltext || null,
+            icon: reason.icon || null
           }))
-          const { error: legacyError } = await supabase
+          const { error: insertWithoutOrderError } = await supabase
             .from('product_reasons_to_love')
-            .insert(legacy)
-          if (legacyError) {
-            console.error('Reasons to love legacy insert error:', legacyError)
+            .insert(withoutOrder as any)
+          if (insertWithoutOrderError) {
+            console.error('Reasons to love insert (without sort_order) error:', insertWithoutOrderError)
           }
         }
       }
