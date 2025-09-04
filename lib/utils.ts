@@ -139,44 +139,44 @@ export const cacheManager = {
   }
 }
 
-// Map standardized color names used for variants to hex values for UI swatches
+// Map standardized color names used for variants to premium hex values for UI swatches
 export function getHexForColorName(colorName?: string): string | null {
   if (!colorName) return null
   const key = colorName.trim().toLowerCase()
   const map: Record<string, string> = {
-    'grey': '#808080',
-    'light grey': '#D3D3D3',
-    'dark grey': '#505050',
-    'brown': '#8B4513',
-    'light brown': '#B5651D',
-    'dark brown': '#5C3A21',
-    'black': '#000000',
-    'white': '#FFFFFF',
-    'beige': '#F5F5DC',
-    'lilac': '#C8A2C8',
-    'cream': '#FFFDD0',
-    'red': '#D32F2F',
-    'orange': '#FB8C00',
-    'navy blue': '#001F3F',
-    'dark blue': '#0D47A1',
-    'light blue': '#ADD8E6',
-    'blue': '#1976D2',
-    'teal': '#008080',
-    'green': '#2E7D32',
-    'light green': '#90EE90',
-    'dark green': '#006400',
-    'olive green': '#556B2F',
-    'yellow': '#FBC02D',
-    'pink': '#E91E63',
-    'purple': '#6A1B9A',
-    'soccer blue': '#0057B8',
-    'soccer red': '#C8102E',
-    'soccer black': '#111111',
-    'taupe': '#483C32',
-    'torquoise': '#40E0D0',
-    'turquoise': '#40E0D0',
-    'aqua blue': '#00FFFF',
-    'lime': '#32CD32'
+    'grey': '#6B7280', // Premium charcoal grey
+    'light grey': '#E5E7EB', // Elegant light grey
+    'dark grey': '#374151', // Rich dark grey
+    'brown': '#92400E', // Warm chocolate brown
+    'light brown': '#D97706', // Golden brown
+    'dark brown': '#451A03', // Deep espresso brown
+    'black': '#111827', // Rich black
+    'white': '#FEFEFE', // Pure white
+    'beige': '#F3F4F6', // Sophisticated beige
+    'lilac': '#C084FC', // Vibrant lilac
+    'cream': '#FFFBEB', // Luxurious cream
+    'red': '#DC2626', // Bold crimson red
+    'orange': '#EA580C', // Vibrant orange
+    'navy blue': '#1E3A8A', // Deep navy
+    'dark blue': '#1D4ED8', // Rich dark blue
+    'light blue': '#3B82F6', // Bright light blue
+    'blue': '#2563EB', // Premium blue
+    'teal': '#0D9488', // Sophisticated teal
+    'green': '#059669', // Forest green
+    'light green': '#10B981', // Fresh light green
+    'dark green': '#047857', // Deep emerald
+    'olive green': '#65A30D', // Rich olive
+    'yellow': '#EAB308', // Golden yellow
+    'pink': '#EC4899', // Vibrant pink
+    'purple': '#7C3AED', // Royal purple
+    'soccer blue': '#1E40AF', // Team blue
+    'soccer red': '#B91C1C', // Team red
+    'soccer black': '#1F2937', // Team black
+    'taupe': '#78716C', // Elegant taupe
+    'torquoise': '#14B8A6', // Bright turquoise
+    'turquoise': '#14B8A6', // Bright turquoise
+    'aqua blue': '#06B6D4', // Crystal aqua
+    'lime': '#84CC16' // Fresh lime
   }
   return map[key] || null
 }

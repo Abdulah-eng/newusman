@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Check, X } from 'lucide-react'
+import { getHexForColorName } from '@/lib/utils'
 
 interface ColorOption {
   name: string
@@ -82,20 +83,8 @@ export function ColorSelectionModal({
     if (!variants || variants.length === 0) return []
     const uniqueColors = [...new Set(variants.filter(v => v.color).map(v => v.color!))]
     return uniqueColors.map(color => {
-      // Use mapping for known names; fall back to raw if hex; else neutral
-      const hexMap: Record<string, string> = {
-        'grey': '#808080','light grey': '#D3D3D3','dark grey': '#505050',
-        'brown': '#8B4513','light brown': '#B5651D','dark brown': '#5C3A21',
-        'black': '#000000','white': '#FFFFFF','beige': '#F5F5DC','lilac': '#C8A2C8',
-        'cream': '#FFFDD0','red': '#D32F2F','orange': '#FB8C00','navy blue': '#001F3F',
-        'dark blue': '#0D47A1','light blue': '#ADD8E6','blue': '#1976D2','teal': '#008080',
-        'green': '#2E7D32','light green': '#90EE90','dark green': '#006400','olive green': '#556B2F',
-        'yellow': '#FBC02D','pink': '#E91E63','purple': '#6A1B9A','soccer blue': '#0057B8',
-        'soccer red': '#C8102E','soccer black': '#111111','taupe': '#483C32','torquoise': '#40E0D0','turquoise': '#40E0D0',
-        'aqua blue': '#00FFFF','lime': '#32CD32'
-      }
-      const key = color.trim().toLowerCase()
-      const hexColor = color.startsWith('#') ? color : (hexMap[key] || '#f3f4f6')
+      // Use the centralized color mapping function
+      const hexColor = color.startsWith('#') ? color : (getHexForColorName(color) || '#f3f4f6')
       return { 
         name: color, 
         hex: hexColor, 
@@ -124,7 +113,7 @@ export function ColorSelectionModal({
 
   // Determine which sections to show
   const hasColorOptions = colorOptions.length > 0
-  const hasDepthOptions = depthOptions.length > 0
+  const hasDepthOptions = false // Always hide depth options
   const hasFirmnessOptions = firmnessOptions.length > 0
   const hasOtherOptions = hasDepthOptions || hasFirmnessOptions
 
@@ -178,7 +167,7 @@ export function ColorSelectionModal({
   const allRequiredSelected = (() => {
     const required: string[] = []
     if (hasColorOptions) required.push(localSelectedColor)
-    if (hasDepthOptions) required.push(localSelectedDepth)
+    // Skip depth options - always hidden
     if (hasFirmnessOptions) required.push(localSelectedFirmness)
     return required.every(option => !!option)
   })()
@@ -271,7 +260,6 @@ export function ColorSelectionModal({
                   {(() => {
                     const options = []
                     if (hasColorOptions) options.push('color')
-                    if (hasDepthOptions) options.push('depth')
                     if (hasFirmnessOptions) options.push('firmness')
                     return `Select ${options.join(', ')} option${options.length > 1 ? 's' : ''} to continue`
                   })()}
@@ -321,12 +309,6 @@ export function ColorSelectionModal({
                         )
                       })()}
                       </div>
-                    </div>
-                  )}
-                  {!showOnlyColors && localSelectedDepth && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600 font-medium">Depth:</span>
-                      <span className="font-semibold text-gray-900">{localSelectedDepth}</span>
                     </div>
                   )}
                   {!showOnlyColors && localSelectedFirmness && (
@@ -393,17 +375,12 @@ export function ColorSelectionModal({
                 </div>
               ) : (
                 <div className={`grid gap-4 ${(() => {
-                  const optionCount = [hasColorOptions, hasDepthOptions, hasFirmnessOptions].filter(Boolean).length
-                  return optionCount === 3 ? 'grid-cols-3' : optionCount === 2 ? 'grid-cols-2' : 'grid-cols-1'
+                  const optionCount = [hasColorOptions, hasFirmnessOptions].filter(Boolean).length
+                  return optionCount === 2 ? 'grid-cols-2' : 'grid-cols-1'
                 })()}`}>
                   {hasColorOptions && (
                     <div className="text-center">
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">Colours</h3>
-                    </div>
-                  )}
-                  {hasDepthOptions && (
-                    <div className="text-center">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Depth Options</h3>
                     </div>
                   )}
                   {hasFirmnessOptions && (
@@ -433,22 +410,29 @@ export function ColorSelectionModal({
                         onClick={() => handleColorSelect(color)}
                       >
                         <div className="flex items-center gap-4">
-                          {/* Color Swatch */}
+                          {/* Premium Color Swatch */}
                           <div className="flex-shrink-0">
                             <div 
-                              className="w-16 h-16 rounded-lg border-2 shadow-lg relative overflow-hidden group"
+                              className="w-20 h-20 rounded-2xl border-3 shadow-2xl relative overflow-hidden group transform transition-all duration-300 hover:scale-105"
                                   style={{ 
                                     backgroundColor: color.hex || '#f3f4f6',
                                     backgroundImage: color.hex ? 'none' : 'linear-gradient(45deg, #f3f4f6 25%, transparent 25%), linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f3f4f6 75%), linear-gradient(-45deg, transparent 75%, #f3f4f6 75%)',
                                     backgroundSize: '20px 20px',
-                                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+                                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+                                    borderColor: localSelectedColor === color.name ? '#f59e0b' : '#e5e7eb'
                                   }}
                                 >
-                                  <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                              {/* Selection indicator overlay */}
-                              {localSelectedColor === color.name && (
-                                <div className="absolute inset-0 bg-orange-500/20 border-2 border-orange-500 rounded-lg"></div>
-                              )}
+                                  {/* Premium shine effect */}
+                                  <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-transparent opacity-60"></div>
+                                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/20 opacity-40"></div>
+                                  
+                                  {/* Selection indicator overlay */}
+                                  {localSelectedColor === color.name && (
+                                    <div className="absolute inset-0 bg-gradient-to-br from-amber-400/30 to-orange-500/30 border-3 border-amber-500 rounded-2xl shadow-lg"></div>
+                                  )}
+                                  
+                                  {/* Premium border glow effect */}
+                                  <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-400 rounded-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-sm"></div>
                                 </div>
                           </div>
                           
@@ -537,8 +521,8 @@ export function ColorSelectionModal({
               ) : (
                 /* Dynamic Layout for Other Products */
                 <div className={`grid items-start gap-6 ${(() => {
-                  const optionCount = [hasColorOptions, hasDepthOptions, hasFirmnessOptions].filter(Boolean).length
-                  return optionCount === 3 ? 'grid-cols-1 md:grid-cols-3' : optionCount === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'
+                  const optionCount = [hasColorOptions, hasFirmnessOptions].filter(Boolean).length
+                  return optionCount === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'
                 })()}`}>
                   {/* Colours Section */}
                   {hasColorOptions && (
@@ -554,23 +538,29 @@ export function ColorSelectionModal({
                         onClick={() => handleColorSelect(color)}
                       >
                         <div className="flex items-center gap-4">
-                          {/* Enhanced Color Swatch */}
+                          {/* Premium Enhanced Color Swatch */}
                           <div className="flex-shrink-0">
                             <div 
-                              className="w-16 h-16 rounded-xl border-2 shadow-lg relative overflow-hidden group"
+                              className="w-20 h-20 rounded-2xl border-3 shadow-2xl relative overflow-hidden group transform transition-all duration-300 hover:scale-105"
                                   style={{ 
                                     backgroundColor: color.hex || '#f3f4f6',
                                     backgroundImage: color.hex ? 'none' : 'linear-gradient(45deg, #f3f4f6 25%, transparent 25%), linear-gradient(-45deg, #f3f4f6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f3f4f6 75%), linear-gradient(-45deg, transparent 75%, #f3f4f6 75%)',
                                     backgroundSize: '20px 20px',
-                                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+                                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+                                    borderColor: localSelectedColor === color.name ? '#f59e0b' : '#e5e7eb'
                                   }}
                                 >
-                                  {/* Subtle shine effect */}
-                                  <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent"></div>
-                              {/* Selection indicator overlay */}
-                              {localSelectedColor === color.name && (
-                                <div className="absolute inset-0 bg-amber-500/20 border-2 border-amber-500 rounded-xl"></div>
-                              )}
+                                  {/* Premium shine effect */}
+                                  <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-transparent opacity-60"></div>
+                                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/20 opacity-40"></div>
+                                  
+                                  {/* Selection indicator overlay */}
+                                  {localSelectedColor === color.name && (
+                                    <div className="absolute inset-0 bg-gradient-to-br from-amber-400/30 to-orange-500/30 border-3 border-amber-500 rounded-2xl shadow-lg"></div>
+                                  )}
+                                  
+                                  {/* Premium border glow effect */}
+                                  <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-400 rounded-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-sm"></div>
                                 </div>
                           </div>
                           
@@ -592,61 +582,6 @@ export function ColorSelectionModal({
                   </div>
                   )}
 
-                  {/* Depth Options Section - Only show if variants have depth options */}
-                  {hasDepthOptions && (
-                    <div className="space-y-3">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Depth Options</h3>
-                      {depthOptions.map((depth) => {
-                        const optionPrice = getOptionPrice('depth', depth.name)
-                        const isSelected = localSelectedDepth === depth.name
-                        
-                        return (
-                          <div
-                            key={depth.name}
-                            className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
-                              isSelected
-                                ? 'border-orange-500 bg-orange-50'
-                                : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                            onClick={() => handleDepthSelect(depth)}
-                          >
-                            <div className="flex items-center gap-4">
-                              {/* Depth Icon */}
-                              <div className="flex-shrink-0">
-                                <div className="w-16 h-16 rounded-lg bg-gray-100 border-2 border-gray-200 flex items-center justify-center">
-                                  <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                                  </svg>
-                                </div>
-                              </div>
-                              
-                              {/* Depth Details */}
-                              <div className="flex-1">
-                                <h3 className="font-bold text-gray-900 text-lg mb-1">{depth.name}</h3>
-                                <p className="text-sm text-gray-600">{depth.description}</p>
-                                
-                                {/* Price Display */}
-                                {optionPrice !== null && optionPrice !== productPrice && (
-                                  <div className="mt-2">
-                                    <div className="px-3 py-1 bg-orange-100 rounded-full border border-orange-200 inline-block">
-                                      <span className="text-orange-800 font-bold text-sm">£{optionPrice.toFixed(2)}</span>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                              
-                              {/* Selection Indicator */}
-                              {isSelected && (
-                                <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                  <Check className="w-4 h-4 text-white" />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
 
                   {/* Firmness Options Section - Only show if variants have firmness options */}
                   {hasFirmnessOptions && (
@@ -715,12 +650,10 @@ export function ColorSelectionModal({
                   {(() => {
                     const requiredOptions: string[] = []
                     if (hasColorOptions) requiredOptions.push('color')
-                    if (hasDepthOptions) requiredOptions.push('depth')
                     if (hasFirmnessOptions) requiredOptions.push('firmness')
                     
                     const selectedOptions: string[] = []
                     if (localSelectedColor) selectedOptions.push('color')
-                    if (localSelectedDepth) selectedOptions.push('depth')
                     if (localSelectedFirmness) selectedOptions.push('firmness')
                     
                     if (selectedOptions.length === 0) {

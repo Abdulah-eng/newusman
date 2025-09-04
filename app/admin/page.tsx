@@ -3254,14 +3254,21 @@ function ProductForm() {
                           placeholder="Select color"
                         />
                         
-                        {/* Color Preview */}
+                        {/* Premium Color Preview */}
                         {v.color && (
-                          <div className="flex items-center gap-2 p-2 border border-gray-200 rounded bg-gray-50">
+                          <div className="flex items-center gap-3 p-3 border-2 border-gray-200 rounded-xl bg-gradient-to-r from-gray-50 to-white shadow-sm">
                             <div 
-                              className="w-8 h-8 rounded border border-gray-300"
-                              style={{ backgroundColor: getHexForColorName(v.color) || v.color }}
-                            />
-                            <span className="text-sm text-gray-600">{v.color}</span>
+                              className="w-10 h-10 rounded-xl border-2 shadow-lg relative overflow-hidden group"
+                              style={{ 
+                                backgroundColor: getHexForColorName(v.color) || v.color,
+                                borderColor: '#e5e7eb'
+                              }}
+                            >
+                              {/* Premium shine effect */}
+                              <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-50"></div>
+                              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 opacity-30"></div>
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">{v.color}</span>
                           </div>
                         )}
                       </div>
