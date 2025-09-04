@@ -570,29 +570,39 @@ export async function PUT(
         console.error('Error deleting existing dimensions:', deleteDimensionsError)
       }
 
-      // Insert new dimensions if any provided
-      if (Object.values(body.dimensions).some(value => value && value !== '')) {
-        const dimensionData = {
-          product_id: id,
-          height: body.dimensions.height || null,
-          length: body.dimensions.length || null,
-          width: body.dimensions.width || null,
-          mattress_size: body.dimensions.mattressSize || null,
-          maximum_height: body.dimensions.maxHeight || null,
-          weight_capacity: body.dimensions.weightCapacity || null,
-          pocket_springs: body.dimensions.pocketSprings || null,
-          comfort_layer: body.dimensions.comfortLayer || null,
-          support_layer: body.dimensions.supportLayer || null,
-          dimension_disclaimer: body.dimensions.dimensionDisclaimer || null
-        }
+      // Insert new dimensions (always insert a row so visibility toggles persist even when values are empty)
+      const dimensionData = {
+        product_id: id,
+        height: body.dimensions.height || null,
+        length: body.dimensions.length || null,
+        width: body.dimensions.width || null,
+        mattress_size: body.dimensions.mattressSize || null,
+        maximum_height: body.dimensions.maxHeight || null,
+        weight_capacity: body.dimensions.weightCapacity || null,
+        pocket_springs: body.dimensions.pocketSprings || null,
+        comfort_layer: body.dimensions.comfortLayer || null,
+        support_layer: body.dimensions.supportLayer || null,
+        // Editable headings (keep undefined as null)
+        mattress_size_heading: body.dimensions.mattressSizeHeading || null,
+        maximum_height_heading: body.dimensions.maximumHeightHeading || null,
+        weight_capacity_heading: body.dimensions.weightCapacityHeading || null,
+        pocket_springs_heading: body.dimensions.pocketSpringsHeading || null,
+        comfort_layer_heading: body.dimensions.comfortLayerHeading || null,
+        support_layer_heading: body.dimensions.supportLayerHeading || null,
+        // Dimension disclaimer
+        dimension_disclaimer: body.dimensions.dimensionDisclaimer || null,
+        // Visibility controls (booleans must be preserved even when false)
+        show_basic_dimensions: body.dimensions.show_basic_dimensions !== undefined ? body.dimensions.show_basic_dimensions : true,
+        show_mattress_specs: body.dimensions.show_mattress_specs !== undefined ? body.dimensions.show_mattress_specs : true,
+        show_technical_specs: body.dimensions.show_technical_specs !== undefined ? body.dimensions.show_technical_specs : true
+      }
 
-        const { error: dimensionError } = await supabase
-          .from('product_dimensions')
-          .insert(dimensionData)
+      const { error: dimensionError } = await supabase
+        .from('product_dimensions')
+        .insert(dimensionData)
 
-        if (dimensionError) {
-          console.error('Dimension update error:', dimensionError)
-        }
+      if (dimensionError) {
+        console.error('Dimension update error:', dimensionError)
       }
     }
 
