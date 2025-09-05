@@ -3167,7 +3167,7 @@ function ProductForm() {
                 <tr className="text-left text-gray-600">
                   <th className="p-2">SKU</th>
                   {useColor && <th className="p-2">Color</th>}
-                  {useDepth && <th className="p-2">Depth</th>}
+                  {useDepth && (selectedCategory || '').toLowerCase() !== 'sofas' && <th className="p-2">Depth</th>}
                   {useFirmness && <th className="p-2">Firmness</th>}
                   {useSize && <th className="p-2">Size</th>}
                   <th className="p-2">Length</th>
@@ -3227,7 +3227,7 @@ function ProductForm() {
                         </select>
                       </td>
                     )}
-                    {useDepth && <td className="p-2 min-w-[120px]"><Input value={v.depth || ''} onChange={e => updateVariant(v.id, { depth: e.target.value })} placeholder="Depth" /></td>}
+                    {useDepth && (selectedCategory || '').toLowerCase() !== 'sofas' && <td className="p-2 min-w-[120px]"><Input value={v.depth || ''} onChange={e => updateVariant(v.id, { depth: e.target.value })} placeholder="Depth" /></td>}
                     {useFirmness && <td className="p-2 min-w-[160px]"><Input value={v.firmness || ''} onChange={e => updateVariant(v.id, { firmness: e.target.value })} placeholder="Firmness" /></td>}
                     {useSize && <td className="p-2 min-w-[140px]"><Input value={v.size || ''} onChange={e => updateVariant(v.id, { size: e.target.value })} placeholder="Size" /></td>}
                     <td className="p-2 min-w-[100px]"><Input value={v.length || ''} onChange={e => updateVariant(v.id, { length: e.target.value })} placeholder="Length" /></td>
@@ -3278,7 +3278,7 @@ function ProductForm() {
                 ))}
                 {variants.length === 0 && (
                   <tr>
-                                          <td colSpan={1 + (useColor ? 1 : 0) + (useDepth ? 1 : 0) + (useFirmness ? 1 : 0) + (useSize ? 1 : 0) + 5} className="p-4 text-gray-500">
+                                          <td colSpan={1 + (useColor ? 1 : 0) + (useDepth && (selectedCategory || '').toLowerCase() !== 'sofas' ? 1 : 0) + (useFirmness ? 1 : 0) + (useSize ? 1 : 0) + 5} className="p-4 text-gray-500">
                         No variants yet. Click "Add blank row" to start.
                       </td>
                   </tr>
@@ -3935,6 +3935,98 @@ function ProductForm() {
             </p>
           </div>
         )}
+      </Card>
+
+      {/* Bulk CSV Upload */}
+      <Card className="p-4">
+        <h2 className="text-xl font-semibold mb-4">Bulk Upload Products (CSV)</h2>
+        <p className="text-sm text-gray-600 mb-4">Upload a CSV file to add multiple products at once. We'll parse and show a preview before saving.</p>
+        <div className="flex items-center gap-3">
+          <input
+            type="file"
+            accept=".csv"
+            onChange={async (e) => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              const text = await file.text()
+              try {
+                const parseCSV = (csvText: string): Array<Record<string,string>> => {
+                  const rows: string[] = []
+                  let current = ''
+                  let inQuotes = false
+                  for (let i = 0; i < csvText.length; i++) {
+                    const char = csvText[i]
+                    const next = csvText[i + 1]
+                    if (char === '"') {
+                      if (inQuotes && next === '"') { current += '"'; i++; continue }
+                      inQuotes = !inQuotes
+                      continue
+                    }
+                    if ((char === '\n' || (char === '\r' && next === '\n')) && !inQuotes) {
+                      rows.push(current)
+                      current = ''
+                      if (char === '\r') i++
+                      continue
+                    }
+                    current += char
+                  }
+                  if (current.length) rows.push(current)
+
+                  const splitRow = (line: string): string[] => {
+                    const cols: string[] = []
+                    let field = ''
+                    let q = false
+                    for (let i = 0; i < line.length; i++) {
+                      const c = line[i]
+                      const n = line[i + 1]
+                      if (c === '"') {
+                        if (q && n === '"') { field += '"'; i++; continue }
+                        q = !q
+                        continue
+                      }
+                      if (c === ',' && !q) { cols.push(field); field = ''; continue }
+                      field += c
+                    }
+                    cols.push(field)
+                    return cols.map(v => v.trim())
+                  }
+
+                  const headerLine = rows.shift() || ''
+                  const headers = splitRow(headerLine).map(h => h.trim())
+                  return rows.filter(r => r.trim().length > 0).map(line => {
+                    const values = splitRow(line)
+                    const obj: Record<string, string> = {}
+                    headers.forEach((h, i) => { obj[h] = (values[i] ?? '').trim() })
+                    return obj
+                  })
+                }
+
+                const parsed = parseCSV(text)
+                console.log('CSV parsed preview (first 3):', parsed.slice(0,3))
+                const res = await fetch('/api/admin/products/bulk', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ rows: parsed })
+                })
+                let result: any = null
+                if (!res.ok) {
+                  const txt = await res.text()
+                  try { result = JSON.parse(txt) } catch { result = { error: txt.slice(0, 300) } }
+                  alert(`Bulk upload failed: ${result.error || 'Unknown error'}`)
+                } else {
+                  result = await res.json()
+                  alert(`Bulk upload complete: ${result.inserted || 0} products added`)
+                }
+              } catch (err: any) {
+                console.error('CSV parse error', err)
+                alert('Failed to parse CSV. Please check formatting.')
+              }
+            }}
+          />
+        </div>
+        <div className="mt-2 text-xs text-gray-500">
+          Expected columns include: name, category, rating, headline, longDescription, price, salePrice, images (pipe-separated), features (pipe-separated), reasonsToLove (pipe-separated), reasonsToBuy (pipe-separated). We will try to map gracefully.
+        </div>
       </Card>
 
       <Card className="p-4">

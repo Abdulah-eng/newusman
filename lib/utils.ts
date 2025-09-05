@@ -160,7 +160,7 @@ export function getHexForColorName(colorName?: string): string | null {
     'navy blue': '#1E3A8A', // Deep navy
     'dark blue': '#1D4ED8', // Rich dark blue
     'light blue': '#3B82F6', // Bright light blue
-    'blue': '#2563EB', // Premium blue
+    'blue': '#1E40AF', // Rich royal blue
     'teal': '#0D9488', // Sophisticated teal
     'green': '#059669', // Forest green
     'light green': '#10B981', // Fresh light green
@@ -176,7 +176,7 @@ export function getHexForColorName(colorName?: string): string | null {
     'torquoise': '#14B8A6', // Bright turquoise
     'turquoise': '#14B8A6', // Bright turquoise
     'aqua blue': '#06B6D4', // Crystal aqua
-    'lime': '#84CC16' // Fresh lime
+    'lime': '#65A30D' // Vibrant emerald lime
   }
   return map[key] || null
 }

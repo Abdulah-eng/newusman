@@ -149,6 +149,10 @@ export interface ProductDetailHappyProps {
 }
 
 export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) => {
+  const { dispatch } = useCart()
+  console.log('ProductDetailHappy - dispatch function:', dispatch)
+  console.log('ProductDetailHappy - dispatch type:', typeof dispatch)
+  
   // Helper function to convert string characteristics to numeric values for sliders
   const getCharacteristicValue = (value: string | number | undefined, type: 'support' | 'pressure' | 'air' | 'durability' | 'firmness'): number => {
     if (typeof value === 'number') {
@@ -214,7 +218,6 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   }
 
   const router = useRouter()
-  const { dispatch } = useCart()
   const [selectedImage, setSelectedImage] = useState(product.images && product.images.length ? product.images[0] : product.image)
   const [modalImageIndex, setModalImageIndex] = useState(0)
   const [selectedColor, setSelectedColor] = useState("")
@@ -233,20 +236,26 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({ description: true })
 
   const handleVariantSelection = (type: string, value: string) => {
+    console.log('handleVariantSelection called:', type, value, 'isSequentialFlow:', isSequentialFlow)
     // Track the last selection to prevent immediate reopening
     setLastSelection(type)
     
     if (type === 'size') {
+      console.log('Setting selected size to:', value)
       setSelectedSize(value)
       setSizeModalOpen(false)
       
       // Only continue sequential flow if we're in Add to Basket mode
       if (isSequentialFlow) {
+        console.log('In sequential flow, checking for next required selection')
+        // Use a longer timeout to ensure state is updated
       setTimeout(() => {
           const { hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
+          console.log('Available options after size selection:', { hasColors, hasDepths, hasFirmness })
           
           // Check color next
           if (hasColors && !selectedColor) {
+            console.log('Opening color modal')
             setColorModalOpen(true)
             return
           }
@@ -317,13 +326,16 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       // If not in sequential flow, just close the popup (individual variant selection)
       
     } else if (type === 'color') {
+      console.log('Setting selected color to:', value)
       setSelectedColor(value)
       setColorModalOpen(false)
       
       // Only continue sequential flow if we're in Add to Basket mode
       if (isSequentialFlow) {
+        console.log('In sequential flow after color selection')
       setTimeout(() => {
           const { hasDepths, hasFirmness } = getAvailableVariantOptions()
+          console.log('Available options after color selection:', { hasDepths, hasFirmness })
           
           // Check other variants
           if (hasDepths && !(product as any).selectedDepth) {
@@ -606,177 +618,6 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   const hasOnlyOneVariant = (product as any).variants && (product as any).variants.length === 1
   const singleVariant = hasOnlyOneVariant ? (product as any).variants[0] : null
 
-  const addToCart = () => {
-    // Get current variant price based on selected options
-    const currentVariantPrice = (() => {
-      const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
-      if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
-        return product.currentPrice || 0
-      }
-
-      // Find variant that matches selected size and color
-      const matchingVariant = (product as any).variants.find((variant: any) => {
-        const sizeMatch = hasSizes ? variant.size === selectedSize : true
-        const colorMatch = !selectedColor || variant.color === selectedColor
-        return sizeMatch && colorMatch
-      })
-
-      return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
-    })()
-
-    // Check if this product has a free gift - simplified detection
-    const hasFreeGift = (product as any).free_gift_product_id && (
-      (product as any).free_gift_enabled || 
-      (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
-    )
-    // Debug logging
-    console.log('Product being added to cart from detail page:', {
-      id: product.id,
-      name: product.name,
-      badges: (product as any).badges,
-      free_gift_product_id: (product as any).free_gift_product_id,
-      free_gift_enabled: (product as any).free_gift_enabled,
-      free_gift_product_name: (product as any).free_gift_product_name,
-      free_gift_product_image: (product as any).free_gift_product_image,
-      hasFreeGift,
-      badgesType: typeof (product as any).badges,
-      badgesIsArray: Array.isArray((product as any).badges),
-      badgesContent: (product as any).badges
-    })
-
-    // For single variant products, skip validation and go straight to cart
-    if (hasOnlyOneVariant && singleVariant) {
-      // Prepare payload with free gift details if available
-      const payload: any = {
-          id: String(product.id),
-          name: product.name,
-          brand: product.brand,
-          image: selectedImage || product.image,
-          currentPrice: singleVariant.currentPrice || singleVariant.originalPrice || product.currentPrice || 0,
-          originalPrice: singleVariant.originalPrice || product.originalPrice,
-          size: singleVariant.size || 'Standard',
-          color: singleVariant.color || 'Standard'
-        }
-
-      // Add free gift details if available
-      if (hasFreeGift) {
-        // Use the gift product name from the fields or default
-        const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
-        
-        Object.assign(payload, {
-          freeGiftProductId: (product as any).free_gift_product_id,
-          freeGiftProductName: giftProductName,
-          freeGiftProductImage: (product as any).free_gift_product_image || ''
-        })
-        console.log('Free gift will be added:', {
-          freeGiftProductId: (product as any).free_gift_product_id,
-          freeGiftProductName: giftProductName,
-          freeGiftProductImage: (product as any).free_gift_product_image || '',
-          source: 'product_detail_page'
-        })
-      } else {
-        console.log('No free gift details available - reasons:', {
-          hasFreeGiftProductId: !!(product as any).free_gift_product_id,
-          free_gift_enabled: (product as any).free_gift_enabled,
-          hasFreeGiftBadge: (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
-        })
-      }
-
-      // Add the single variant directly to cart
-      dispatch({
-        type: 'ADD_ITEM',
-        payload
-      })
-      
-      // Open the basket sidebar
-      setBasketSidebarOpen(true)
-      return
-    }
-
-    // Set sequential flow flag when Add to Basket button is clicked
-    setIsSequentialFlow(true)
-
-    // Check for missing variants and open popups one by one in sequence
-    const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
-
-    // Start with size check (if size variants exist)
-    if (hasSizes && !selectedSize) {
-      // Size is required but not selected, open size modal
-      setSizeModalOpen(true)
-      return
-    }
-
-    // After size is selected (or if no size required), check color
-    if (hasColors && !selectedColor) {
-      // Color is required but not selected, open color modal
-      setColorModalOpen(true)
-      return
-    }
-
-    // Check for other variant types if they exist
-    if (hasDepths && !(product as any).selectedDepth) {
-      // Depth is required but not selected, would need to implement depth modal
-      // For now, just return to prevent adding to cart
-      console.log('Depth selection required but not implemented yet')
-      return
-    }
-
-    if (hasFirmness && !(product as any).selectedFirmness) {
-      // Firmness is required but not selected, would need to implement firmness modal
-      // For now, just return to prevent adding to cart
-      console.log('Firmness selection required but not implemented yet')
-      return
-    }
-
-    // All required variants are selected, proceed to add to cart
-
-    // Add to cart logic here
-
-    // Prepare payload with free gift details if available
-    const payload: any = {
-        id: String(product.id),
-        name: product.name,
-        brand: product.brand,
-        image: selectedImage || product.image,
-        currentPrice: currentVariantPrice,
-        originalPrice: product.originalPrice,
-        size: selectedSizeData?.name || 'Standard',
-        color: selectedColor
-    }
-
-    // Add free gift details if available
-    if (hasFreeGift) {
-      // Use the gift product name from the fields or default
-      const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
-      
-      Object.assign(payload, {
-        freeGiftProductId: (product as any).free_gift_product_id,
-        freeGiftProductName: giftProductName,
-        freeGiftProductImage: (product as any).free_gift_product_image || ''
-      })
-      console.log('Free gift will be added:', {
-        freeGiftProductId: (product as any).free_gift_product_id,
-        freeGiftProductName: giftProductName,
-        freeGiftProductImage: (product as any).free_gift_product_image || '',
-        source: 'product_detail_page'
-      })
-    } else {
-      console.log('No free gift details available - reasons:', {
-        hasFreeGiftProductId: !!(product as any).free_gift_product_id,
-        free_gift_enabled: (product as any).free_gift_enabled,
-        hasFreeGiftBadge: (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
-      })
-    }
-
-    // Actually add the item to cart using cart context
-    dispatch({
-      type: 'ADD_ITEM',
-      payload
-    })
-
-    // Open the basket sidebar instead of the old modal
-    setBasketSidebarOpen(true)
-  }
 
   const [isButtonSticky, setIsButtonSticky] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -837,11 +678,23 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   // Smart variant selection logic
   const getAvailableVariantOptions = useCallback(() => {
     const variants = (product as any).variants || []
-    const hasSizes = variants.some((v: any) => v.size)
-    const hasColors = variants.some((v: any) => v.color)
-    const hasDepths = variants.some((v: any) => v.depth)
-    const hasFirmness = variants.some((v: any) => v.firmness)
     
+    // Check for meaningful variant values - exclude null, undefined, empty strings, and whitespace
+    const hasSizes = variants.some((v: any) => v.size && typeof v.size === 'string' && v.size.trim() !== '')
+    const hasColors = variants.some((v: any) => v.color && typeof v.color === 'string' && v.color.trim() !== '')
+    const hasDepths = variants.some((v: any) => v.depth && typeof v.depth === 'string' && v.depth.trim() !== '')
+    const hasFirmness = variants.some((v: any) => v.firmness && typeof v.firmness === 'string' && v.firmness.trim() !== '')
+    
+    // Debug: Log the actual depth values to see what's being detected
+    const depthValues = variants.map((v: any) => ({ depth: v.depth, type: typeof v.depth, trimmed: v.depth ? v.depth.trim() : v.depth }))
+    console.log('getAvailableVariantOptions:', { 
+      hasSizes, 
+      hasColors, 
+      hasDepths, 
+      hasFirmness, 
+      depthValues,
+      variants: variants.map((v: any) => ({ size: v.size, color: v.color, depth: v.depth, firmness: v.firmness }))
+    })
     return { hasSizes, hasColors, hasDepths, hasFirmness }
   }, [(product as any).variants])
 
@@ -880,43 +733,104 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
 
 
-  // Function to start sequential variant selection flow for Add to Basket
-  const startSequentialVariantSelection = useCallback(() => {
-    setIsSequentialFlow(true) // Mark that we're in sequential flow mode
+
+  // useEffect to automatically add to cart when all variants are selected in sequential flow
+  useEffect(() => {
+    console.log('useEffect triggered - isSequentialFlow:', isSequentialFlow, 'selectedSize:', selectedSize, 'selectedColor:', selectedColor)
+    if (!isSequentialFlow) return // Only run when in sequential flow mode
+    
+    // Add a small delay to ensure state updates are complete
+    const timeoutId = setTimeout(() => {
     
     const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
     
-    // Start with size check (if size variants exist)
-    if (hasSizes && !selectedSize) {
-      // Size is required but not selected, open size modal
-      setSizeModalOpen(true)
-      return
-    }
+    // Check if all required variants are selected
+    const allVariantsSelected = 
+      (!hasSizes || selectedSize) &&
+      (!hasColors || selectedColor) &&
+      (!hasDepths || (product as any).selectedDepth) &&
+      (!hasFirmness || (product as any).selectedFirmness)
     
-    // After size is selected (or if no size required), check color
-    if (hasColors && !selectedColor) {
-      // Color is required but not selected, open color modal
-      setColorModalOpen(true)
-      return
+    if (allVariantsSelected) {
+      console.log('All variants selected, automatically adding to cart')
+      setIsSequentialFlow(false) // Reset the flag
+      
+      // Calculate current variant price
+      const currentVariantPrice = (() => {
+        const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
+        if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
+          return product.currentPrice || 0
+        }
+
+        // Find variant that matches selected size and color
+        const matchingVariant = (product as any).variants.find((variant: any) => {
+          const sizeMatch = hasSizes ? variant.size === selectedSize : true
+          const colorMatch = !selectedColor || variant.color === selectedColor
+          return sizeMatch && colorMatch
+        })
+
+        return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
+      })()
+      
+      // Get selected size data
+      const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
+      
+      // Prepare payload with free gift details if available
+      const payload: any = {
+          id: String(product.id),
+          name: product.name,
+          brand: product.brand,
+          image: selectedImage || product.image,
+          currentPrice: currentVariantPrice,
+          originalPrice: product.originalPrice,
+          size: selectedSizeData?.name || 'Standard',
+          color: selectedColor
+      }
+
+      // Add free gift details if available
+      const hasFreeGift = (product as any).free_gift_product_id && (
+        (product as any).free_gift_enabled || 
+        (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+      )
+      
+      if (hasFreeGift) {
+        // Use the gift product name from the fields or default
+        const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
+        
+        Object.assign(payload, {
+          freeGiftProductId: (product as any).free_gift_product_id,
+          freeGiftProductName: giftProductName,
+          freeGiftProductImage: (product as any).free_gift_product_image || ''
+        })
+        console.log('Free gift will be added:', {
+          freeGiftProductId: (product as any).free_gift_product_id,
+          freeGiftProductName: giftProductName,
+          freeGiftProductImage: (product as any).free_gift_product_image || '',
+          source: 'product_detail_page'
+        })
+      } else {
+        console.log('No free gift details available - reasons:', {
+          hasFreeGiftProductId: !!(product as any).free_gift_product_id,
+          free_gift_enabled: (product as any).free_gift_enabled,
+          hasFreeGiftBadge: (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+        })
+      }
+
+      // Actually add the item to cart using cart context
+      console.log('Dispatching ADD_ITEM with payload:', payload)
+      dispatch({
+        type: 'ADD_ITEM',
+        payload
+      })
+      console.log('ADD_ITEM dispatched successfully')
+
+      // Open the basket sidebar
+      setBasketSidebarOpen(true)
     }
+    }, 100) // Small delay to ensure state updates are complete
     
-    // Check for other variant types if they exist
-    if (hasDepths && !(product as any).selectedDepth) {
-      // Depth is required but not selected, would need to implement depth modal
-      console.log('Depth selection required but not implemented yet')
-      return
-    }
-    
-    if (hasFirmness && !(product as any).selectedFirmness) {
-      // Firmness is required but not selected, would need to implement depth modal
-      console.log('Firmness selection required but not implemented yet')
-      return
-    }
-    
-    // All required variants are selected, proceed to add to cart
-    setIsSequentialFlow(false) // Reset the flag
-    addToCart()
-  }, [getAvailableVariantOptions, selectedSize, selectedColor, product, addToCart])
+    return () => clearTimeout(timeoutId)
+  }, [isSequentialFlow, selectedSize, selectedColor, getAvailableVariantOptions, dispatch, selectedImage, sizeData, product])
 
   // Enhanced smart selection that can start with either size or color
   const startSmartSelectionWithPriority = useCallback((priorityType?: 'size' | 'color') => {
@@ -948,6 +862,421 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
   // Get the selected size data with fallback
   const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
+
+  const addToCart = useCallback(() => {
+    console.log('addToCart function called')
+    console.log('Product data:', product)
+    console.log('Selected size:', selectedSize)
+    console.log('Selected color:', selectedColor)
+    
+    // Get current variant price based on selected options
+    const currentVariantPrice = (() => {
+      const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
+      if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
+        return product.currentPrice || 0
+      }
+
+      // Find variant that matches selected size and color
+      const matchingVariant = (product as any).variants.find((variant: any) => {
+        const sizeMatch = hasSizes ? variant.size === selectedSize : true
+        const colorMatch = !selectedColor || variant.color === selectedColor
+        return sizeMatch && colorMatch
+      })
+
+      return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
+    })()
+    
+    console.log('Current variant price:', currentVariantPrice)
+
+    // Check if this product has a free gift - simplified detection
+    const hasFreeGift = (product as any).free_gift_product_id && (
+      (product as any).free_gift_enabled || 
+      (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+    )
+    // Debug logging
+    console.log('Product being added to cart from detail page:', {
+      id: product.id,
+      name: product.name,
+      badges: (product as any).badges,
+      free_gift_product_id: (product as any).free_gift_product_id,
+      free_gift_enabled: (product as any).free_gift_enabled,
+      free_gift_product_name: (product as any).free_gift_product_name,
+      free_gift_product_image: (product as any).free_gift_product_image,
+      hasFreeGift,
+      badgesType: typeof (product as any).badges,
+      badgesIsArray: Array.isArray((product as any).badges),
+      badgesContent: (product as any).badges
+    })
+
+    // For single variant products, skip validation and go straight to cart
+    if (hasOnlyOneVariant && singleVariant) {
+      // Prepare payload with free gift details if available
+      const payload: any = {
+          id: String(product.id),
+          name: product.name,
+          brand: product.brand,
+          image: selectedImage || product.image,
+          currentPrice: singleVariant.currentPrice || singleVariant.originalPrice || product.currentPrice || 0,
+          originalPrice: singleVariant.originalPrice || product.originalPrice,
+          size: singleVariant.size || 'Standard',
+          color: singleVariant.color || 'Standard'
+        }
+
+      // Add free gift details if available
+      if (hasFreeGift) {
+        // Use the gift product name from the fields or default
+        const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
+        
+        Object.assign(payload, {
+          freeGiftProductId: (product as any).free_gift_product_id,
+          freeGiftProductName: giftProductName,
+          freeGiftProductImage: (product as any).free_gift_product_image || ''
+        })
+        console.log('Free gift will be added:', {
+          freeGiftProductId: (product as any).free_gift_product_id,
+          freeGiftProductName: giftProductName,
+          freeGiftProductImage: (product as any).free_gift_product_image || '',
+          source: 'product_detail_page'
+        })
+      } else {
+        console.log('No free gift details available - reasons:', {
+          hasFreeGiftProductId: !!(product as any).free_gift_product_id,
+          free_gift_enabled: (product as any).free_gift_enabled,
+          hasFreeGiftBadge: (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+        })
+      }
+
+      // Add the single variant directly to cart
+      console.log('Dispatching ADD_ITEM for single variant with payload:', payload)
+      dispatch({
+        type: 'ADD_ITEM',
+        payload
+      })
+      console.log('ADD_ITEM for single variant dispatched successfully')
+      
+      // Open the basket sidebar
+      setBasketSidebarOpen(true)
+      return
+    }
+
+    // Check if all required variants are already selected
+    const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
+    
+    // For depth and firmness, use default values if not selected
+    const variants = (product as any).variants || []
+    let selectedDepth = (product as any).selectedDepth
+    let selectedFirmness = (product as any).selectedFirmness
+    
+    if (hasDepths && !selectedDepth) {
+      selectedDepth = variants.find((v: any) => v.depth && v.depth.trim() !== '')?.depth
+      if (selectedDepth) {
+        console.log('Using default depth for variant check:', selectedDepth)
+        ;(product as any).selectedDepth = selectedDepth
+      }
+    }
+    
+    if (hasFirmness && !selectedFirmness) {
+      selectedFirmness = variants.find((v: any) => v.firmness && v.firmness.trim() !== '')?.firmness
+      if (selectedFirmness) {
+        console.log('Using default firmness for variant check:', selectedFirmness)
+        ;(product as any).selectedFirmness = selectedFirmness
+      }
+    }
+    
+    const allVariantsSelected = 
+      (!hasSizes || selectedSize) &&
+      (!hasColors || selectedColor) &&
+      (!hasDepths || selectedDepth) &&
+      (!hasFirmness || selectedFirmness)
+    
+    console.log('Variant check:', {
+      hasSizes,
+      hasColors, 
+      hasDepths,
+      hasFirmness,
+      selectedSize,
+      selectedColor,
+      selectedDepth: (product as any).selectedDepth,
+      selectedFirmness: (product as any).selectedFirmness,
+      allVariantsSelected
+    })
+    
+    if (allVariantsSelected) {
+      console.log('All variants already selected, adding to cart directly')
+      
+      // Get selected size data
+      const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
+      
+      // Prepare payload with free gift details if available
+      const payload: any = {
+          id: String(product.id),
+          name: product.name,
+          brand: product.brand,
+          image: selectedImage || product.image,
+          currentPrice: currentVariantPrice,
+          originalPrice: product.originalPrice,
+          size: selectedSizeData?.name || 'Standard',
+          color: selectedColor
+      }
+
+      // Add free gift details if available
+      if (hasFreeGift) {
+        // Use the gift product name from the fields or default
+        const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
+        
+        Object.assign(payload, {
+          freeGiftProductId: (product as any).free_gift_product_id,
+          freeGiftProductName: giftProductName,
+          freeGiftProductImage: (product as any).free_gift_product_image || ''
+        })
+        console.log('Free gift will be added:', {
+          freeGiftProductId: (product as any).free_gift_product_id,
+          freeGiftProductName: giftProductName,
+          freeGiftProductImage: (product as any).free_gift_product_image || '',
+          source: 'product_detail_page'
+        })
+      } else {
+        console.log('No free gift details available - reasons:', {
+          hasFreeGiftProductId: !!(product as any).free_gift_product_id,
+          free_gift_enabled: (product as any).free_gift_enabled,
+          hasFreeGiftBadge: (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+        })
+      }
+
+      // Actually add the item to cart using cart context
+      console.log('Dispatching ADD_ITEM with payload:', payload)
+      dispatch({
+        type: 'ADD_ITEM',
+        payload
+      })
+      console.log('ADD_ITEM dispatched successfully')
+
+      // Open the basket sidebar
+      setBasketSidebarOpen(true)
+    } else {
+      console.log('Not all variants selected, opening sequential selection')
+      // Inline the sequential variant selection logic
+      setIsSequentialFlow(true) // Mark that we're in sequential flow mode
+      
+      const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
+      
+      // Start with size check (if size variants exist)
+      if (hasSizes && !selectedSize) {
+        // Size is required but not selected, open size modal
+        setSizeModalOpen(true)
+        return
+      }
+      
+      // After size is selected (or if no size required), check color
+      if (hasColors && !selectedColor) {
+        // Color is required but not selected, open color modal
+        setColorModalOpen(true)
+        return
+      }
+      
+      // Check for other variant types if they exist
+      const variants = (product as any).variants || []
+      if (hasDepths && !(product as any).selectedDepth) {
+        // For now, use the first available depth value as default
+        const firstDepth = variants.find((v: any) => v.depth && v.depth.trim() !== '')?.depth
+        if (firstDepth) {
+          console.log('Using default depth:', firstDepth)
+          // Set the depth in the product object for consistency
+          ;(product as any).selectedDepth = firstDepth
+        }
+      }
+      
+      if (hasFirmness && !(product as any).selectedFirmness) {
+        // For now, use the first available firmness value as default
+        const firstFirmness = variants.find((v: any) => v.firmness && v.firmness.trim() !== '')?.firmness
+        if (firstFirmness) {
+          console.log('Using default firmness:', firstFirmness)
+          // Set the firmness in the product object for consistency
+          ;(product as any).selectedFirmness = firstFirmness
+        }
+      }
+      
+      // All required variants are selected, proceed to add to cart
+      console.log('All variants selected in inline logic, adding to cart')
+      
+      // Calculate current variant price
+      const currentVariantPrice = (() => {
+        const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
+        if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
+          return product.currentPrice || 0
+        }
+
+        // Find variant that matches selected size and color
+        const matchingVariant = (product as any).variants.find((variant: any) => {
+          const sizeMatch = hasSizes ? variant.size === selectedSize : true
+          const colorMatch = !selectedColor || variant.color === selectedColor
+          return sizeMatch && colorMatch
+        })
+
+        return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
+      })()
+      
+      // Prepare payload with free gift details if available
+      const payload: any = {
+          id: String(product.id),
+          name: product.name,
+          brand: product.brand,
+          image: selectedImage || product.image,
+          currentPrice: currentVariantPrice,
+          originalPrice: product.originalPrice,
+          size: selectedSizeData?.name || 'Standard',
+          color: selectedColor
+        }
+
+      // Add free gift details if available
+      const hasFreeGift = (product as any).free_gift_product_id && (
+        (product as any).free_gift_enabled || 
+        (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+      )
+      
+      if (hasFreeGift) {
+        // Use the gift product name from the fields or default
+        const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
+        
+        Object.assign(payload, {
+          freeGiftProductId: (product as any).free_gift_product_id,
+          freeGiftProductName: giftProductName,
+          freeGiftProductImage: (product as any).free_gift_product_image || ''
+        })
+        console.log('Free gift will be added:', {
+          freeGiftProductId: (product as any).free_gift_product_id,
+          freeGiftProductName: giftProductName,
+          freeGiftProductImage: (product as any).free_gift_product_image || '',
+          source: 'product_detail_page'
+        })
+      } else {
+        console.log('No free gift details available - reasons:', {
+          hasFreeGiftProductId: !!(product as any).free_gift_product_id,
+          free_gift_enabled: (product as any).free_gift_enabled,
+          hasFreeGiftBadge: (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+        })
+      }
+
+      // Actually add the item to cart using cart context
+      console.log('Dispatching ADD_ITEM with payload:', payload)
+      dispatch({
+        type: 'ADD_ITEM',
+        payload
+      })
+      console.log('ADD_ITEM dispatched successfully')
+
+      // Open the basket sidebar
+      setBasketSidebarOpen(true)
+      setIsSequentialFlow(false) // Reset the flag
+    }
+  }, [hasOnlyOneVariant, singleVariant, product, dispatch, selectedImage, selectedSize, selectedColor, sizeData, getAvailableVariantOptions])
+
+  // Function to start sequential variant selection flow for Add to Basket
+  const startSequentialVariantSelection = useCallback(() => {
+    setIsSequentialFlow(true) // Mark that we're in sequential flow mode
+    
+    const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
+
+    // Start with size check (if size variants exist)
+    if (hasSizes && !selectedSize) {
+      // Size is required but not selected, open size modal
+      setSizeModalOpen(true)
+      return
+    }
+
+    // After size is selected (or if no size required), check color
+    if (hasColors && !selectedColor) {
+      // Color is required but not selected, open color modal
+      setColorModalOpen(true)
+      return
+    }
+
+    // Check for other variant types if they exist
+    if (hasDepths && !(product as any).selectedDepth) {
+      // Depth is required but not selected, would need to implement depth modal
+      console.log('Depth selection required but not implemented yet')
+      return
+    }
+
+    if (hasFirmness && !(product as any).selectedFirmness) {
+      // Firmness is required but not selected, would need to implement depth modal
+      console.log('Firmness selection required but not implemented yet')
+      return
+    }
+
+    // All required variants are selected, proceed to add to cart
+    console.log('All variants selected in startSequentialVariantSelection, adding to cart')
+    
+    // Calculate current variant price
+    const currentVariantPrice = (() => {
+      const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
+      if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
+        return product.currentPrice || 0
+      }
+
+      // Find variant that matches selected size and color
+      const matchingVariant = (product as any).variants.find((variant: any) => {
+        const sizeMatch = hasSizes ? variant.size === selectedSize : true
+        const colorMatch = !selectedColor || variant.color === selectedColor
+        return sizeMatch && colorMatch
+      })
+
+      return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
+    })()
+
+    // Prepare payload with free gift details if available
+    const payload: any = {
+        id: String(product.id),
+        name: product.name,
+        brand: product.brand,
+        image: selectedImage || product.image,
+        currentPrice: currentVariantPrice,
+        originalPrice: product.originalPrice,
+        size: selectedSizeData?.name || 'Standard',
+        color: selectedColor
+    }
+
+    // Add free gift details if available
+    const hasFreeGift = (product as any).free_gift_product_id && (
+      (product as any).free_gift_enabled || 
+      (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+    )
+    
+    if (hasFreeGift) {
+      // Use the gift product name from the fields or default
+      const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
+      
+      Object.assign(payload, {
+        freeGiftProductId: (product as any).free_gift_product_id,
+        freeGiftProductName: giftProductName,
+        freeGiftProductImage: (product as any).free_gift_product_image || ''
+      })
+      console.log('Free gift will be added:', {
+        freeGiftProductId: (product as any).free_gift_product_id,
+        freeGiftProductName: giftProductName,
+        freeGiftProductImage: (product as any).free_gift_product_image || '',
+        source: 'product_detail_page'
+      })
+    } else {
+      console.log('No free gift details available - reasons:', {
+        hasFreeGiftProductId: !!(product as any).free_gift_product_id,
+        free_gift_enabled: (product as any).free_gift_enabled,
+        hasFreeGiftBadge: (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+      })
+    }
+
+    // Actually add the item to cart using cart context
+    console.log('Dispatching ADD_ITEM with payload:', payload)
+    dispatch({
+      type: 'ADD_ITEM',
+      payload
+    })
+    console.log('ADD_ITEM dispatched successfully')
+
+    // Open the basket sidebar
+    setBasketSidebarOpen(true)
+    setIsSequentialFlow(false) // Reset the flag
+  }, [getAvailableVariantOptions, selectedSize, selectedColor, product, dispatch, selectedImage, sizeData, selectedSizeData])
 
   // Safe monthly price calculation - use product prices when no size is selected
   const monthlyPrice = selectedSizeData?.currentPrice ? Math.floor(selectedSizeData.currentPrice / 12) : Math.floor((product.currentPrice || currentPrice) / 12)
