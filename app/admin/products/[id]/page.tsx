@@ -109,9 +109,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [images, setImages] = useState<Array<{ id: string; url: string; file?: File }>>([])
   const [newImage, setNewImage] = useState<string>('')
   const [uploadingImage, setUploadingImage] = useState(false)
-  const [mainImage, setMainImage] = useState('')
-  const [uploadingMainImage, setUploadingMainImage] = useState(false)
-  const [mainImageIndex, setMainImageIndex] = useState<number>(0)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
 
   // Categories
   const categories = [
@@ -169,10 +167,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       setDurabilityLevel(productData.durabilityLevel || 'High')
       setVariants(productData.variants || [])
       
-      // Set main image
-      if (productData.main_image) {
-        setMainImage(productData.main_image)
-      }
       
       // Set attribute flags based on variants
       if (productData.variants && productData.variants.length > 0) {
@@ -189,8 +183,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             url: img,
             file: undefined
           })))
-          // Since images are now sorted with main image first, set main image index to 0
-          setMainImageIndex(0)
         }
       
       // Set description paragraphs
@@ -489,6 +481,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     try {
       setUploadingImage(true)
       
+      // Ask user whether to convert and desired quality
+      const convert = window.confirm('Convert these images to WebP? Click Cancel to upload original format.')
+      let quality: number | undefined = undefined
+      if (convert) {
+        const q = window.prompt('Enter WebP quality (1-100). Higher = better quality, larger size.', '90')
+        const parsed = q ? parseInt(q, 10) : NaN
+        if (!isNaN(parsed)) quality = Math.max(1, Math.min(100, parsed))
+      }
+      
       // Collect upload results for summary alert
       const uploadResults: Array<{
         fileName: string
@@ -505,6 +506,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           const formData = new FormData()
           formData.append('file', file)
           formData.append('preset', 'medium') // Use medium preset for additional images
+          formData.append('convert', String(convert))
+          formData.append('format', convert ? 'webp' : 'original')
+          if (typeof quality === 'number') formData.append('quality', String(quality))
           
           const response = await fetch('/api/upload-optimized', {
             method: 'POST',
@@ -636,95 +640,29 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     }
   }
 
-  const handleMainImageUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return
-
-    try {
-      setUploadingMainImage(true)
-      const file = files[0]
-      
-      try {
-        // Use optimized upload API for main image
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('preset', 'large') // Use large preset for main product image
-        
-        const response = await fetch('/api/upload-optimized', {
-          method: 'POST',
-          body: formData
-        })
-        
-        if (response.ok) {
-          const result = await response.json()
-          setMainImage(result.url)
-          
-          // Show size comparison alert for main image
-          const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
-          const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
-          const savingsPercent = result.compressionRatio
-          
-          alert(`Main product image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
-          
-          console.log('[Edit Form] Main image optimized upload result:', result)
-        } else {
-          const error = await response.json()
-          console.error('[Edit Form] Main image optimized upload error:', error)
-          
-          // Fallback to regular upload
-          const fallbackFormData = new FormData()
-          fallbackFormData.append('file', file)
-          
-          const res = await fetch('/api/upload', {
-            method: 'POST',
-            body: fallbackFormData,
-          })
-
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}))
-            throw new Error(err.error || 'Upload failed')
-          }
-
-          const json = await res.json()
-          setMainImage(json.url)
-          alert('Main image uploaded successfully (fallback mode)')
-        }
-      } catch (error) {
-        console.error('[Edit Form] Main image upload error:', error)
-        // Final fallback to regular upload
-        const fallbackFormData = new FormData()
-        fallbackFormData.append('file', file)
-        
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: fallbackFormData,
-        })
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}))
-          throw new Error(err.error || 'Upload failed')
-        }
-
-        const json = await res.json()
-        setMainImage(json.url)
-      }
-    } catch (error: any) {
-      console.error('Main image upload error:', error)
-      alert(error?.message || 'Upload failed')
-    } finally {
-      setUploadingMainImage(false)
-    }
-  }
 
   const handleDescriptionFileUpload = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (files && files[0]) {
       const file = files[0]
       
+      // Ask user whether to convert and desired quality
+      const convert = window.confirm('Convert this description image to WebP? Click Cancel to upload original format.')
+      let quality: number | undefined = undefined
+      if (convert) {
+        const q = window.prompt('Enter WebP quality (1-100). Higher = better quality, larger size.', '90')
+        const parsed = q ? parseInt(q, 10) : NaN
+        if (!isNaN(parsed)) quality = Math.max(1, Math.min(100, parsed))
+      }
+      
       try {
         // Use optimized upload API for description images
         const formData = new FormData()
         formData.append('file', file)
         formData.append('preset', 'medium') // Use medium preset for description images
+        formData.append('convert', String(convert))
+        formData.append('format', convert ? 'webp' : 'original')
+        if (typeof quality === 'number') formData.append('quality', String(quality))
         
         const response = await fetch('/api/upload-optimized', {
           method: 'POST',
@@ -800,9 +738,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         pressureReliefLevel,
         airCirculationLevel,
         durabilityLevel,
-        main_image: mainImage,
         images: images.map(img => img.url), // Extract URLs from image objects
-        mainImageIndex: mainImageIndex,
         descriptionParagraphs,
         faqs,
         warrantySections,
@@ -987,76 +923,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   />
                 </div>
                 
-                {/* Main Image Section */}
-                <div className="mt-6">
-                  <Label className="text-lg font-semibold mb-4 block">Main Product Image</Label>
-                  <div className="space-y-4">
-                    {/* Current Main Image Display */}
-                    {mainImage && (
-                      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                        <img 
-                          src={mainImage} 
-                          alt="Main product image" 
-                          className="w-24 h-24 object-cover rounded"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                          }}
-                        />
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-600">Current main image</p>
-                          <p className="text-xs text-gray-500 truncate">{mainImage}</p>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => setMainImage('')}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    )}
-                    
-                    {/* Main Image Upload */}
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">Upload New Main Image (converted to WebP)</Label>
-                      <Input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={(e) => handleMainImageUpload(e.target.files)}
-                        className="file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                      />
-                      {uploadingMainImage && (
-                        <div className="mt-2 text-sm text-blue-600">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 inline-block mr-2"></div>
-                          Uploading and optimizing main image...
-                        </div>
-                      )}
-                      <p className="text-xs text-gray-500 mt-1">
-                        Main image will be automatically converted to WebP format for better performance
-                      </p>
-                    </div>
-                    
-                    {/* Main Image URL Input */}
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">Or Enter Main Image URL</Label>
-                      <div className="flex gap-2">
-                        <Input 
-                          placeholder="https://..." 
-                          value={mainImage} 
-                          onChange={(e) => setMainImage(e.target.value)} 
-                        />
-                        <Button 
-                          variant="outline"
-                          onClick={() => setMainImage('')}
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </Card>
             </TabsContent>
 
@@ -1115,47 +981,106 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         {images.length > 0 && (
                           <div>
                             <Label className="text-sm font-medium mb-2 block">Current Images ({images.length})</Label>
+                            <div className="text-sm text-gray-600 mb-3">
+                              Image Sequence (drag to reorder)
+                            </div>
                             <ul className="space-y-2">
                               {images.map((image, idx) => (
-                                <li key={image.id} className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded">
-                                  <div className="flex items-center gap-2 flex-1">
+                                <li 
+                                  key={image.id} 
+                                  className={`flex items-center justify-between gap-2 p-3 rounded border transition-all duration-200 cursor-move ${
+                                    draggedIndex === idx 
+                                      ? 'bg-blue-100 border-blue-300 shadow-lg transform scale-105' 
+                                      : 'bg-gray-50 border-gray-200 hover:border-gray-300 hover:shadow-md'
+                                  }`}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    setDraggedIndex(idx)
+                                    e.dataTransfer.setData('text/plain', idx.toString())
+                                    e.dataTransfer.effectAllowed = 'move'
+                                  }}
+                                  onDragEnd={() => {
+                                    setDraggedIndex(null)
+                                  }}
+                                  onDragOver={(e) => {
+                                    e.preventDefault()
+                                    e.dataTransfer.dropEffect = 'move'
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault()
+                                    const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'))
+                                    const newImages = [...images]
+                                    const draggedItem = newImages[draggedIndex]
+                                    newImages.splice(draggedIndex, 1)
+                                    newImages.splice(idx, 0, draggedItem)
+                                    setImages(newImages)
+                                    
+                                    setDraggedIndex(null)
+                                  }}
+                                >
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <div className="flex flex-col gap-1">
+                                      <div className="w-6 h-6 bg-gray-300 rounded flex items-center justify-center text-xs font-medium text-gray-600">
+                                        {idx + 1}
+                                      </div>
+                                      <div className="text-xs text-gray-500 text-center">Drag</div>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (idx > 0) {
+                                            const newImages = [...images]
+                                            const temp = newImages[idx]
+                                            newImages[idx] = newImages[idx - 1]
+                                            newImages[idx - 1] = temp
+                                            setImages(newImages)
+                                            
+                                          }
+                                        }}
+                                        disabled={idx === 0}
+                                        className="w-6 h-4 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed rounded flex items-center justify-center text-xs"
+                                      >
+                                        ↑
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (idx < images.length - 1) {
+                                            const newImages = [...images]
+                                            const temp = newImages[idx]
+                                            newImages[idx] = newImages[idx + 1]
+                                            newImages[idx + 1] = temp
+                                            setImages(newImages)
+                                            
+                                          }
+                                        }}
+                                        disabled={idx === images.length - 1}
+                                        className="w-6 h-4 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed rounded flex items-center justify-center text-xs"
+                                      >
+                                        ↓
+                                      </button>
+                                    </div>
                                     <img 
                                       src={image.url} 
                                       alt={`Product image ${idx + 1}`} 
-                                      className="w-12 h-12 object-cover rounded"
+                                      className="w-12 h-12 object-cover rounded border"
                                       onError={(e) => {
                                         const target = e.target as HTMLImageElement
                                         target.style.display = 'none'
                                       }}
                                     />
-                                    <span className="truncate text-sm text-gray-700">{image.url}</span>
-                                    {idx === mainImageIndex && (
-                                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
-                                        Main Image
-                                      </span>
-                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <div className="truncate text-sm text-gray-700">{image.url}</div>
+                                      <div className="text-xs text-gray-500">Position {idx + 1}</div>
+                                    </div>
                                   </div>
                                   <div className="flex gap-1">
-                                    {idx !== mainImageIndex && (
-                                      <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        onClick={() => setMainImageIndex(idx)}
-                                        className="text-xs"
-                                      >
-                                        Set as Main
-                                      </Button>
-                                    )}
                                     <Button 
                                       variant="ghost" 
                                       size="sm" 
                                       onClick={() => {
                                         setImages(imgs => imgs.filter((_, i) => i !== idx))
-                                        if (idx === mainImageIndex) {
-                                          setMainImageIndex(0)
-                                        } else if (idx < mainImageIndex) {
-                                          setMainImageIndex(mainImageIndex - 1)
-                                        }
                                       }}
                                     >
                                       Remove

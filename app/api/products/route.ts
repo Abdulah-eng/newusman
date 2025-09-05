@@ -267,7 +267,7 @@ export async function POST(request: NextRequest) {
         file_size: null,
         file_type: null,
         is_main_image: index === mainImageIndex, // Use specified main image index
-        sort_order: index
+        sort_order: index // This will be the sequence order
       }))
 
       const { error: imageUrlInsertError } = await supabase

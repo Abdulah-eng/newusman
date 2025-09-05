@@ -1629,10 +1629,10 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminNav />
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
-          <div className="flex space-x-4">
+      <div className="container mx-auto px-4 py-8 max-w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Admin Panel</h1>
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
             <Link href="/admin/products">
               <Button variant="outline" className="bg-white hover:bg-gray-50">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1652,7 +1652,7 @@ export default function AdminPage() {
             </Link>
           </div>
         </div>
-        <ProductForm />
+          <ProductForm />
       </div>
     </div>
   )
@@ -1677,7 +1677,7 @@ function CheckboxGrid({
   return (
     <div className="mb-4">
       <div className="font-semibold mb-2">{label}</div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
         {options.map((opt, index) => (
           <label key={`${opt}-${index}`} className={`flex items-center gap-2 rounded border p-2 cursor-pointer ${selected.includes(opt) ? 'border-orange-400 bg-orange-50' : 'border-gray-200 bg-white'}`}>
             <input type="checkbox" className="h-4 w-4" checked={selected.includes(opt)} onChange={() => toggle(opt)} />
@@ -1767,7 +1767,7 @@ function ProductForm() {
   const [images, setImages] = useState<string[]>([])
   const [newImage, setNewImage] = useState<string>('')
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
-  const [mainImageIndex, setMainImageIndex] = useState<number>(0)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
 
   const [name, setName] = useState('')
   const [rating, setRating] = useState<number>(4.5)
@@ -2743,7 +2743,6 @@ function ProductForm() {
         selectedBunkbedMattresses,
         // Include URL-based images so backend can persist them
         images: [...images, ...uploadedUrls],
-        mainImageIndex: mainImageIndex,
         uploadedFiles: [],
         variants,
         selectedFeatures,
@@ -2947,7 +2946,7 @@ function ProductForm() {
   }
 
   return (
-    <div className="mt-4 space-y-6">
+    <div className="mt-4 space-y-6 max-w-full overflow-hidden">
       {/* Category Selection */}
       <Card className="p-4">
         <h2 className="text-xl font-semibold mb-4">Product Category</h2>
@@ -2984,7 +2983,7 @@ function ProductForm() {
         <h2 className="text-xl font-semibold mb-4">Product Images</h2>
         <p className="text-sm text-gray-600 mb-4">Add product images that will be displayed prominently on the product page.</p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
             <div className="font-semibold mb-2">Product Images</div>
             
@@ -2996,40 +2995,110 @@ function ProductForm() {
                 <Button onClick={() => { if (newImage.trim()) { setImages(imgs => [...imgs, newImage.trim()]); setNewImage('') } }}>Add URL</Button>
               </div>
               {images.length > 0 && (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-gray-700 mb-2">
+                    Image Sequence (drag to reorder)
+                  </div>
                 <ul className="space-y-2">
                   {images.map((url, idx) => (
-                    <li key={`${url}-${idx}`} className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded">
-                      <div className="flex items-center gap-2 flex-1">
-                        <span className="truncate text-sm text-gray-700">{url}</span>
-                        {idx === mainImageIndex && (
-                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
-                            Main Image
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex gap-1">
-                        {idx !== mainImageIndex && (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => setMainImageIndex(idx)}
-                            className="text-xs"
-                          >
-                            Set as Main
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => {
-                          setImages(imgs => imgs.filter((_, i) => i !== idx))
-                          if (idx === mainImageIndex) {
-                            setMainImageIndex(0)
-                          } else if (idx < mainImageIndex) {
-                            setMainImageIndex(mainImageIndex - 1)
-                          }
-                        }}>Remove</Button>
-                      </div>
+                      <li 
+                        key={`${url}-${idx}`} 
+                        className={`flex items-center justify-between gap-2 p-3 rounded border transition-all duration-200 cursor-move ${
+                          draggedIndex === idx 
+                            ? 'bg-blue-100 border-blue-300 shadow-lg transform scale-105' 
+                            : 'bg-gray-50 border-gray-200 hover:border-gray-300 hover:shadow-md'
+                        }`}
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggedIndex(idx)
+                          e.dataTransfer.setData('text/plain', idx.toString())
+                          e.dataTransfer.effectAllowed = 'move'
+                        }}
+                        onDragEnd={() => {
+                          setDraggedIndex(null)
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                          e.dataTransfer.dropEffect = 'move'
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault()
+                          const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'))
+                          const newImages = [...images]
+                          const draggedItem = newImages[draggedIndex]
+                          newImages.splice(draggedIndex, 1)
+                          newImages.splice(idx, 0, draggedItem)
+                          setImages(newImages)
+                          
+                          setDraggedIndex(null)
+                        }}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="flex flex-col gap-1">
+                            <div className="w-6 h-6 bg-gray-300 rounded flex items-center justify-center text-xs font-medium text-gray-600">
+                              {idx + 1}
+                            </div>
+                            <div className="text-xs text-gray-500 text-center">Drag</div>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (idx > 0) {
+                                  const newImages = [...images]
+                                  const temp = newImages[idx]
+                                  newImages[idx] = newImages[idx - 1]
+                                  newImages[idx - 1] = temp
+                                  setImages(newImages)
+                                  
+                                }
+                              }}
+                              disabled={idx === 0}
+                              className="w-6 h-4 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed rounded flex items-center justify-center text-xs"
+                            >
+                              ↑
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (idx < images.length - 1) {
+                                  const newImages = [...images]
+                                  const temp = newImages[idx]
+                                  newImages[idx] = newImages[idx + 1]
+                                  newImages[idx + 1] = temp
+                                  setImages(newImages)
+                                  
+                                }
+                              }}
+                              disabled={idx === images.length - 1}
+                              className="w-6 h-4 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed rounded flex items-center justify-center text-xs"
+                            >
+                              ↓
+                            </button>
+                          </div>
+                          <img 
+                            src={url} 
+                            alt={`Product image ${idx + 1}`} 
+                            className="w-12 h-12 object-cover rounded border"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.style.display = 'none'
+                            }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate text-sm text-gray-700">{url}</div>
+                            <div className="text-xs text-gray-500">Position {idx + 1}</div>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => {
+                            setImages(imgs => imgs.filter((_, i) => i !== idx))
+                          }}>Remove</Button>
+                        </div>
                     </li>
                   ))}
                 </ul>
+                </div>
               )}
             </div>
 
@@ -3133,7 +3202,7 @@ function ProductForm() {
                  Select mattresses that will be available for this bunkbed. These will appear in the "choose colour and other option" popup for customers.
                </p>
                
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                  {loadingBunkbedMattresses ? (
                    <div className="col-span-full p-4 text-center">
                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
@@ -3189,31 +3258,31 @@ function ProductForm() {
           <p className="text-sm text-gray-600 mb-4">Add variant rows and fill in the details for each combination of this {categories.find(c => c.value === selectedCategory)?.label?.toLowerCase()}.</p>
           <div className="mb-3"><Button onClick={addVariant}>Add blank row</Button></div>
           
-          <div className="overflow-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[800px]">
               <thead>
                 <tr className="text-left text-gray-600">
-                  <th className="p-2">SKU</th>
-                  {useColor && <th className="p-2">Color</th>}
-                  {useDepth && (selectedCategory || '').toLowerCase() !== 'sofas' && <th className="p-2">Depth</th>}
-                  {useFirmness && <th className="p-2">Firmness</th>}
-                  {useSize && <th className="p-2">Size</th>}
-                  <th className="p-2">Length</th>
-                  <th className="p-2">{(selectedCategory || '').toLowerCase() === 'sofas' ? 'Depth' : 'Width'}</th>
-                  <th className="p-2">Height</th>
-                  <th className="p-2">Available</th>
-                  <th className="p-2">Original Price</th>
-                  <th className="p-2">Now Price</th>
-                  <th className="p-2">Color</th>
-                  <th className="p-2"></th>
+                  <th className="p-2 min-w-[80px]">SKU</th>
+                  {useColor && <th className="p-2 min-w-[100px]">Color</th>}
+                  {useDepth && (selectedCategory || '').toLowerCase() !== 'sofas' && <th className="p-2 min-w-[80px]">Depth</th>}
+                  {useFirmness && <th className="p-2 min-w-[100px]">Firmness</th>}
+                  {useSize && <th className="p-2 min-w-[100px]">Size</th>}
+                  <th className="p-2 min-w-[80px]">Length</th>
+                  <th className="p-2 min-w-[80px]">{(selectedCategory || '').toLowerCase() === 'sofas' ? 'Depth' : 'Width'}</th>
+                  <th className="p-2 min-w-[80px]">Height</th>
+                  <th className="p-2 min-w-[80px]">Available</th>
+                  <th className="p-2 min-w-[100px]">Original Price</th>
+                  <th className="p-2 min-w-[100px]">Now Price</th>
+                  <th className="p-2 min-w-[120px]">Color</th>
+                  <th className="p-2 min-w-[80px]"></th>
                 </tr>
               </thead>
               <tbody>
                 {variants.map(v => (
                   <tr key={v.id} className="border-t">
-                    <td className="p-2 min-w-[120px]"><Input value={v.sku} onChange={e => updateVariant(v.id, { sku: e.target.value })} placeholder="SKU" /></td>
+                    <td className="p-2 min-w-[80px]"><Input value={v.sku} onChange={e => updateVariant(v.id, { sku: e.target.value })} placeholder="SKU" /></td>
                     {useColor && (
-                      <td className="p-2 min-w-[160px]">
+                    <td className="p-2 min-w-[100px]">
                         <select 
                           value={v.color || ''} 
                           onChange={e => updateVariant(v.id, { color: e.target.value })}
@@ -3255,13 +3324,13 @@ function ProductForm() {
                         </select>
                       </td>
                     )}
-                    {useDepth && (selectedCategory || '').toLowerCase() !== 'sofas' && <td className="p-2 min-w-[120px]"><Input value={v.depth || ''} onChange={e => updateVariant(v.id, { depth: e.target.value })} placeholder="Depth" /></td>}
-                    {useFirmness && <td className="p-2 min-w-[160px]"><Input value={v.firmness || ''} onChange={e => updateVariant(v.id, { firmness: e.target.value })} placeholder="Firmness" /></td>}
-                    {useSize && <td className="p-2 min-w-[140px]"><Input value={v.size || ''} onChange={e => updateVariant(v.id, { size: e.target.value })} placeholder="Size" /></td>}
-                    <td className="p-2 min-w-[100px]"><Input value={v.length || ''} onChange={e => updateVariant(v.id, { length: e.target.value })} placeholder="Length" /></td>
-                    <td className="p-2 min-w-[100px]"><Input value={((selectedCategory || '').toLowerCase() === 'sofas' ? v.depth : v.width) || ''} onChange={e => ((selectedCategory || '').toLowerCase() === 'sofas' ? updateVariant(v.id, { depth: e.target.value }) : updateVariant(v.id, { width: e.target.value }))} placeholder={(selectedCategory || '').toLowerCase() === 'sofas' ? 'Depth' : 'Width'} /></td>
-                    <td className="p-2 min-w-[100px]"><Input value={v.height || ''} onChange={e => updateVariant(v.id, { height: e.target.value })} placeholder="Height" /></td>
-                    <td className="p-2 min-w-[100px]">
+                    {useDepth && (selectedCategory || '').toLowerCase() !== 'sofas' && <td className="p-2 min-w-[80px]"><Input value={v.depth || ''} onChange={e => updateVariant(v.id, { depth: e.target.value })} placeholder="Depth" /></td>}
+                    {useFirmness && <td className="p-2 min-w-[100px]"><Input value={v.firmness || ''} onChange={e => updateVariant(v.id, { firmness: e.target.value })} placeholder="Firmness" /></td>}
+                    {useSize && <td className="p-2 min-w-[100px]"><Input value={v.size || ''} onChange={e => updateVariant(v.id, { size: e.target.value })} placeholder="Size" /></td>}
+                    <td className="p-2 min-w-[80px]"><Input value={v.length || ''} onChange={e => updateVariant(v.id, { length: e.target.value })} placeholder="Length" /></td>
+                    <td className="p-2 min-w-[80px]"><Input value={((selectedCategory || '').toLowerCase() === 'sofas' ? v.depth : v.width) || ''} onChange={e => ((selectedCategory || '').toLowerCase() === 'sofas' ? updateVariant(v.id, { depth: e.target.value }) : updateVariant(v.id, { width: e.target.value }))} placeholder={(selectedCategory || '').toLowerCase() === 'sofas' ? 'Depth' : 'Width'} /></td>
+                    <td className="p-2 min-w-[80px]"><Input value={v.height || ''} onChange={e => updateVariant(v.id, { height: e.target.value })} placeholder="Height" /></td>
+                    <td className="p-2 min-w-[80px]">
                       <select 
                         value={v.availability ? 'true' : 'false'} 
                         onChange={e => updateVariant(v.id, { availability: e.target.value === 'true' })}
@@ -3271,9 +3340,9 @@ function ProductForm() {
                         <option value="false">No</option>
                       </select>
                     </td>
-                    <td className="p-2 min-w-[140px]"><Input type="number" value={v.originalPrice ?? ''} onChange={e => updateVariant(v.id, { originalPrice: e.target.value ? Number(e.target.value) : undefined })} placeholder="Original" /></td>
-                    <td className="p-2 min-w-[140px]"><Input type="number" value={v.currentPrice ?? ''} onChange={e => updateVariant(v.id, { currentPrice: e.target.value ? Number(e.target.value) : undefined })} placeholder="Now" /></td>
-                    <td className="p-2 min-w-[200px]">
+                    <td className="p-2 min-w-[100px]"><Input type="number" value={v.originalPrice ?? ''} onChange={e => updateVariant(v.id, { originalPrice: e.target.value ? Number(e.target.value) : undefined })} placeholder="Original" /></td>
+                    <td className="p-2 min-w-[100px]"><Input type="number" value={v.currentPrice ?? ''} onChange={e => updateVariant(v.id, { currentPrice: e.target.value ? Number(e.target.value) : undefined })} placeholder="Now" /></td>
+                    <td className="p-2 min-w-[120px]">
                       <div className="space-y-2">
                         {/* Color Picker */}
                         <ColorPicker
@@ -3284,9 +3353,9 @@ function ProductForm() {
                         
                         {/* Premium Color Preview */}
                         {v.color && (
-                          <div className="flex items-center gap-3 p-3 border-2 border-gray-200 rounded-xl bg-gradient-to-r from-gray-50 to-white shadow-sm">
+                          <div className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg bg-gradient-to-r from-gray-50 to-white shadow-sm">
                             <div 
-                              className="w-10 h-10 rounded-xl border-2 shadow-lg relative overflow-hidden group"
+                              className="w-6 h-6 rounded-lg border shadow-sm relative overflow-hidden group"
                               style={{ 
                                 backgroundColor: getHexForColorName(v.color) || v.color,
                                 borderColor: '#e5e7eb'
@@ -3295,9 +3364,9 @@ function ProductForm() {
                               {/* Premium shine effect */}
                               <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-50"></div>
                               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 opacity-30"></div>
-                            </div>
-                            <span className="text-sm font-medium text-gray-700">{v.color}</span>
                           </div>
+                            <span className="text-xs font-medium text-gray-700 truncate">{v.color}</span>
+                        </div>
                         )}
                       </div>
                     </td>
@@ -3337,7 +3406,7 @@ function ProductForm() {
            </Label>
            
            {/* Feature Cards Grid */}
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
              {getFeatureCardsForCategory(selectedCategory).map((feature) => {
                const isSelected = selectedReasonsToLove.some(item => item.reason === feature.title)
                const IconComponent = getIconComponentAdmin(feature.icon)
@@ -3695,33 +3764,33 @@ function ProductForm() {
             </label>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Height</Label>
-              <Input 
-                value={dimensions.height} 
-                onChange={e => updateDimension('height', e.target.value)}
-                placeholder="25 cm"
-              />
-            </div>
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Length</Label>
-              <Input 
-                value={dimensions.length} 
-                onChange={e => updateDimension('length', e.target.value)}
-                placeholder="L 190cm"
-              />
-            </div>
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Width</Label>
-              <Input 
-                value={dimensions.width} 
-                onChange={e => updateDimension('width', e.target.value)}
-                placeholder="135cm"
-              />
+          <div>
+            <Label className="text-sm font-medium mb-2 block">Height</Label>
+            <Input 
+              value={dimensions.height} 
+              onChange={e => updateDimension('height', e.target.value)}
+              placeholder="25 cm"
+            />
+          </div>
+          <div>
+            <Label className="text-sm font-medium mb-2 block">Length</Label>
+            <Input 
+              value={dimensions.length} 
+              onChange={e => updateDimension('length', e.target.value)}
+              placeholder="L 190cm"
+            />
+          </div>
+          <div>
+            <Label className="text-sm font-medium mb-2 block">Width</Label>
+            <Input 
+              value={dimensions.width} 
+              onChange={e => updateDimension('width', e.target.value)}
+              placeholder="135cm"
+            />
             </div>
           </div>
-        </div>
-
+          </div>
+          
         {/* Section 2: Mattress Specifications */}
         <div className="mb-6 p-4 border border-gray-200 rounded-lg">
           <div className="flex items-center space-x-2 mb-3">
@@ -3735,62 +3804,62 @@ function ProductForm() {
             </label>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Mattress Size with Editable Heading */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Label className="text-sm font-medium block">Heading</Label>
-                <Input 
-                  value={dimensions.mattressSizeHeading} 
-                  onChange={e => updateDimension('mattressSizeHeading', e.target.value)}
-                  placeholder="Mattress Size"
-                  className="text-xs"
-                />
-              </div>
+          {/* Mattress Size with Editable Heading */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Label className="text-sm font-medium block">Heading</Label>
               <Input 
-                value={dimensions.mattressSize} 
-                onChange={e => updateDimension('mattressSize', e.target.value)}
-                placeholder="135cm x L 190cm cm"
+                value={dimensions.mattressSizeHeading} 
+                onChange={e => updateDimension('mattressSizeHeading', e.target.value)}
+                placeholder="Mattress Size"
+                className="text-xs"
               />
             </div>
-            
-            {/* Maximum Height with Editable Heading */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Label className="text-sm font-medium block">Heading</Label>
-                <Input 
-                  value={dimensions.maximumHeightHeading} 
-                  onChange={e => updateDimension('maximumHeightHeading', e.target.value)}
-                  placeholder="Maximum Height"
-                  className="text-xs"
-                />
-              </div>
+            <Input 
+              value={dimensions.mattressSize} 
+              onChange={e => updateDimension('mattressSize', e.target.value)}
+              placeholder="135cm x L 190cm cm"
+            />
+          </div>
+          
+          {/* Maximum Height with Editable Heading */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Label className="text-sm font-medium block">Heading</Label>
               <Input 
-                value={dimensions.maxHeight} 
-                onChange={e => updateDimension('maxHeight', e.target.value)}
-                placeholder="25 cm"
+                value={dimensions.maximumHeightHeading} 
+                onChange={e => updateDimension('maximumHeightHeading', e.target.value)}
+                placeholder="Maximum Height"
+                className="text-xs"
               />
             </div>
-            
-            {/* Weight Capacity with Editable Heading */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Label className="text-sm font-medium block">Heading</Label>
-                <Input 
-                  value={dimensions.weightCapacityHeading} 
-                  onChange={e => updateDimension('weightCapacityHeading', e.target.value)}
-                  placeholder="Weight Capacity"
-                  className="text-xs"
-                />
-              </div>
+            <Input 
+              value={dimensions.maxHeight} 
+              onChange={e => updateDimension('maxHeight', e.target.value)}
+              placeholder="25 cm"
+            />
+          </div>
+          
+          {/* Weight Capacity with Editable Heading */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Label className="text-sm font-medium block">Heading</Label>
               <Input 
-                value={dimensions.weightCapacity} 
-                onChange={e => updateDimension('weightCapacity', e.target.value)}
-                placeholder="200 kg"
+                value={dimensions.weightCapacityHeading} 
+                onChange={e => updateDimension('weightCapacityHeading', e.target.value)}
+                placeholder="Weight Capacity"
+                className="text-xs"
               />
+            </div>
+            <Input 
+              value={dimensions.weightCapacity} 
+              onChange={e => updateDimension('weightCapacity', e.target.value)}
+              placeholder="200 kg"
+            />
             </div>
           </div>
-        </div>
-
+          </div>
+          
         {/* Section 3: Technical Specifications */}
         <div className="mb-6 p-4 border border-gray-200 rounded-lg">
           <div className="flex items-center space-x-2 mb-3">
@@ -3804,72 +3873,72 @@ function ProductForm() {
             </label>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Pocket Springs with Editable Heading */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Label className="text-sm font-medium block">Heading</Label>
-                <Input 
-                  value={dimensions.pocketSpringsHeading} 
-                  onChange={e => updateDimension('pocketSpringsHeading', e.target.value)}
-                  placeholder="Pocket Springs"
-                  className="text-xs"
-                />
-              </div>
+          {/* Pocket Springs with Editable Heading */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Label className="text-sm font-medium block">Heading</Label>
               <Input 
-                value={dimensions.pocketSprings} 
-                onChange={e => updateDimension('pocketSprings', e.target.value)}
-                placeholder="1000 count"
+                value={dimensions.pocketSpringsHeading} 
+                onChange={e => updateDimension('pocketSpringsHeading', e.target.value)}
+                placeholder="Pocket Springs"
+                className="text-xs"
               />
             </div>
-            
-            {/* Comfort Layer with Editable Heading */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Label className="text-sm font-medium block">Heading</Label>
-                <Input 
-                  value={dimensions.comfortLayerHeading} 
-                  onChange={e => updateDimension('comfortLayerHeading', e.target.value)}
-                  placeholder="Comfort Layer"
-                  className="text-xs"
-                />
-              </div>
+            <Input 
+              value={dimensions.pocketSprings} 
+              onChange={e => updateDimension('pocketSprings', e.target.value)}
+              placeholder="1000 count"
+            />
+          </div>
+          
+          {/* Comfort Layer with Editable Heading */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Label className="text-sm font-medium block">Heading</Label>
               <Input 
-                value={dimensions.comfortLayer} 
-                onChange={e => updateDimension('comfortLayer', e.target.value)}
-                placeholder="8 cm"
+                value={dimensions.comfortLayerHeading} 
+                onChange={e => updateDimension('comfortLayerHeading', e.target.value)}
+                placeholder="Comfort Layer"
+                className="text-xs"
               />
             </div>
-            
-            {/* Support Layer with Editable Heading */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Label className="text-sm font-medium block">Heading</Label>
-                <Input 
-                  value={dimensions.supportLayerHeading} 
-                  onChange={e => updateDimension('supportLayerHeading', e.target.value)}
-                  placeholder="Support Layer"
-                  className="text-xs"
-                />
-              </div>
+            <Input 
+              value={dimensions.comfortLayer} 
+              onChange={e => updateDimension('comfortLayer', e.target.value)}
+              placeholder="8 cm"
+            />
+          </div>
+          
+          {/* Support Layer with Editable Heading */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Label className="text-sm font-medium block">Heading</Label>
               <Input 
-                value={dimensions.supportLayer} 
-                onChange={e => updateDimension('supportLayer', e.target.value)}
-                placeholder="17 cm"
+                value={dimensions.supportLayerHeading} 
+                onChange={e => updateDimension('supportLayerHeading', e.target.value)}
+                placeholder="Support Layer"
+                className="text-xs"
               />
+            </div>
+            <Input 
+              value={dimensions.supportLayer} 
+              onChange={e => updateDimension('supportLayer', e.target.value)}
+              placeholder="17 cm"
+            />
             </div>
           </div>
-        </div>
-
-        {/* Dimension Disclaimer */}
+          </div>
+          
+          {/* Dimension Disclaimer */}
         <div className="mb-4">
-          <Label className="text-sm font-medium mb-2 block">Dimension Disclaimer</Label>
-          <Textarea 
-            value={dimensions.dimensionDisclaimer} 
-            onChange={e => updateDimension('dimensionDisclaimer', e.target.value)}
-            placeholder="e.g., All measurements are approximate and may vary slightly."
-            rows={2}
-          />
-          <p className="text-xs text-gray-500 mt-1">This disclaimer will appear below the dimension specifications on the product page.</p>
+            <Label className="text-sm font-medium mb-2 block">Dimension Disclaimer</Label>
+            <Textarea 
+              value={dimensions.dimensionDisclaimer} 
+              onChange={e => updateDimension('dimensionDisclaimer', e.target.value)}
+              placeholder="e.g., All measurements are approximate and may vary slightly."
+              rows={2}
+            />
+            <p className="text-xs text-gray-500 mt-1">This disclaimer will appear below the dimension specifications on the product page.</p>
         </div>
       </Card>
 
@@ -3942,7 +4011,7 @@ function ProductForm() {
         <h2 className="text-xl font-semibold mb-4">Popular Categories</h2>
         <p className="text-sm text-gray-600 mb-4">Select which popular categories this product should appear in. These categories are shown on the product pages.</p>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {getPopularCategories().map((category) => (
             <label key={category.name} className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
               <input 
@@ -4432,7 +4501,7 @@ function ProductForm() {
                   <p className="text-gray-500">Loading products...</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {(() => {
                     const products = getProductsForCategory(selectedCategoryForSelector)
                     const filtered = products.filter(p => 
@@ -4573,7 +4642,7 @@ function ProductForm() {
 
             {/* Images Grid */}
             <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {/* Product Images (URLs) */}
                 {images.map((url, idx) => (
                   <div 
@@ -4745,7 +4814,7 @@ function ProductForm() {
                   <p className="text-gray-500">Loading products...</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {(() => {
                     const products = getProductsForCategory(selectedCategoryForGiftSelector || 'mattresses')
                     const filtered = products.filter(p => 

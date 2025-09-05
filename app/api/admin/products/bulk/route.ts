@@ -85,7 +85,10 @@ export async function POST(req: Request) {
           product_id: productId, 
           image_url: url, 
           is_main_image: index === mainImageIndex,
-          sort_order: index
+          sort_order: index, // This will be the sequence order
+          file_name: null,
+          file_size: null,
+          file_type: null
         }))
         const { error } = await supabase.from('product_images').insert(imageRows as any)
         if (error) console.error('product_images insert', error)

@@ -537,7 +537,7 @@ export async function PUT(
       }
     }
 
-    // Handle main image index if provided
+    // Handle main image index and image sequence if provided
     if (body.mainImageIndex !== undefined && body.images && body.images.length > 0) {
       // First, clear all main image flags
       const { error: clearMainImageError } = await supabase
@@ -549,15 +549,20 @@ export async function PUT(
         console.error('Error clearing main image flags:', clearMainImageError)
       }
 
-      // Then set the specified image as main
-      const { error: setMainImageError } = await supabase
-        .from('product_images')
-        .update({ is_main_image: true })
-        .eq('product_id', id)
-        .eq('sort_order', body.mainImageIndex)
+      // Update sort_order for all images based on their new sequence
+      for (let i = 0; i < body.images.length; i++) {
+        const { error: updateSortOrderError } = await supabase
+          .from('product_images')
+          .update({ 
+            sort_order: i,
+            is_main_image: i === body.mainImageIndex
+          })
+          .eq('product_id', id)
+          .eq('image_url', body.images[i])
 
-      if (setMainImageError) {
-        console.error('Error setting main image:', setMainImageError)
+        if (updateSortOrderError) {
+          console.error(`Error updating sort order for image ${i}:`, updateSortOrderError)
+        }
       }
     }
 

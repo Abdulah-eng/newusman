@@ -45,8 +45,8 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [sortBy, setSortBy] = useState('created_at')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [sortBy, setSortBy] = useState('name')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string }>>([])
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
@@ -142,15 +142,6 @@ export default function AdminProductsPage() {
     }
   }
 
-  const getLowestPrice = (variants: Product['variants']) => {
-    if (!variants || variants.length === 0) return null
-    return Math.min(...variants.map(v => v.current_price || v.original_price || 0))
-  }
-
-  const getHighestPrice = (variants: Product['variants']) => {
-    if (!variants || variants.length === 0) return null
-    return Math.max(...variants.map(v => v.current_price || v.original_price || 0))
-  }
 
   const getCategoryInfo = (categoryId: string) => {
     return categories.find(cat => cat.id === categoryId) || null
@@ -165,13 +156,6 @@ export default function AdminProductsPage() {
     )
   })
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    })
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -242,9 +226,8 @@ export default function AdminProductsPage() {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="created_at">Date Created</option>
                 <option value="name">Name</option>
-                <option value="rating">Rating</option>
+                <option value="created_at">Date Created</option>
                 <option value="updated_at">Last Updated</option>
               </select>
             </div>
@@ -290,22 +273,13 @@ export default function AdminProductsPage() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Product
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Category
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Price Range
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Rating
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -314,21 +288,21 @@ export default function AdminProductsPage() {
                   {filteredProducts.map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       {/* Product Info */}
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-16 w-16">
+                          <div className="flex-shrink-0 h-12 w-12">
                             <img
-                              className="h-16 w-16 rounded-lg object-cover"
+                              className="h-12 w-12 rounded-lg object-cover"
                               src={product.images?.[0]?.image_url || '/placeholder.jpg'}
                               alt={product.name}
                             />
                           </div>
-                          <div className="ml-4">
+                          <div className="ml-3">
                             <div className="text-sm font-medium text-gray-900">
                               {product.name}
                             </div>
                             {product.headline && (
-                              <div className="text-sm text-gray-500">
+                              <div className="text-xs text-gray-500 truncate max-w-xs">
                                 {product.headline}
                               </div>
                             )}
@@ -340,74 +314,34 @@ export default function AdminProductsPage() {
                       </td>
 
                       {/* Category */}
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         {(() => {
                           const categoryInfo = getCategoryInfo(product.category_id)
                           return categoryInfo ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                               {categoryInfo.name}
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                               No Category
                             </span>
                           )
                         })()}
                       </td>
 
-                      {/* Price Range */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {(() => {
-                          const lowest = getLowestPrice(product.variants)
-                          const highest = getHighestPrice(product.variants)
-                          if (lowest === null || highest === null) return 'No variants'
-                          if (lowest === highest) return `£${lowest.toFixed(2)}`
-                          return `£${lowest.toFixed(2)} - £${highest.toFixed(2)}`
-                        })()}
-                      </td>
-
-                      {/* Rating */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {product.rating ? (
-                          <div className="flex items-center">
-                            <span className="text-sm text-gray-900 mr-2">{product.rating}</span>
-                            <div className="flex items-center">
-                              {[...Array(5)].map((_, i) => (
-                                <svg
-                                  key={i}
-                                  className={`w-4 h-4 ${
-                                    i < Math.floor(product.rating!) ? 'text-yellow-400' : 'text-gray-300'
-                                  }`}
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">No rating</span>
-                        )}
-                      </td>
-
-                      {/* Created Date */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(product.created_at)}
-                      </td>
-
                       {/* Actions */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-2">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center space-x-1">
                           <Link href={`/admin/products/${product.id}`}>
-                            <Button variant="outline" size="sm">
-                              <Edit className="w-4 h-4 mr-1" />
+                            <Button variant="outline" size="sm" className="h-8 px-2">
+                              <Edit className="w-3 h-3 mr-1" />
                               Edit
                             </Button>
                           </Link>
                           <Button
                             variant="outline"
                             size="sm"
+                            className="h-8 px-2"
                             onClick={() => {
                               const categoryInfo = getCategoryInfo(product.category_id)
                               if (categoryInfo?.slug) {
@@ -418,16 +352,16 @@ export default function AdminProductsPage() {
                             }}
                             disabled={!getCategoryInfo(product.category_id)?.slug}
                           >
-                            <Eye className="w-4 h-4 mr-1" />
+                            <Eye className="w-3 h-3 mr-1" />
                             View
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
+                            className="h-8 px-2 text-red-600 border-red-600 hover:bg-red-50"
                             onClick={() => setDeleteConfirm(product.id)}
-                            className="text-red-600 border-red-600 hover:bg-red-50"
                           >
-                            <Trash2 className="w-4 h-4 mr-1" />
+                            <Trash2 className="w-3 h-3 mr-1" />
                             Delete
                           </Button>
                         </div>
