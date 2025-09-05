@@ -1767,6 +1767,7 @@ function ProductForm() {
   const [images, setImages] = useState<string[]>([])
   const [newImage, setNewImage] = useState<string>('')
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
+  const [mainImageIndex, setMainImageIndex] = useState<number>(0)
 
   const [name, setName] = useState('')
   const [rating, setRating] = useState<number>(4.5)
@@ -2742,6 +2743,7 @@ function ProductForm() {
         selectedBunkbedMattresses,
         // Include URL-based images so backend can persist them
         images: [...images, ...uploadedUrls],
+        mainImageIndex: mainImageIndex,
         uploadedFiles: [],
         variants,
         selectedFeatures,
@@ -2997,8 +2999,34 @@ function ProductForm() {
                 <ul className="space-y-2">
                   {images.map((url, idx) => (
                     <li key={`${url}-${idx}`} className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded">
-                      <span className="truncate text-sm text-gray-700">{url}</span>
-                      <Button variant="ghost" size="sm" onClick={() => setImages(imgs => imgs.filter((_, i) => i !== idx))}>Remove</Button>
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="truncate text-sm text-gray-700">{url}</span>
+                        {idx === mainImageIndex && (
+                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+                            Main Image
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex gap-1">
+                        {idx !== mainImageIndex && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setMainImageIndex(idx)}
+                            className="text-xs"
+                          >
+                            Set as Main
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" onClick={() => {
+                          setImages(imgs => imgs.filter((_, i) => i !== idx))
+                          if (idx === mainImageIndex) {
+                            setMainImageIndex(0)
+                          } else if (idx < mainImageIndex) {
+                            setMainImageIndex(mainImageIndex - 1)
+                          }
+                        }}>Remove</Button>
+                      </div>
                     </li>
                   ))}
                 </ul>

@@ -200,8 +200,25 @@ export async function GET(
       showInSalesCategory: product.show_in_sales_category,
       selectedMattresses: product.selected_mattresses,
       images: (product.product_images || [])
+        .sort((a: any, b: any) => {
+          // Sort by is_main_image first (true first), then by sort_order
+          if (a.is_main_image && !b.is_main_image) return -1
+          if (!a.is_main_image && b.is_main_image) return 1
+          return (a.sort_order || 0) - (b.sort_order || 0)
+        })
         .map((img: any) => buildUrl(img))
         .filter((u: string | null) => !!u),
+      image: (() => {
+        // Get the main image (first in the sorted array) or fallback to first image
+        const sortedImages = (product.product_images || [])
+          .sort((a: any, b: any) => {
+            if (a.is_main_image && !b.is_main_image) return -1
+            if (!a.is_main_image && b.is_main_image) return 1
+            return (a.sort_order || 0) - (b.sort_order || 0)
+          })
+        const mainImage = sortedImages[0]
+        return mainImage ? buildUrl(mainImage) : null
+      })(),
               variants: (variantList || []).map((variant: any) => ({
           sku: variant.sku,
           originalPrice: variant.original_price,
@@ -517,6 +534,30 @@ export async function PUT(
         if (insertMainImageError) {
           console.error('Error inserting main image:', insertMainImageError)
         }
+      }
+    }
+
+    // Handle main image index if provided
+    if (body.mainImageIndex !== undefined && body.images && body.images.length > 0) {
+      // First, clear all main image flags
+      const { error: clearMainImageError } = await supabase
+        .from('product_images')
+        .update({ is_main_image: false })
+        .eq('product_id', id)
+
+      if (clearMainImageError) {
+        console.error('Error clearing main image flags:', clearMainImageError)
+      }
+
+      // Then set the specified image as main
+      const { error: setMainImageError } = await supabase
+        .from('product_images')
+        .update({ is_main_image: true })
+        .eq('product_id', id)
+        .eq('sort_order', body.mainImageIndex)
+
+      if (setMainImageError) {
+        console.error('Error setting main image:', setMainImageError)
       }
     }
 

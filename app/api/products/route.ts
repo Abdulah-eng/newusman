@@ -259,13 +259,14 @@ export async function POST(request: NextRequest) {
     // Insert product images
     // 1) URL images from admin (imageUrls)
     if (imageUrls && imageUrls.length > 0) {
+      const mainImageIndex = body.mainImageIndex || 0
       const imageUrlRows = imageUrls.map((url: string, index: number) => ({
         product_id: productId,
         image_url: url,
         file_name: null,
         file_size: null,
         file_type: null,
-        is_main_image: index === 0, // First URL becomes main if present
+        is_main_image: index === mainImageIndex, // Use specified main image index
         sort_order: index
       }))
 

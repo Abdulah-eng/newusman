@@ -111,6 +111,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [uploadingImage, setUploadingImage] = useState(false)
   const [mainImage, setMainImage] = useState('')
   const [uploadingMainImage, setUploadingMainImage] = useState(false)
+  const [mainImageIndex, setMainImageIndex] = useState<number>(0)
 
   // Categories
   const categories = [
@@ -188,6 +189,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             url: img,
             file: undefined
           })))
+          // Since images are now sorted with main image first, set main image index to 0
+          setMainImageIndex(0)
         }
       
       // Set description paragraphs
@@ -799,6 +802,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         durabilityLevel,
         main_image: mainImage,
         images: images.map(img => img.url), // Extract URLs from image objects
+        mainImageIndex: mainImageIndex,
         descriptionParagraphs,
         faqs,
         warrantySections,
@@ -1114,7 +1118,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             <ul className="space-y-2">
                               {images.map((image, idx) => (
                                 <li key={image.id} className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 flex-1">
                                     <img 
                                       src={image.url} 
                                       alt={`Product image ${idx + 1}`} 
@@ -1125,14 +1129,38 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                       }}
                                     />
                                     <span className="truncate text-sm text-gray-700">{image.url}</span>
+                                    {idx === mainImageIndex && (
+                                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+                                        Main Image
+                                      </span>
+                                    )}
                                   </div>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => setImages(imgs => imgs.filter((_, i) => i !== idx))}
-                                  >
-                                    Remove
-                                  </Button>
+                                  <div className="flex gap-1">
+                                    {idx !== mainImageIndex && (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        onClick={() => setMainImageIndex(idx)}
+                                        className="text-xs"
+                                      >
+                                        Set as Main
+                                      </Button>
+                                    )}
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      onClick={() => {
+                                        setImages(imgs => imgs.filter((_, i) => i !== idx))
+                                        if (idx === mainImageIndex) {
+                                          setMainImageIndex(0)
+                                        } else if (idx < mainImageIndex) {
+                                          setMainImageIndex(mainImageIndex - 1)
+                                        }
+                                      }}
+                                    >
+                                      Remove
+                                    </Button>
+                                  </div>
                                 </li>
                               ))}
                             </ul>

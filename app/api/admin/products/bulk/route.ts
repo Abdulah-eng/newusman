@@ -80,7 +80,13 @@ export async function POST(req: Request) {
       // Images
       const images = (row.images || '').split('|').map(s => s.trim()).filter(Boolean)
       if (images.length) {
-        const imageRows = images.map((url, index) => ({ product_id: productId, image_url: url, is_main_image: index === 0 }))
+        const mainImageIndex = parseInt(row.mainImageIndex) || 0
+        const imageRows = images.map((url, index) => ({ 
+          product_id: productId, 
+          image_url: url, 
+          is_main_image: index === mainImageIndex,
+          sort_order: index
+        }))
         const { error } = await supabase.from('product_images').insert(imageRows as any)
         if (error) console.error('product_images insert', error)
       }
