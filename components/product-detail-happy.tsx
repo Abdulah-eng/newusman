@@ -14,6 +14,7 @@ import { getFeatureIcon } from "@/lib/icon-mapping"
 import { BasketSidebar } from "@/components/basket-sidebar"
 import { SizeSelectionModal } from "@/components/size-selection-modal"
 import { ColorSelectionModal } from "@/components/color-selection-modal"
+import { ImageMagnifier } from "@/components/image-magnifier"
 
 
 
@@ -1794,9 +1795,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
             <div 
               className="relative w-full h-96 lg:h-[28rem] xl:h-[32rem] rounded-xl overflow-hidden bg-gray-50 cursor-pointer mb-4 flex items-center justify-center group" 
               onClick={() => {
-              const currentIndex = gallery.findIndex(img => img === selectedImage);
-              setModalImageIndex(currentIndex >= 0 ? currentIndex : 0);
-              setImageModalOpen(true);
+                const currentIndex = gallery.findIndex(img => img === selectedImage);
+                setModalImageIndex(currentIndex >= 0 ? currentIndex : 0);
+                setImageModalOpen(true);
               }}
               onKeyDown={(e) => {
                 if (gallery.length > 1) {
@@ -1817,29 +1818,17 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
               role="button"
               aria-label={`View ${product.name} image gallery`}
             >
-
               <Image 
-
                 src={selectedImage || product.image || "/placeholder.svg"} 
-
                 alt={product.name} 
-
                 fill 
-
                 className="object-contain"
-
                 priority
-
                 onError={(e) => {
-
                   console.error('Image failed to load:', e)
-
                   const target = e.target as HTMLImageElement
-
                   target.src = "/placeholder.svg"
-
                 }}
-
               />
 
               {/* Navigation Arrows - Only show when gallery has multiple images */}
@@ -4590,44 +4579,46 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
         <div className="fixed inset-0 bg-white z-50 flex items-center justify-center p-4">
 
-          <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center">
+          <div className="relative max-w-7xl max-h-[90vh] w-full h-[90vh] flex items-center justify-center">
 
             {/* Close Button */}
 
-            <button
+            <div className="absolute top-4 right-4 z-10 flex gap-2">
 
-              onClick={() => setImageModalOpen(false)}
+              <button
 
-              className="absolute top-4 right-4 z-10 w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-700 backdrop-blur-sm transition-all duration-200 hover:scale-110"
+                onClick={() => setImageModalOpen(false)}
 
-              aria-label="Close modal"
+                className="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-700 backdrop-blur-sm transition-all duration-200 hover:scale-110"
 
-            >
+                aria-label="Close modal"
 
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              >
 
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
-              </svg>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
 
-            </button>
+                </svg>
+
+              </button>
+
+            </div>
 
 
 
-            {/* Main Image */}
+            {/* Main Image with Magnifier */}
 
-            <div className="relative w-full h-full flex items-center justify-center">
+            <div className="relative w-full h-full flex items-center justify-center min-h-[400px]">
 
-              <Image 
-
-                src={gallery[modalImageIndex] || "/placeholder.svg"} 
-
-                alt={product.name} 
-
-                fill 
-
-                className="object-contain" 
-
+              <ImageMagnifier
+                src={gallery[modalImageIndex] || "/placeholder.svg"}
+                alt={product.name}
+                width={800}
+                height={600}
+                className="w-full h-full max-w-full max-h-full"
+                magnifierSize={250}
+                zoomLevel={1.8}
               />
 
             </div>
@@ -5010,7 +5001,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
       />
 
-
+      {/* Full Size Image Crop Modal */}
 
       </div>
 

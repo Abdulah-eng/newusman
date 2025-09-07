@@ -1769,8 +1769,10 @@ function ProductForm() {
   const [newImage, setNewImage] = useState<string>('')
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
-  const [convertToWebP, setConvertToWebP] = useState<boolean>(true)
-  const [webpQuality, setWebpQuality] = useState<number>(90)
+  const [convertToWebP, setConvertToWebP] = useState<boolean>(true) // Default for new images
+  const [webpQuality, setWebpQuality] = useState<number>(90) // Default for new images
+  const [mainImageIndex, setMainImageIndex] = useState<number>(0)
+  const [imageWebPSettings, setImageWebPSettings] = useState<Map<string, { convert: boolean; quality: number }>>(new Map())
   const [cropModalOpen, setCropModalOpen] = useState<boolean>(false)
   const [imageToCrop, setImageToCrop] = useState<File | null>(null)
   const [croppedImages, setCroppedImages] = useState<Map<string, string>>(new Map())
@@ -2024,6 +2026,22 @@ function ProductForm() {
 
   const removeUploadedFile = (index: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index))
+    // Adjust main image index if needed
+    if (mainImageIndex >= uploadedFiles.length - 1) {
+      setMainImageIndex(Math.max(0, uploadedFiles.length - 2))
+    }
+  }
+
+  const setAsMainImage = (index: number) => {
+    setMainImageIndex(index)
+  }
+
+  const getImageWebPSetting = (fileName: string) => {
+    return imageWebPSettings.get(fileName) || { convert: convertToWebP, quality: webpQuality }
+  }
+
+  const setImageWebPSetting = (fileName: string, convert: boolean, quality: number) => {
+    setImageWebPSettings(prev => new Map(prev.set(fileName, { convert, quality })))
   }
 
   const updateDescriptionParagraph = (index: number, field: 'heading' | 'content' | 'image' | 'uploadedFile', value: string | File | null) => {
@@ -2427,15 +2445,16 @@ function ProductForm() {
         
         for (let i = 0; i < uploadedFiles.length; i++) {
           const file = uploadedFiles[i]
+          const webpSetting = getImageWebPSetting(file.name)
           
           try {
             // Use optimized upload API instead of direct Supabase upload
             const formData = new FormData()
             formData.append('file', file)
             formData.append('preset', 'large') // Use large preset for product images
-            formData.append('convert', String(convertToWebP))
-            formData.append('format', convertToWebP ? 'webp' : 'original')
-            if (convertToWebP) formData.append('quality', String(webpQuality))
+            formData.append('convert', String(webpSetting.convert))
+            formData.append('format', webpSetting.convert ? 'webp' : 'original')
+            if (webpSetting.convert) formData.append('quality', String(webpSetting.quality))
             
             const response = await fetch('/api/upload-optimized', {
               method: 'POST',
@@ -2567,7 +2586,17 @@ function ProductForm() {
             })
           }
           
-          alertMessage += `\n🎯 Images converted to WebP format for better performance!`
+          // Show WebP conversion summary
+          const webpConverted = successfulUploads.filter(r => r.fileName && getImageWebPSetting(r.fileName).convert).length
+          const originalFormat = successfulUploads.length - webpConverted
+          
+          if (webpConverted > 0 && originalFormat > 0) {
+            alertMessage += `\n🎯 ${webpConverted} images converted to WebP, ${originalFormat} kept in original format`
+          } else if (webpConverted > 0) {
+            alertMessage += `\n🎯 All images converted to WebP format for better performance!`
+          } else {
+            alertMessage += `\n📷 All images uploaded in original format (WebP conversion disabled)`
+          }
           
           alert(alertMessage)
         }
@@ -2771,6 +2800,7 @@ function ProductForm() {
         // Include URL-based images so backend can persist them
         images: [...images, ...uploadedUrls],
         uploadedFiles: [],
+        mainImageIndex: mainImageIndex,
         variants,
         selectedFeatures,
         selectedReasonsToLove,
@@ -3129,43 +3159,6 @@ function ProductForm() {
               )}
             </div>
 
-            {/* WebP Conversion Settings */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <Label className="text-sm font-medium mb-3 block">Image Upload Settings</Label>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="convertToWebP"
-                    checked={convertToWebP}
-                    onChange={(e) => setConvertToWebP(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <Label htmlFor="convertToWebP" className="text-sm font-medium">
-                    Convert images to WebP format
-                  </Label>
-                </div>
-                {convertToWebP && (
-                  <div className="ml-7">
-                    <Label className="text-sm text-gray-600 mb-1 block">WebP Quality (1-100)</Label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="range"
-                        min="1"
-                        max="100"
-                        value={webpQuality}
-                        onChange={(e) => setWebpQuality(parseInt(e.target.value))}
-                        className="flex-1"
-                      />
-                      <span className="text-sm font-medium w-8">{webpQuality}</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Higher = better quality, larger file size
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
 
             {/* File Upload */}
             <div className="mb-4">
@@ -3182,7 +3175,11 @@ function ProductForm() {
               {uploadedFiles.length > 0 && (
                 <ul className="space-y-2">
                   {uploadedFiles.map((file, idx) => (
-                    <li key={`${file.name}-${idx}`} className="flex items-center justify-between gap-2 p-2 bg-blue-50 rounded">
+                    <li key={`${file.name}-${idx}`} className={`flex items-center justify-between gap-2 p-2 rounded border-2 transition-all ${
+                      mainImageIndex === idx 
+                        ? 'bg-green-50 border-green-300' 
+                        : 'bg-blue-50 border-transparent hover:border-blue-200'
+                    }`}>
                       <div className="flex items-center gap-2">
                         {croppedImages.has(file.name) ? (
                           <img 
@@ -3201,11 +3198,57 @@ function ProductForm() {
                           </div>
                         )}
                         <div>
-                          <span className="text-sm font-medium text-blue-800">{file.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-blue-800">{file.name}</span>
+                            {mainImageIndex === idx && (
+                              <span className="px-2 py-1 bg-green-500 text-white text-xs rounded-full font-medium">
+                                MAIN
+                              </span>
+                            )}
+                          </div>
                           <span className="text-xs text-blue-600 block">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                          
+                          {/* Individual WebP Settings */}
+                          <div className="mt-2 flex items-center gap-2">
+                            <label className="flex items-center gap-1 text-xs">
+                              <input
+                                type="checkbox"
+                                checked={getImageWebPSetting(file.name).convert}
+                                onChange={(e) => setImageWebPSetting(file.name, e.target.checked, getImageWebPSetting(file.name).quality)}
+                                className="w-3 h-3"
+                              />
+                              <span className="text-gray-600">WebP</span>
+                            </label>
+                            {getImageWebPSetting(file.name).convert && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-gray-500">Quality:</span>
+                                <input
+                                  type="range"
+                                  min="1"
+                                  max="100"
+                                  value={getImageWebPSetting(file.name).quality}
+                                  onChange={(e) => setImageWebPSetting(file.name, true, Number(e.target.value))}
+                                  className="w-16 h-1"
+                                />
+                                <span className="text-xs text-gray-500 w-6">{getImageWebPSetting(file.name).quality}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => removeUploadedFile(idx)}>Remove</Button>
+                      <div className="flex gap-2">
+                        {mainImageIndex !== idx && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setAsMainImage(idx)}
+                            className="text-xs"
+                          >
+                            Set as Main
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" onClick={() => removeUploadedFile(idx)}>Remove</Button>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -3218,6 +3261,14 @@ function ProductForm() {
                 <strong>Total Images:</strong> {images.length + uploadedFiles.length}
                 {images.length > 0 && <span className="ml-2">• URLs: {images.length}</span>}
                 {uploadedFiles.length > 0 && <span className="ml-2">• Files: {uploadedFiles.length}</span>}
+                {uploadedFiles.length > 0 && (
+                  <div className="mt-2 text-green-600 font-medium">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      Main Image: {uploadedFiles[mainImageIndex]?.name || 'None selected'}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -67,16 +67,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     { heading: 'Terms', content: 'Warranty terms and conditions apply...' },
     { heading: 'Support', content: 'Dedicated customer support for warranty claims...' }
   ])
-  const [dimensions, setDimensions] = useState({
-    height: '25 cm',
-    length: 'L 190cm',
-    width: '135cm',
-    mattressSize: '135cm x L 190cm cm',
-    maxHeight: '25 cm',
-    weightCapacity: '200 kg',
-    pocketSprings: '1000 count',
-    comfortLayer: '8 cm',
-    supportLayer: '17 cm',
+    const [dimensions, setDimensions] = useState({
+      height: '25 cm',
+      length: 'L 190cm',
+      width: '135cm',
+      mattressSize: '135cm x L 190cm cm',
+      maxHeight: '25 cm',
+      weightCapacity: '200 kg',
+      pocketSprings: '1000 count',
+      comfortLayer: '8 cm',
+      supportLayer: '17 cm',
     dimensionDisclaimer: 'All measurements are approximate and may vary slightly.',
     show_basic_dimensions: true,
     show_mattress_specs: true,
@@ -110,9 +110,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [images, setImages] = useState<Array<{ id: string; url: string; file?: File }>>([])
   const [newImage, setNewImage] = useState<string>('')
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [mainImageIndex, setMainImageIndex] = useState<number>(0)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
-  const [convertToWebP, setConvertToWebP] = useState<boolean>(true)
-  const [webpQuality, setWebpQuality] = useState<number>(90)
+  const [convertToWebP, setConvertToWebP] = useState<boolean>(true) // Default for new images
+  const [webpQuality, setWebpQuality] = useState<number>(90) // Default for new images
+  const [imageWebPSettings, setImageWebPSettings] = useState<Map<string, { convert: boolean; quality: number }>>(new Map())
   const [cropModalOpen, setCropModalOpen] = useState<boolean>(false)
   const [imageToCrop, setImageToCrop] = useState<File | null>(null)
   const [croppedImages, setCroppedImages] = useState<Map<string, string>>(new Map())
@@ -329,7 +331,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const addImportantNotice = () => {
     if (newNotice.trim()) {
       setImportantNotices(prev => [...prev, {
-        id: crypto.randomUUID(),
+      id: crypto.randomUUID(),
         noticeText: newNotice,
         sortOrder: prev.length
       }])
@@ -436,6 +438,18 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setSelectedReasonsToLove(prev => prev.filter((_, i) => i !== index))
   }
 
+  const setAsMainImage = (index: number) => {
+    setMainImageIndex(index)
+  }
+
+  const getImageWebPSetting = (imageId: string) => {
+    return imageWebPSettings.get(imageId) || { convert: convertToWebP, quality: webpQuality }
+  }
+
+  const setImageWebPSetting = (imageId: string, convert: boolean, quality: number) => {
+    setImageWebPSettings(prev => new Map(prev.set(imageId, { convert, quality })))
+  }
+
   const updateReasonToLoveDescription = (index: number, description: string) => {
     setSelectedReasonsToLove(prev => prev.map((item, i) => 
       i === index ? { ...item, description } : item
@@ -507,20 +521,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       // Upload the cropped file
       try {
         // Use optimized upload API for additional images
-        const formData = new FormData()
-        formData.append('file', file)
+            const formData = new FormData()
+            formData.append('file', file)
         formData.append('preset', 'medium') // Use medium preset for additional images
         formData.append('convert', String(convert))
         formData.append('format', convert ? 'webp' : 'original')
         if (typeof quality === 'number') formData.append('quality', String(quality))
-        
-        const response = await fetch('/api/upload-optimized', {
-          method: 'POST',
-          body: formData
-        })
-        
-        if (response.ok) {
-          const result = await response.json()
+            
+            const response = await fetch('/api/upload-optimized', {
+              method: 'POST',
+              body: formData
+            })
+            
+            if (response.ok) {
+              const result = await response.json()
           console.log('[Edit Form] Cropped image optimized upload result:', result)
           
           // Add the cropped image to the images array
@@ -528,11 +542,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           setCroppedImages(prev => new Map(prev.set(imageToCrop.name, croppedImageUrl)))
           
           alert(`Image cropped and uploaded successfully!\n\n📁 File: ${file.name}\n📏 Original: ${(file.size / 1024 / 1024).toFixed(2)} MB\n🔄 New (WebP): ${(result.optimizedSize / 1024).toFixed(2)} MB\n💾 Savings: ${result.compressionRatio}%`)
-        } else {
-          const error = await response.json()
+            } else {
+              const error = await response.json()
           console.error('[Edit Form] Cropped image optimized upload error:', error)
           
-          // Fallback to regular upload
+            // Fallback to regular upload
           const fallbackFormData = new FormData()
           fallbackFormData.append('file', file)
           
@@ -578,30 +592,32 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       // Use toggle values for WebP conversion
       const convert = convertToWebP
       const quality = convertToWebP ? webpQuality : undefined
-      
-      try {
-        // Use optimized upload API for description images
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('preset', 'medium') // Use medium preset for description images
+            
+            try {
+              // Use optimized upload API for description images
+              const formData = new FormData()
+              formData.append('file', file)
+              formData.append('preset', 'medium') // Use medium preset for description images
         formData.append('convert', String(convert))
         formData.append('format', convert ? 'webp' : 'original')
         if (typeof quality === 'number') formData.append('quality', String(quality))
-        
-        const response = await fetch('/api/upload-optimized', {
-          method: 'POST',
-          body: formData
-        })
-        
-        if (response.ok) {
-          const result = await response.json()
+              
+              const response = await fetch('/api/upload-optimized', {
+                method: 'POST',
+                body: formData
+              })
+              
+              if (response.ok) {
+                const result = await response.json()
           
           // Show size comparison alert for description image
           const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
           const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
           const savingsPercent = result.compressionRatio
           
-          alert(`Description image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
+          // Show appropriate message based on WebP conversion setting
+          const conversionMessage = convert ? "Image converted to WebP format for better performance." : "Image uploaded in original format (WebP conversion disabled)."
+          alert(`Description image ${convert ? 'optimized' : 'uploaded'} successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New: ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\n${conversionMessage}`)
           
           // Update the description paragraph with the optimized image URL
           const newParagraphs = [...descriptionParagraphs]
@@ -609,11 +625,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           setDescriptionParagraphs(newParagraphs)
           
           console.log('[Edit Form] Description image optimized upload result:', result)
-        } else {
-          const error = await response.json()
+              } else {
+                const error = await response.json()
           console.error('[Edit Form] Description image optimized upload error:', error)
           
-          // Fallback to regular upload
+                // Fallback to regular upload
           const fallbackFormData = new FormData()
           fallbackFormData.append('file', file)
           
@@ -663,6 +679,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         airCirculationLevel,
         durabilityLevel,
         images: images.map(img => img.url), // Extract URLs from image objects
+        mainImageIndex: mainImageIndex,
         descriptionParagraphs,
         faqs,
         warrantySections,
@@ -739,20 +756,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   }
 
   if (error) {
-    return (
+  return (
       <div className="min-h-screen bg-gray-50">
         <AdminNav />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               <strong>Error:</strong> {error}
-            </div>
+          </div>
             <Link href="/admin/products">
               <Button variant="outline">Back to Products</Button>
             </Link>
           </div>
         </div>
-      </div>
+        </div>
     )
   }
 
@@ -766,11 +783,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               ← Back to Products
             </Link>
             <h1 className="text-3xl font-bold text-gray-900">Edit Product: {name}</h1>
-          </div>
+              </div>
           <Button onClick={handleSubmit} disabled={saving} className="bg-orange-600 hover:bg-orange-700">
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
-        </div>
+            </div>
 
         <form onSubmit={handleSubmit}>
           <Tabs defaultValue="basic" className="space-y-6">
@@ -792,13 +809,13 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="name">Product Name</Label>
-                    <Input
+                <Input 
                       id="name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Enter product name"
-                    />
-                  </div>
+                />
+              </div>
                   <div>
                     <Label htmlFor="category">Category</Label>
                     <select
@@ -813,7 +830,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         </option>
                       ))}
                     </select>
-                  </div>
+            </div>
                   <div>
                     <Label htmlFor="rating">Rating</Label>
                     <Input
@@ -825,7 +842,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                       value={rating}
                       onChange={(e) => setRating(parseFloat(e.target.value))}
                     />
-                  </div>
+              </div>
                   <div>
                     <Label htmlFor="headline">Headline</Label>
                     <Input
@@ -834,8 +851,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                       onChange={(e) => setHeadline(e.target.value)}
                       placeholder="Enter product headline"
                     />
-                  </div>
-                </div>
+            </div>
+          </div>
                 <div className="mt-4">
                   <Label htmlFor="longDescription">Long Description</Label>
                   <Textarea
@@ -845,9 +862,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     placeholder="Enter detailed product description"
                     rows={4}
                   />
-                </div>
+        </div>
                 
-              </Card>
+      </Card>
             </TabsContent>
 
             {/* Images Tab */}
@@ -855,43 +872,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               <Card className="p-6">
                 <h2 className="text-xl font-semibold mb-4">Product Images</h2>
                 <div className="space-y-4">
-                  {/* WebP Conversion Settings */}
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <Label className="text-sm font-medium mb-3 block">Image Upload Settings</Label>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          id="convertToWebP"
-                          checked={convertToWebP}
-                          onChange={(e) => setConvertToWebP(e.target.checked)}
-                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                        />
-                        <Label htmlFor="convertToWebP" className="text-sm font-medium">
-                          Convert images to WebP format
-                        </Label>
-                      </div>
-                      {convertToWebP && (
-                        <div className="ml-7">
-                          <Label className="text-sm text-gray-600 mb-1 block">WebP Quality (1-100)</Label>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="range"
-                              min="1"
-                              max="100"
-                              value={webpQuality}
-                              onChange={(e) => setWebpQuality(parseInt(e.target.value))}
-                              className="flex-1"
-                            />
-                            <span className="text-sm font-medium w-8">{webpQuality}</span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Higher = better quality, larger file size
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
 
                   <div>
                     <Label>Add Images</Label>
@@ -910,8 +890,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             <div className="mt-2 text-sm text-blue-600">
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 inline-block mr-2"></div>
                               Uploading and optimizing images...
-                            </div>
-                          )}
+                          </div>
+                        )}
                           <p className="text-xs text-gray-500 mt-1">
                             Images will be processed according to your upload settings above
                           </p>
@@ -926,7 +906,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                               value={newImage} 
                               onChange={e => setNewImage(e.target.value)} 
                             />
-                            <Button 
+                              <Button
                               onClick={() => { 
                                 if (newImage.trim()) { 
                                   setImages(imgs => [...imgs, { id: crypto.randomUUID(), url: newImage.trim(), file: undefined }]); 
@@ -935,8 +915,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                               }}
                             >
                               Add URL
-                            </Button>
-                          </div>
+                              </Button>
+                            </div>
                         </div>
 
                         {/* Display Images */}
@@ -953,6 +933,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                   className={`flex items-center justify-between gap-2 p-3 rounded border transition-all duration-200 cursor-move ${
                                     draggedIndex === idx 
                                       ? 'bg-blue-100 border-blue-300 shadow-lg transform scale-105' 
+                                      : mainImageIndex === idx
+                                      ? 'bg-green-50 border-green-300 hover:border-green-400'
                                       : 'bg-gray-50 border-gray-200 hover:border-gray-300 hover:shadow-md'
                                   }`}
                                   draggable
@@ -984,9 +966,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                     <div className="flex flex-col gap-1">
                                       <div className="w-6 h-6 bg-gray-300 rounded flex items-center justify-center text-xs font-medium text-gray-600">
                                         {idx + 1}
-                                      </div>
+                          </div>
                                       <div className="text-xs text-gray-500 text-center">Drag</div>
-                                    </div>
+                        </div>
                                     <div className="flex flex-col gap-1">
                                       <button
                                         type="button"
@@ -1007,7 +989,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => {
+                   onClick={() => {
                                           if (idx < images.length - 1) {
                                             const newImages = [...images]
                                             const temp = newImages[idx]
@@ -1022,7 +1004,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                       >
                                         ↓
                                       </button>
-                                    </div>
+                     </div>
                                     <img 
                                       src={image.url} 
                                       alt={`Product image ${idx + 1}`} 
@@ -1033,30 +1015,91 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                       }}
                                     />
                                     <div className="flex-1 min-w-0">
-                                      <div className="truncate text-sm text-gray-700">{image.url}</div>
+                                      <div className="flex items-center gap-2">
+                                        <div className="truncate text-sm text-gray-700">{image.url}</div>
+                                        {mainImageIndex === idx && (
+                                          <span className="px-2 py-1 bg-green-500 text-white text-xs rounded-full font-medium">
+                                            MAIN
+                                          </span>
+                                        )}
+                                      </div>
                                       <div className="text-xs text-gray-500">Position {idx + 1}</div>
-                                    </div>
-                                  </div>
+                                      
+                                      {/* Individual WebP Settings */}
+                                      <div className="mt-2 flex items-center gap-2">
+                                        <label className="flex items-center gap-1 text-xs">
+                                          <input
+                                            type="checkbox"
+                                            checked={getImageWebPSetting(image.id).convert}
+                                            onChange={(e) => setImageWebPSetting(image.id, e.target.checked, getImageWebPSetting(image.id).quality)}
+                                            className="w-3 h-3"
+                                          />
+                                          <span className="text-gray-600">WebP</span>
+                                        </label>
+                                        {getImageWebPSetting(image.id).convert && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-xs text-gray-500">Quality:</span>
+                                            <input
+                                              type="range"
+                                              min="1"
+                                              max="100"
+                                              value={getImageWebPSetting(image.id).quality}
+                                              onChange={(e) => setImageWebPSetting(image.id, true, Number(e.target.value))}
+                                              className="w-16 h-1"
+                                            />
+                                            <span className="text-xs text-gray-500 w-6">{getImageWebPSetting(image.id).quality}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                   </div>
+                 </div>
                                   <div className="flex gap-1">
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm" 
+                                    {mainImageIndex !== idx && (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        onClick={() => setAsMainImage(idx)}
+                                        className="text-xs"
+                                      >
+                                        Set as Main
+                                      </Button>
+                                    )}
+                     <Button 
+                       variant="ghost" 
+                       size="sm" 
                                       onClick={() => {
                                         setImages(imgs => imgs.filter((_, i) => i !== idx))
+                                        // Adjust main image index if needed
+                                        if (mainImageIndex >= images.length - 1) {
+                                          setMainImageIndex(Math.max(0, images.length - 2))
+                                        }
                                       }}
-                                    >
-                                      Remove
-                                    </Button>
-                                  </div>
+                     >
+                       Remove
+                     </Button>
+                   </div>
                                 </li>
                               ))}
                             </ul>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                </div>
-              </Card>
+                            {images.length > 0 && (
+                              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                                <div className="text-sm text-gray-600">
+                                  <strong>Total Images:</strong> {images.length}
+                                  <div className="mt-2 text-green-600 font-medium">
+                                    <span className="inline-flex items-center gap-1">
+                                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                      Main Image: Position {mainImageIndex + 1}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+             </div>
+           )}
+         </div>
+          </div>
+        </div>
+      </Card>
             </TabsContent>
 
             {/* Variants Tab */}
@@ -1067,97 +1110,97 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   <Button onClick={addVariant} className="bg-blue-600 hover:bg-blue-700">
                     Add New Variant
                   </Button>
-                </div>
+              </div>
                 <div className="space-y-4">
                   {variants.map((variant, index) => (
                     <div key={variant.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="font-medium">Variant {index + 1}</h3>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
                           onClick={() => removeVariant(variant.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
+                            className="text-red-600 hover:text-red-700"
+                          >
                           Remove
-                        </Button>
-                      </div>
+                          </Button>
+                        </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div>
+            <div>
                           <Label>SKU</Label>
-                          <Input
+              <Input 
                             value={variant.sku || ''}
                             onChange={(e) => updateVariant(variant.id, { sku: e.target.value })}
                             placeholder="SKU"
-                          />
-                        </div>
+              />
+            </div>
                         {useSize && (
-                          <div>
+            <div>
                             <Label>Size</Label>
-                            <Input
+              <Input 
                               value={variant.size || ''}
                               onChange={(e) => updateVariant(variant.id, { size: e.target.value })}
                               placeholder="Size"
-                            />
-                          </div>
+              />
+            </div>
                         )}
                         {useColor && (
-                          <div>
+              <div>
                             <Label>Color</Label>
-                            <Input
+                <Input 
                               value={variant.color || ''}
                               onChange={(e) => updateVariant(variant.id, { color: e.target.value })}
                               placeholder="Color"
-                            />
-                          </div>
+                />
+               </div>
                         )}
                         {useDepth && (
-                          <div>
+              <div>
                             <Label>Depth</Label>
                             <Input
                               value={variant.depth || ''}
                               onChange={(e) => updateVariant(variant.id, { depth: e.target.value })}
                               placeholder="Depth"
-                            />
-                          </div>
+                />
+              </div>
                         )}
                         {useFirmness && (
-                          <div>
+        <div>
                             <Label>Firmness</Label>
                             <Input
                               value={variant.firmness || ''}
                               onChange={(e) => updateVariant(variant.id, { firmness: e.target.value })}
                               placeholder="Firmness"
-                            />
-                          </div>
+          />
+        </div>
                         )}
-                        <div>
+        <div>
                           <Label>Length</Label>
                           <Input
                             value={variant.length || ''}
                             onChange={(e) => updateVariant(variant.id, { length: e.target.value })}
                             placeholder="Length"
-                          />
-                        </div>
-                        <div>
+          />
+        </div>
+          <div>
                           <Label>{(product.category || '').toLowerCase() === 'sofas' ? 'Depth' : 'Width'}</Label>
-                          <Input
+            <Input 
                             value={((product.category || '').toLowerCase() === 'sofas' ? variant.depth : variant.width) || ''}
                             onChange={(e) => (product.category || '').toLowerCase() === 'sofas' 
                               ? updateVariant(variant.id, { depth: e.target.value }) 
                               : updateVariant(variant.id, { width: e.target.value })}
                             placeholder={(product.category || '').toLowerCase() === 'sofas' ? 'Depth' : 'Width'}
-                          />
-                        </div>
-                        <div>
+            />
+          </div>
+          <div>
                           <Label>Height</Label>
-                          <Input
+            <Input 
                             value={variant.height || ''}
                             onChange={(e) => updateVariant(variant.id, { height: e.target.value })}
                             placeholder="Height"
-                          />
-                        </div>
-                        <div>
+            />
+          </div>
+          <div>
                           <Label>Availability</Label>
                           <select
                             value={variant.availability ? 'true' : 'false'}
@@ -1167,39 +1210,39 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             <option value="true">Available</option>
                             <option value="false">Not Available</option>
                           </select>
-                        </div>
-                        <div>
+          </div>
+          <div>
                           <Label>Original Price</Label>
-                          <Input
+              <Input 
                             type="number"
                             step="0.01"
                             value={variant.originalPrice || ''}
                             onChange={(e) => updateVariant(variant.id, { originalPrice: parseFloat(e.target.value) })}
                             placeholder="0.00"
-                          />
-                        </div>
-                        <div>
+              />
+            </div>
+          <div>
                           <Label>Current Price</Label>
-                          <Input
+              <Input 
                             type="number"
                             step="0.01"
                             value={variant.currentPrice || ''}
                             onChange={(e) => updateVariant(variant.id, { currentPrice: parseFloat(e.target.value) })}
                             placeholder="0.00"
-                          />
-                        </div>
-                        <div>
+              />
+            </div>
+          <div>
                           <Label>Variant Image</Label>
-                          <Input
+              <Input 
                             value={variant.variant_image || ''}
                             onChange={(e) => updateVariant(variant.id, { variant_image: e.target.value })}
                             placeholder="Image URL"
-                          />
-                        </div>
-                      </div>
-                    </div>
+              />
+            </div>
+          </div>
+            </div>
                   ))}
-                </div>
+          </div>
               </Card>
             </TabsContent>
 
@@ -1208,16 +1251,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               <Card className="p-6">
                 <h2 className="text-xl font-semibold mb-4">Content & Media</h2>
                 <div className="space-y-4">
-                  <div>
+          <div>
                     <Label htmlFor="warrantyDeliveryLine">Warranty & Delivery Line</Label>
-                    <Input
+              <Input 
                       id="warrantyDeliveryLine"
                       value={warrantyDeliveryLine}
                       onChange={(e) => setWarrantyDeliveryLine(e.target.value)}
                       placeholder="e.g., 10-Year Warranty • Free Delivery • 100-Night Trial"
-                    />
-                  </div>
-                  <div>
+              />
+            </div>
+          <div>
                     <Label htmlFor="careInstructions">Care Instructions</Label>
                     <Textarea
                       id="careInstructions"
@@ -1225,20 +1268,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                       onChange={(e) => setCareInstructions(e.target.value)}
                       placeholder="Enter care instructions"
                       rows={3}
-                    />
-                  </div>
+              />
+            </div>
                   <div>
                     <Label htmlFor="trialInformation">Trial Information</Label>
-                    <Textarea
+            <Textarea 
                       id="trialInformation"
                       value={trialInformation}
                       onChange={(e) => setTrialInformation(e.target.value)}
                       placeholder="Enter trial information"
                       rows={3}
                     />
-                  </div>
-                </div>
-              </Card>
+          </div>
+        </div>
+      </Card>
 
 
 
@@ -1247,12 +1290,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold">Important Notices</h2>
                   <Button onClick={addImportantNotice} variant="outline" size="sm">
-                    Add Notice
-                  </Button>
-                </div>
+            Add Notice
+          </Button>
+        </div>
                 <div className="space-y-4">
                   <div className="flex gap-2">
-                    <Input
+                    <Input 
                       placeholder="Enter important notice"
                       value={newNotice}
                       onChange={(e) => setNewNotice(e.target.value)}
@@ -1262,18 +1305,18 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   {importantNotices.map((notice) => (
                     <div key={notice.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <span className="text-sm">{notice.noticeText}</span>
-                      <Button 
+                <Button
                         onClick={() => removeImportantNotice(notice.id)}
-                        variant="ghost" 
-                        size="sm"
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </Card>
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
+          </div>
+      </Card>
             </TabsContent>
 
             {/* Description Tab */}
@@ -1284,7 +1327,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   <Button onClick={addDescriptionParagraph} variant="outline" size="sm">
                     Add Paragraph
                   </Button>
-                </div>
+        </div>
                 <p className="text-sm text-gray-600 mb-4">Add 3 description paragraphs with images for the product page.</p>
                 <div className="space-y-4">
                   {descriptionParagraphs.map((para, index) => (
@@ -1299,17 +1342,17 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         >
                           Remove
                         </Button>
-                      </div>
+                  </div>
                       <div className="space-y-3">
-                        <div>
+                    <div>
                           <Label>Heading</Label>
                           <Input
                             value={para.heading}
                             onChange={(e) => updateDescriptionParagraph(index, 'heading', e.target.value)}
                             placeholder="Enter heading"
                           />
-                        </div>
-                        <div>
+                    </div>
+          <div>
                           <Label>Content</Label>
                           <Textarea
                             value={para.content}
@@ -1317,8 +1360,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             placeholder="Enter content"
                             rows={3}
                           />
-                        </div>
-                        <div>
+          </div>
+          <div>
                           <Label>Image</Label>
                           <div className="space-y-2">
                             <Input
@@ -1332,14 +1375,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             />
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
-                                <input
+                <input 
                                   type="file"
                                   accept="image/*"
                                   onChange={(e) => handleDescriptionFileUpload(index, e)}
                                   className="text-sm"
                                 />
                                 <span className="text-sm text-gray-500">Upload image</span>
-                              </div>
+            </div>
                               {para.image && (
                                 <div className="flex items-center gap-2">
                                   <img 
@@ -1362,10 +1405,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                   >
                                     Remove Image
                                   </Button>
-                                </div>
+          </div>
                               )}
-                            </div>
-                          </div>
+          </div>
+          </div>
                         </div>
                       </div>
                     </div>
@@ -1379,62 +1422,62 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               <Card className="p-6">
                 <h2 className="text-xl font-semibold mb-4">Product Features</h2>
                 <div className="space-y-4">
-                  <div>
+              <div>
                     <Label>Firmness Scale</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {([
-                        'Soft',
-                        'Soft-Medium',
-                        'Medium',
-                        'Medium-Firm',
-                        'Firm',
-                        'Extra-firm',
-                      ] as const).map((val) => (
-                        <label key={val} className={`px-3 py-1 rounded border cursor-pointer text-sm ${firmnessScale===val ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {([
+                    'Soft',
+                    'Soft-Medium',
+                    'Medium',
+                    'Medium-Firm',
+                    'Firm',
+                    'Extra-firm',
+                  ] as const).map((val) => (
+                    <label key={val} className={`px-3 py-1 rounded border cursor-pointer text-sm ${firmnessScale===val ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
                           <input type="radio" name="firmness" className="mr-1" checked={firmnessScale===val} onChange={() => setFirmnessScale(val)} />{val}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>Support</Label>
-                      <div className="flex gap-2 mt-2">
-                        {(['Low','Medium','High'] as const).map(l => (
-                          <label key={`support-${l}`} className={`px-3 py-1 rounded border cursor-pointer text-sm ${supportLevel===l ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
-                            <input type="radio" name="support" className="mr-1" checked={supportLevel===l} onChange={() => setSupportLevel(l)} />{l}
-                          </label>
-                        ))}
-                      </div>
-                      <Label className="mt-3 block">Pressure Relief</Label>
-                      <div className="flex gap-2 mt-2">
-                        {(['Low','Medium','High'] as const).map(l => (
-                          <label key={`pressure-${l}`} className={`px-3 py-1 rounded border cursor-pointer text-sm ${pressureReliefLevel===l ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
-                            <input type="radio" name="pressure" className="mr-1" checked={pressureReliefLevel===l} onChange={() => setPressureReliefLevel(l)} />{l}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Air Circulation</Label>
-                      <div className="flex gap-2 mt-2">
-                        {(['Low','Medium','High'] as const).map(l => (
-                          <label key={`air-${l}`} className={`px-3 py-1 rounded border cursor-pointer text-sm ${airCirculationLevel===l ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
-                            <input type="radio" name="air" className="mr-1" checked={airCirculationLevel===l} onChange={() => setAirCirculationLevel(l)} />{l}
-                          </label>
-                        ))}
-                      </div>
-                      <Label className="mt-3 block">Durability</Label>
-                      <div className="flex gap-2 mt-2">
-                        {(['Low','Medium','High'] as const).map(l => (
-                          <label key={`durability-${l}`} className={`px-3 py-1 rounded border cursor-pointer text-sm ${durabilityLevel===l ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
-                            <input type="radio" name="durability" className="mr-1" checked={durabilityLevel===l} onChange={() => setDurabilityLevel(l)} />{l}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                    </label>
+                  ))}
                 </div>
+              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Support</Label>
+                <div className="flex gap-2 mt-2">
+                  {(['Low','Medium','High'] as const).map(l => (
+                    <label key={`support-${l}`} className={`px-3 py-1 rounded border cursor-pointer text-sm ${supportLevel===l ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
+                      <input type="radio" name="support" className="mr-1" checked={supportLevel===l} onChange={() => setSupportLevel(l)} />{l}
+                    </label>
+                  ))}
+                </div>
+                <Label className="mt-3 block">Pressure Relief</Label>
+                <div className="flex gap-2 mt-2">
+                  {(['Low','Medium','High'] as const).map(l => (
+                    <label key={`pressure-${l}`} className={`px-3 py-1 rounded border cursor-pointer text-sm ${pressureReliefLevel===l ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
+                      <input type="radio" name="pressure" className="mr-1" checked={pressureReliefLevel===l} onChange={() => setPressureReliefLevel(l)} />{l}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label>Air Circulation</Label>
+                <div className="flex gap-2 mt-2">
+                  {(['Low','Medium','High'] as const).map(l => (
+                    <label key={`air-${l}`} className={`px-3 py-1 rounded border cursor-pointer text-sm ${airCirculationLevel===l ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
+                      <input type="radio" name="air" className="mr-1" checked={airCirculationLevel===l} onChange={() => setAirCirculationLevel(l)} />{l}
+                    </label>
+                  ))}
+                </div>
+                      <Label className="mt-3 block">Durability</Label>
+                <div className="flex gap-2 mt-2">
+                  {(['Low','Medium','High'] as const).map(l => (
+                    <label key={`durability-${l}`} className={`px-3 py-1 rounded border cursor-pointer text-sm ${durabilityLevel===l ? 'bg-orange-50 border-orange-400' : 'bg-white border-gray-200'}`}>
+                      <input type="radio" name="durability" className="mr-1" checked={durabilityLevel===l} onChange={() => setDurabilityLevel(l)} />{l}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
               </Card>
 
               {/* Product Badges Section */}
@@ -1485,7 +1528,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     </div>
                     <span className="text-sm text-gray-500">Shows when product comes with free gift</span>
                   </label>
-                </div>
+                      </div>
               </Card>
 
               {/* Mattress Features Section */}
@@ -1508,9 +1551,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         <span className="text-sm text-gray-800">{feature}</span>
                       </label>
                     ))}
-                  </div>
-                </div>
-              </Card>
+                          </div>
+            </div>
+      </Card>
 
               {/* Popular Categories Section */}
               <Card className="p-6">
@@ -1529,14 +1572,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                       <span className="text-sm font-medium">{category.name}</span>
                     </label>
                   ))}
-                </div>
-                
+              </div>
+              
                 {selectedPopularCategories.length > 0 && (
                   <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-sm text-blue-800">
                       <strong>Selected:</strong> {selectedPopularCategories.join(', ')}
-                    </p>
-                  </div>
+                </p>
+              </div>
                 )}
               </Card>
 
@@ -1551,23 +1594,23 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   {getFeatureCardsForCategory(category).map((feature) => {
                     const isSelected = selectedReasonsToLove.some(item => item.reason === feature.title)
                     const IconComponent = getIconComponentAdmin(feature.icon)
-                    
-                    return (
-                      <div
+                      
+                      return (
+                        <div 
                         key={feature.id}
                         className={`border-2 rounded-lg p-4 cursor-pointer transition-all duration-200 ${
-                          isSelected
+                            isSelected 
                             ? 'border-orange-500 bg-orange-50 shadow-md'
                             : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                        }`}
-                        onClick={() => {
-                          if (isSelected) {
+                          }`}
+                          onClick={() => {
+                            if (isSelected) {
                             // Remove if already selected
                             const index = selectedReasonsToLove.findIndex(item => item.reason === feature.title)
                             if (index !== -1) {
                               removeReasonToLove(index)
                             }
-                          } else {
+                            } else {
                             // Add if not selected
                             addReasonToLove(feature.title, feature.description, '', feature.icon)
                           }
@@ -1576,15 +1619,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         <div className="text-center">
                           <div className="w-12 h-12 mx-auto mb-3 text-orange-500 flex items-center justify-center">
                             <IconComponent />
-                          </div>
+                              </div>
                           <h3 className="text-sm font-semibold text-gray-900 mb-2">{feature.title}</h3>
                           <p className="text-xs text-gray-600 leading-relaxed">{feature.description}</p>
+                          </div>
                         </div>
-                      </div>
-                    )
+                      )
                   })}
-                </div>
-                
+            </div>
+
                 {/* Display selected features with custom description inputs */}
                 {selectedReasonsToLove.length > 0 && (
                   <div className="mt-4 space-y-3">
@@ -1600,8 +1643,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             className="text-red-600 hover:text-red-700"
                           >
                             Remove
-                          </Button>
-                        </div>
+                  </Button>
+                </div>
                         <Textarea
                           placeholder="Customize the description or leave as default..."
                           value={item.description}
@@ -1620,14 +1663,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                           <p className="text-xs text-gray-500 mt-1">
                             This text will appear below the icon in the feature card on the product page.
                           </p>
-                        </div>
+              </div>
                         <p className="text-xs text-gray-500 mt-1">
                           Leave empty to use the default description, or customize it for this specific product.
                         </p>
-                      </div>
+            </div>
                     ))}
-                  </div>
-                )}
+        </div>
+      )}
 
                 {/* Create a custom feature card */}
                 <div className="mt-6 p-4 border rounded-lg">
@@ -1640,7 +1683,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         value={newLoveReason}
                         onChange={(e) => setNewLoveReason(e.target.value)}
                       />
-                    </div>
+              </div>
                     <div className="md:col-span-2">
                       <Label className="text-xs">Description</Label>
                       <Input
@@ -1648,7 +1691,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         value={newLoveDescription}
                         onChange={(e) => setNewLoveDescription(e.target.value)}
                       />
-                    </div>
+                  </div>
                     <div className="md:col-span-3">
                       <Label className="text-xs">Small Text (optional)</Label>
                       <Input
@@ -1656,8 +1699,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         value={newLoveSmalltext}
                         onChange={(e) => setNewLoveSmalltext(e.target.value)}
                       />
-                    </div>
-                  </div>
+                </div>
+              </div>
                   <div className="mt-3">
                     <Button
                       type="button"
@@ -1672,7 +1715,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     >
                       Add Feature Card
                     </Button>
-                  </div>
+            </div>
                 </div>
               </Card>
 
@@ -1724,7 +1767,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     <label htmlFor="show_basic_dimensions_edit" className="text-sm font-medium text-gray-700">
                       Show Basic Dimensions Section
                     </label>
-                  </div>
+                          </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label>Height</Label>
@@ -1733,7 +1776,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         onChange={(e) => setDimensions({...dimensions, height: e.target.value})}
                         placeholder="25 cm"
                       />
-                    </div>
+                        </div>
                     <div>
                       <Label>Length</Label>
                       <Input
@@ -1741,7 +1784,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         onChange={(e) => setDimensions({...dimensions, length: e.target.value})}
                         placeholder="L 190cm"
                       />
-                    </div>
+                      </div>
                     <div>
                       <Label>Width</Label>
                       <Input
@@ -1750,8 +1793,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         placeholder="135cm"
                       />
                     </div>
+                    </div>
                   </div>
-                </div>
 
                 {/* Section 2: Mattress Specifications */}
                 <div className="mb-6 p-4 border border-gray-200 rounded-lg">
@@ -1764,7 +1807,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     <label htmlFor="show_mattress_specs_edit" className="text-sm font-medium text-gray-700">
                       Show Mattress Specifications Section
                     </label>
-                  </div>
+                      </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label>Mattress Size</Label>
@@ -1773,7 +1816,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         onChange={(e) => setDimensions({...dimensions, mattressSize: e.target.value})}
                         placeholder="135cm x L 190cm cm"
                       />
-                    </div>
+                        </div>
                     <div>
                       <Label>Max Height</Label>
                       <Input
@@ -1781,7 +1824,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         onChange={(e) => setDimensions({...dimensions, maxHeight: e.target.value})}
                         placeholder="25 cm"
                       />
-                    </div>
+                      </div>
                     <div>
                       <Label>Weight Capacity</Label>
                       <Input
@@ -1790,8 +1833,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         placeholder="200 kg"
                       />
                     </div>
+                    </div>
                   </div>
-                </div>
 
                 {/* Section 3: Technical Specifications */}
                 <div className="mb-6 p-4 border border-gray-200 rounded-lg">
@@ -1804,7 +1847,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     <label htmlFor="show_technical_specs_edit" className="text-sm font-medium text-gray-700">
                       Show Technical Specifications Section
                     </label>
-                  </div>
+                    </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label>Pocket Springs</Label>
@@ -1813,7 +1856,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         onChange={(e) => setDimensions({...dimensions, pocketSprings: e.target.value})}
                         placeholder="1000 count"
                       />
-                    </div>
+                  </div>
                     <div>
                       <Label>Comfort Layer</Label>
                       <Input
@@ -1821,7 +1864,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         onChange={(e) => setDimensions({...dimensions, comfortLayer: e.target.value})}
                         placeholder="8 cm"
                       />
-                    </div>
+              </div>
                     <div>
                       <Label>Support Layer</Label>
                       <Input
@@ -1829,7 +1872,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         onChange={(e) => setDimensions({...dimensions, supportLayer: e.target.value})}
                         placeholder="17 cm"
                       />
-                    </div>
+            </div>
                   </div>
                 </div>
               </Card>
@@ -1847,7 +1890,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     rows={2}
                   />
                   <p className="text-xs text-gray-500 mt-1">This disclaimer will appear below the dimension specifications on the product page.</p>
-                </div>
+              </div>
               </Card>
 
               {/* Important Notices */}
@@ -1859,7 +1902,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   <Button onClick={addImportantNotice} variant="outline" size="sm">
                     Add Notice
                   </Button>
-                </div>
+            </div>
                 
                 {importantNotices.length > 0 && (
                   <div className="space-y-3">
@@ -1878,7 +1921,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                               placeholder="Enter important notice text..."
                               className="flex-1"
                             />
-                          </div>
+          </div>
                           <div className="flex items-center gap-2">
                             <Label className="text-xs text-gray-600">Sort Order:</Label>
                             <Input 
@@ -1891,8 +1934,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                               }}
                               className="w-20 text-xs"
                             />
-                          </div>
-                        </div>
+        </div>
+         </div>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1903,18 +1946,18 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         </Button>
                       </div>
                     ))}
-                  </div>
-                )}
-                
+        </div>
+      )}
+
                 {importantNotices.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <p>No important notices added yet.</p>
                     <p className="text-sm">Click "Add Notice" to create your first important notice.</p>
-                  </div>
+              </div>
                 )}
               </Card>
             </TabsContent>
-
+              
             {/* Warranty Tab */}
             <TabsContent value="warranty" className="space-y-6">
               {/* FAQs */}
@@ -1924,7 +1967,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   <Button onClick={addFaq} variant="outline" size="sm">
                     Add FAQ
                   </Button>
-                </div>
+                  </div>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
@@ -1934,7 +1977,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         value={newFaq.question}
                         onChange={(e) => setNewFaq({...newFaq, question: e.target.value})}
                       />
-                    </div>
+                </div>
                     <div>
                       <Label>Answer</Label>
                       <Input
@@ -1942,8 +1985,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         value={newFaq.answer}
                         onChange={(e) => setNewFaq({...newFaq, answer: e.target.value})}
                       />
-                    </div>
-                  </div>
+              </div>
+            </div>
                   <Button onClick={addFaq}>Add FAQ</Button>
                   
                   {faqs.map((faq, index) => (
@@ -1958,11 +2001,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         >
                           Remove
                         </Button>
-                      </div>
+              </div>
                       <div className="space-y-3">
                         <div>
                           <Label>Question</Label>
-                          <Input
+                <Input 
                             value={faq.question}
                             onChange={(e) => {
                               const newFaqs = [...faqs]
@@ -1971,7 +2014,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             }}
                             placeholder="Enter question"
                           />
-                        </div>
+              </div>
                         <div>
                           <Label>Answer</Label>
                           <Textarea
@@ -1984,9 +2027,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             placeholder="Enter answer"
                             rows={3}
                           />
+            </div>
+                </div>
                         </div>
-                      </div>
-                    </div>
                   ))}
                 </div>
               </Card>
@@ -2021,7 +2064,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             onChange={(e) => updateWarrantySection(index, 'heading', e.target.value)}
                             placeholder="Enter heading"
                           />
-                        </div>
+                              </div>
                         <div>
                           <Label>Content</Label>
                           <Textarea
@@ -2030,16 +2073,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             placeholder="Enter content"
                             rows={3}
                           />
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
                 </div>
+                  ))}
+            </div>
               </Card>
             </TabsContent>
           </Tabs>
         </form>
-      </div>
+          </div>
 
       {/* Image Crop Modal */}
       <ImageCropModal
