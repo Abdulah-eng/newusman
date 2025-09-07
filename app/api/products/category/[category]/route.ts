@@ -7,6 +7,10 @@ export async function GET(
 ) {
   try {
     const { category } = await params
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '8')
+    const offset = (page - 1) * limit
 
     // OPTIMIZATION: Add caching headers for better performance
     const cacheControl = 'public, s-maxage=300, stale-while-revalidate=600' // Cache for 5 minutes, stale for 10 minutes
@@ -15,7 +19,7 @@ export async function GET(
     if (category === 'kids') {
       console.log('🔍 Kids Category: Fetching products with show_in_kids_category = true')
       // For kids page, fetch products where show_in_kids_category is true
-      const { data: products, error: productsError } = await supabase
+      const { data: products, error: productsError, count: totalCount } = await supabase
         .from('products')
         .select(`
           *,
@@ -31,8 +35,9 @@ export async function GET(
           product_dimensions(*),
           product_popular_categories(*),
           product_dimension_images(*)
-        `)
+        `, { count: 'exact' })
         .eq('show_in_kids_category', true)
+        .range(offset, offset + limit - 1)
 
       if (productsError) {
         console.error('Error fetching kids products:', productsError)
@@ -163,19 +168,26 @@ export async function GET(
         }
       }) || [])
 
-      console.log(`🔍 Kids Category: Found ${transformedProducts.length} products`)
-      console.log(`🔍 Sale Category: Found ${transformedProducts.length} products`)
-          console.log(`🔍 Regular Category (${category}): Found ${transformedProducts.length} products`)
-    return NextResponse.json({
-      products: transformedProducts,
-      count: transformedProducts.length
-    })
+      console.log(`🔍 Kids Category: Found ${transformedProducts.length} products (page ${page} of ${Math.ceil((totalCount || 0) / limit)})`)
+      
+      return NextResponse.json({
+        products: transformedProducts,
+        count: transformedProducts.length,
+        totalCount: totalCount || 0,
+        page,
+        limit,
+        totalPages: Math.ceil((totalCount || 0) / limit)
+      }, {
+        headers: {
+          'Cache-Control': cacheControl
+        }
+      })
     }
 
     if (category === 'sale') {
       console.log('🔍 Sale Category: Fetching products with show_in_sales_category = true')
       // For sale page, fetch products where show_in_sales_category is true
-      const { data: products, error: productsError } = await supabase
+      const { data: products, error: productsError, count: totalCount } = await supabase
         .from('products')
         .select(`
           *,
@@ -191,8 +203,9 @@ export async function GET(
           product_dimensions(*),
           product_popular_categories(*),
           product_dimension_images(*)
-        `)
+        `, { count: 'exact' })
         .eq('show_in_sales_category', true)
+        .range(offset, offset + limit - 1)
 
       if (productsError) {
         console.error('Error fetching sale products:', productsError)
@@ -332,9 +345,15 @@ export async function GET(
         }
       }) || [])
 
+      console.log(`🔍 Sale Category: Found ${transformedProducts.length} products (page ${page} of ${Math.ceil((totalCount || 0) / limit)})`)
+      
       return NextResponse.json({
         products: transformedProducts,
-        count: transformedProducts.length
+        count: transformedProducts.length,
+        totalCount: totalCount || 0,
+        page,
+        limit,
+        totalPages: Math.ceil((totalCount || 0) / limit)
       }, {
         headers: {
           'Cache-Control': cacheControl
@@ -358,7 +377,7 @@ export async function GET(
     }
 
     // Get products with all related data
-    const { data: products, error: productsError } = await supabase
+    const { data: products, error: productsError, count: totalCount } = await supabase
       .from('products')
       .select(`
         *,
@@ -374,9 +393,10 @@ export async function GET(
         product_dimensions(*),
         product_popular_categories(*),
         product_dimension_images(*)
-      `)
+      `, { count: 'exact' })
       .eq('category_id', categoryData.id)
       .eq('categories.slug', category)
+      .range(offset, offset + limit - 1)
 
     if (productsError) {
       console.error('Error fetching products:', productsError)
@@ -516,9 +536,15 @@ export async function GET(
       }
     }) || [])
 
+    console.log(`🔍 Regular Category (${category}): Found ${transformedProducts.length} products (page ${page} of ${Math.ceil((totalCount || 0) / limit)})`)
+    
     return NextResponse.json({
       products: transformedProducts,
-      count: transformedProducts.length
+      count: transformedProducts.length,
+      totalCount: totalCount || 0,
+      page,
+      limit,
+      totalPages: Math.ceil((totalCount || 0) / limit)
     }, {
       headers: {
         'Cache-Control': cacheControl

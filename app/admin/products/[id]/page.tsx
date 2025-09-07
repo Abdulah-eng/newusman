@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { getFeatureCardsForCategory } from '@/lib/feature-cards'
 import { getFeaturesForCategory } from '@/lib/category-features'
+import { ImageCropModal } from '@/components/image-crop-modal'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -110,6 +111,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [newImage, setNewImage] = useState<string>('')
   const [uploadingImage, setUploadingImage] = useState(false)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [convertToWebP, setConvertToWebP] = useState<boolean>(true)
+  const [webpQuality, setWebpQuality] = useState<number>(90)
+  const [cropModalOpen, setCropModalOpen] = useState<boolean>(false)
+  const [imageToCrop, setImageToCrop] = useState<File | null>(null)
+  const [croppedImages, setCroppedImages] = useState<Map<string, string>>(new Map())
 
   // Categories
   const categories = [
@@ -475,95 +481,58 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   }
 
   // Image upload functions
-  const handleImageUpload = async (files: FileList | null) => {
+  const handleImageUpload = (files: FileList | null) => {
     if (!files || files.length === 0) return
+    
+    // Open crop modal for the first file
+    setImageToCrop(files[0])
+    setCropModalOpen(true)
+  }
+
+  const handleCropComplete = async (croppedImageUrl: string) => {
+    if (!imageToCrop) return
 
     try {
       setUploadingImage(true)
       
-      // Ask user whether to convert and desired quality
-      const convert = window.confirm('Convert these images to WebP? Click Cancel to upload original format.')
-      let quality: number | undefined = undefined
-      if (convert) {
-        const q = window.prompt('Enter WebP quality (1-100). Higher = better quality, larger size.', '90')
-        const parsed = q ? parseInt(q, 10) : NaN
-        if (!isNaN(parsed)) quality = Math.max(1, Math.min(100, parsed))
-      }
+      // Convert data URL to File
+      const response = await fetch(croppedImageUrl)
+      const blob = await response.blob()
+      const file = new File([blob], imageToCrop.name, { type: 'image/jpeg' })
       
-      // Collect upload results for summary alert
-      const uploadResults: Array<{
-        fileName: string
-        originalSize: number
-        optimizedSize: number
-        savingsPercent: string
-        success: boolean
-        error?: string
-      }> = []
+      // Use toggle values for WebP conversion
+      const convert = convertToWebP
+      const quality = convertToWebP ? webpQuality : undefined
       
-      const uploadPromises = Array.from(files).map(async (file) => {
-        try {
-          // Use optimized upload API for additional images
-          const formData = new FormData()
-          formData.append('file', file)
-          formData.append('preset', 'medium') // Use medium preset for additional images
-          formData.append('convert', String(convert))
-          formData.append('format', convert ? 'webp' : 'original')
-          if (typeof quality === 'number') formData.append('quality', String(quality))
+      // Upload the cropped file
+      try {
+        // Use optimized upload API for additional images
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('preset', 'medium') // Use medium preset for additional images
+        formData.append('convert', String(convert))
+        formData.append('format', convert ? 'webp' : 'original')
+        if (typeof quality === 'number') formData.append('quality', String(quality))
+        
+        const response = await fetch('/api/upload-optimized', {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          console.log('[Edit Form] Cropped image optimized upload result:', result)
           
-          const response = await fetch('/api/upload-optimized', {
-            method: 'POST',
-            body: formData
-          })
+          // Add the cropped image to the images array
+          setImages(prev => [...prev, { id: crypto.randomUUID(), url: result.url, file: undefined }])
+          setCroppedImages(prev => new Map(prev.set(imageToCrop.name, croppedImageUrl)))
           
-          if (response.ok) {
-            const result = await response.json()
-            
-            // Collect result for summary
-            uploadResults.push({
-              fileName: file.name,
-              originalSize: file.size,
-              optimizedSize: result.optimizedSize * 1024, // Convert KB to bytes for comparison
-              savingsPercent: result.compressionRatio,
-              success: true
-            })
-            
-            console.log('[Edit Form] Additional image optimized upload result:', result)
-            return { id: crypto.randomUUID(), url: result.url, file: undefined }
-          } else {
-            const error = await response.json()
-            console.error('[Edit Form] Additional image optimized upload error:', error)
-            
-            // Fallback to regular upload
-            const fallbackFormData = new FormData()
-            fallbackFormData.append('file', file)
-            
-            const res = await fetch('/api/upload', {
-              method: 'POST',
-              body: fallbackFormData,
-            })
-
-            if (!res.ok) {
-              const err = await res.json().catch(() => ({}))
-              throw new Error(err.error || 'Upload failed')
-            }
-
-            const json = await res.json()
-            
-            uploadResults.push({
-              fileName: file.name,
-              originalSize: file.size,
-              optimizedSize: file.size,
-              savingsPercent: '0',
-              success: false,
-              error: 'Fallback upload (no optimization)'
-            })
-            
-            return { id: crypto.randomUUID(), url: json.url, file: undefined }
-          }
-        } catch (error) {
-          console.error('[Edit Form] Additional image upload error:', error)
+          alert(`Image cropped and uploaded successfully!\n\n📁 File: ${file.name}\n📏 Original: ${(file.size / 1024 / 1024).toFixed(2)} MB\n🔄 New (WebP): ${(result.optimizedSize / 1024).toFixed(2)} MB\n💾 Savings: ${result.compressionRatio}%`)
+        } else {
+          const error = await response.json()
+          console.error('[Edit Form] Cropped image optimized upload error:', error)
           
-          // Final fallback to regular upload
+          // Fallback to regular upload
           const fallbackFormData = new FormData()
           fallbackFormData.append('file', file)
           
@@ -578,65 +547,25 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           }
 
           const json = await res.json()
+          console.log('[Edit Form] Cropped image fallback upload result:', json)
           
-          uploadResults.push({
-            fileName: file.name,
-            originalSize: file.size,
-            optimizedSize: file.size,
-            savingsPercent: '0',
-            success: false,
-            error: 'Upload failed'
-          })
+          // Add the cropped image to the images array
+          setImages(prev => [...prev, { id: crypto.randomUUID(), url: json.url, file: undefined }])
+          setCroppedImages(prev => new Map(prev.set(imageToCrop.name, croppedImageUrl)))
           
-          return { id: crypto.randomUUID(), url: json.url, file: undefined }
+          alert('Image cropped and uploaded successfully (fallback mode)')
         }
-      })
-
-      const uploadedImages = await Promise.all(uploadPromises)
-      setImages(prev => [...prev, ...uploadedImages])
-      
-      // Show summary alert for additional images
-      if (uploadResults.length > 0) {
-        const successfulUploads = uploadResults.filter(r => r.success)
-        const failedUploads = uploadResults.filter(r => !r.success)
-        
-        let alertMessage = `📸 Additional Images Upload Summary\n\n`
-        
-        if (successfulUploads.length > 0) {
-          const totalOriginalSize = successfulUploads.reduce((sum, r) => sum + r.originalSize, 0)
-          const totalOptimizedSize = successfulUploads.reduce((sum, r) => sum + r.optimizedSize, 0)
-          const totalSavings = ((totalOriginalSize - totalOptimizedSize) / totalOriginalSize * 100).toFixed(1)
-          
-          alertMessage += `✅ Successfully Optimized: ${successfulUploads.length} images\n`
-          alertMessage += `📏 Total Original Size: ${(totalOriginalSize / 1024 / 1024).toFixed(2)} MB\n`
-          alertMessage += `🔄 Total Optimized Size: ${(totalOptimizedSize / 1024 / 1024).toFixed(2)} MB\n`
-          alertMessage += `💾 Total Savings: ${totalSavings}%\n\n`
-          
-          // Add individual file details
-          successfulUploads.forEach(result => {
-            const originalMB = (result.originalSize / 1024 / 1024).toFixed(2)
-            const optimizedMB = (result.optimizedSize / 1024 / 1024).toFixed(2)
-            alertMessage += `📁 ${result.fileName}: ${originalMB} MB → ${optimizedMB} MB (${result.savingsPercent}% saved)\n`
-          })
-        }
-        
-        if (failedUploads.length > 0) {
-          alertMessage += `\n❌ Failed/Unoptimized: ${failedUploads.length} images\n`
-          failedUploads.forEach(result => {
-            const sizeMB = (result.originalSize / 1024 / 1024).toFixed(2)
-            alertMessage += `📁 ${result.fileName}: ${sizeMB} MB (${result.error})\n`
-          })
-        }
-        
-        alertMessage += `\n🎯 Images converted to WebP format for better performance!`
-        
-        alert(alertMessage)
+      } catch (error) {
+        console.error('[Edit Form] Cropped image upload error:', error)
+        alert('Failed to upload cropped image: ' + (error instanceof Error ? error.message : 'Unknown error'))
       }
-    } catch (error: any) {
-      console.error('Image upload error:', error)
-      alert(error?.message || 'Upload failed')
+    } catch (error) {
+      console.error('Error processing cropped image:', error)
+      alert('Error processing cropped image: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setUploadingImage(false)
+      setCropModalOpen(false)
+      setImageToCrop(null)
     }
   }
 
@@ -646,14 +575,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     if (files && files[0]) {
       const file = files[0]
       
-      // Ask user whether to convert and desired quality
-      const convert = window.confirm('Convert this description image to WebP? Click Cancel to upload original format.')
-      let quality: number | undefined = undefined
-      if (convert) {
-        const q = window.prompt('Enter WebP quality (1-100). Higher = better quality, larger size.', '90')
-        const parsed = q ? parseInt(q, 10) : NaN
-        if (!isNaN(parsed)) quality = Math.max(1, Math.min(100, parsed))
-      }
+      // Use toggle values for WebP conversion
+      const convert = convertToWebP
+      const quality = convertToWebP ? webpQuality : undefined
       
       try {
         // Use optimized upload API for description images
@@ -931,12 +855,50 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               <Card className="p-6">
                 <h2 className="text-xl font-semibold mb-4">Product Images</h2>
                 <div className="space-y-4">
-                                      <div>
-                      <Label>Add Images</Label>
-                      <div className="space-y-4">
-                        {/* File Upload */}
-                        <div>
-                          <Label className="text-sm font-medium mb-2 block">Upload Images (converted to WebP)</Label>
+                  {/* WebP Conversion Settings */}
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <Label className="text-sm font-medium mb-3 block">Image Upload Settings</Label>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          id="convertToWebP"
+                          checked={convertToWebP}
+                          onChange={(e) => setConvertToWebP(e.target.checked)}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <Label htmlFor="convertToWebP" className="text-sm font-medium">
+                          Convert images to WebP format
+                        </Label>
+                      </div>
+                      {convertToWebP && (
+                        <div className="ml-7">
+                          <Label className="text-sm text-gray-600 mb-1 block">WebP Quality (1-100)</Label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="range"
+                              min="1"
+                              max="100"
+                              value={webpQuality}
+                              onChange={(e) => setWebpQuality(parseInt(e.target.value))}
+                              className="flex-1"
+                            />
+                            <span className="text-sm font-medium w-8">{webpQuality}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Higher = better quality, larger file size
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Add Images</Label>
+                    <div className="space-y-4">
+                      {/* File Upload */}
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">Upload Images</Label>
                           <Input 
                             type="file" 
                             accept="image/*" 
@@ -951,7 +913,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             </div>
                           )}
                           <p className="text-xs text-gray-500 mt-1">
-                            Images will be automatically converted to WebP format for better performance
+                            Images will be processed according to your upload settings above
                           </p>
                         </div>
 
@@ -1376,7 +1338,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                   onChange={(e) => handleDescriptionFileUpload(index, e)}
                                   className="text-sm"
                                 />
-                                <span className="text-sm text-gray-500">Upload image (converted to WebP)</span>
+                                <span className="text-sm text-gray-500">Upload image</span>
                               </div>
                               {para.image && (
                                 <div className="flex items-center gap-2">
@@ -2078,6 +2040,18 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </Tabs>
         </form>
       </div>
+
+      {/* Image Crop Modal */}
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        onClose={() => {
+          setCropModalOpen(false)
+          setImageToCrop(null)
+        }}
+        onCrop={handleCropComplete}
+        imageFile={imageToCrop}
+        aspectRatio={1}
+      />
     </div>
   )
 }

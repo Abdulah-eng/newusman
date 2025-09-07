@@ -62,6 +62,7 @@ import { getHexForColorName } from '@/lib/utils'
 import { getIconComponent } from '@/lib/icon-mapping'
 import { getFeaturesForCategory as getFeaturesForCategoryLib } from '@/lib/category-features'
 import { getFeatureCardsForCategory as getFeatureCardsForCategoryLib } from '@/lib/feature-cards'
+import { ImageCropModal } from '@/components/image-crop-modal'
 
 type VariantRow = {
   id: string
@@ -1768,6 +1769,11 @@ function ProductForm() {
   const [newImage, setNewImage] = useState<string>('')
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [convertToWebP, setConvertToWebP] = useState<boolean>(true)
+  const [webpQuality, setWebpQuality] = useState<number>(90)
+  const [cropModalOpen, setCropModalOpen] = useState<boolean>(false)
+  const [imageToCrop, setImageToCrop] = useState<File | null>(null)
+  const [croppedImages, setCroppedImages] = useState<Map<string, string>>(new Map())
 
   const [name, setName] = useState('')
   const [rating, setRating] = useState<number>(4.5)
@@ -1995,10 +2001,25 @@ function ProductForm() {
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
-    if (files) {
-      const newFiles = Array.from(files)
-      setUploadedFiles(prev => [...prev, ...newFiles])
+    if (files && files[0]) {
+      setImageToCrop(files[0])
+      setCropModalOpen(true)
     }
+  }
+
+  const handleCropComplete = (croppedImageUrl: string) => {
+    if (imageToCrop) {
+      // Convert data URL to File
+      fetch(croppedImageUrl)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], imageToCrop.name, { type: 'image/jpeg' })
+          setUploadedFiles(prev => [...prev, file])
+          setCroppedImages(prev => new Map(prev.set(imageToCrop.name, croppedImageUrl)))
+        })
+    }
+    setCropModalOpen(false)
+    setImageToCrop(null)
   }
 
   const removeUploadedFile = (index: number) => {
@@ -2412,6 +2433,9 @@ function ProductForm() {
             const formData = new FormData()
             formData.append('file', file)
             formData.append('preset', 'large') // Use large preset for product images
+            formData.append('convert', String(convertToWebP))
+            formData.append('format', convertToWebP ? 'webp' : 'original')
+            if (convertToWebP) formData.append('quality', String(webpQuality))
             
             const response = await fetch('/api/upload-optimized', {
               method: 'POST',
@@ -2576,6 +2600,9 @@ function ProductForm() {
               const formData = new FormData()
               formData.append('file', file)
               formData.append('preset', 'medium') // Use medium preset for description images
+              formData.append('convert', String(convertToWebP))
+              formData.append('format', convertToWebP ? 'webp' : 'original')
+              if (convertToWebP) formData.append('quality', String(webpQuality))
               
               const response = await fetch('/api/upload-optimized', {
                 method: 'POST',
@@ -3102,6 +3129,44 @@ function ProductForm() {
               )}
             </div>
 
+            {/* WebP Conversion Settings */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <Label className="text-sm font-medium mb-3 block">Image Upload Settings</Label>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="convertToWebP"
+                    checked={convertToWebP}
+                    onChange={(e) => setConvertToWebP(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <Label htmlFor="convertToWebP" className="text-sm font-medium">
+                    Convert images to WebP format
+                  </Label>
+                </div>
+                {convertToWebP && (
+                  <div className="ml-7">
+                    <Label className="text-sm text-gray-600 mb-1 block">WebP Quality (1-100)</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="1"
+                        max="100"
+                        value={webpQuality}
+                        onChange={(e) => setWebpQuality(parseInt(e.target.value))}
+                        className="flex-1"
+                      />
+                      <span className="text-sm font-medium w-8">{webpQuality}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Higher = better quality, larger file size
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* File Upload */}
             <div className="mb-4">
               <Label className="text-sm text-gray-600 mb-2 block">Upload Image Files</Label>
@@ -3119,8 +3184,26 @@ function ProductForm() {
                   {uploadedFiles.map((file, idx) => (
                     <li key={`${file.name}-${idx}`} className="flex items-center justify-between gap-2 p-2 bg-blue-50 rounded">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-blue-800">{file.name}</span>
-                        <span className="text-xs text-blue-600">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                        {croppedImages.has(file.name) ? (
+                          <img 
+                            src={croppedImages.get(file.name)} 
+                            alt="Cropped preview" 
+                            className="w-12 h-12 object-cover rounded cursor-pointer hover:opacity-80"
+                            onClick={() => {
+                              setImageToCrop(file)
+                              setCropModalOpen(true)
+                            }}
+                            title="Click to re-crop"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                            <span className="text-xs text-gray-500">IMG</span>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-sm font-medium text-blue-800">{file.name}</span>
+                          <span className="text-xs text-blue-600 block">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                        </div>
                       </div>
                       <Button variant="ghost" size="sm" onClick={() => removeUploadedFile(idx)}>Remove</Button>
                     </li>
@@ -3315,6 +3398,9 @@ function ProductForm() {
                           <option>PINK</option>
                           <option>PURPLE</option>
                           <option>SOCCER BLUE</option>
+                          <option>HONEY WAX</option>
+                          <option>PINE WAX</option>
+                          <option>PINE</option>
                           <option>SOCCER RED</option>
                           <option>SOCCER BLACK</option>
                           <option>TAUPE</option>
@@ -4870,6 +4956,17 @@ function ProductForm() {
         </div>
       )}
 
+      {/* Image Crop Modal */}
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        onClose={() => {
+          setCropModalOpen(false)
+          setImageToCrop(null)
+        }}
+        onCrop={handleCropComplete}
+        imageFile={imageToCrop}
+        aspectRatio={1}
+      />
 
     </div>
   )
