@@ -495,13 +495,53 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     return iconMap[iconName] || (() => <div className="w-6 h-6 bg-gray-500 rounded-full" />)
   }
 
-  // Image upload functions
-  const handleImageUpload = (files: FileList | null) => {
+  // Image upload functions (no auto-crop on upload)
+  const handleImageUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return
-    
-    // Open crop modal for the first file
-    setImageToCrop(files[0])
-    setCropModalOpen(true)
+    try {
+      setUploadingImage(true)
+      const fileArray = Array.from(files)
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i]
+        try {
+          const formData = new FormData()
+          formData.append('file', file)
+          formData.append('preset', 'medium')
+          formData.append('convert', String(convertToWebP))
+          formData.append('format', convertToWebP ? 'webp' : 'original')
+          if (convertToWebP) formData.append('quality', String(webpQuality))
+
+          const response = await fetch('/api/upload-optimized', {
+            method: 'POST',
+            body: formData
+          })
+
+          if (response.ok) {
+            const result = await response.json()
+            setImages(prev => [...prev, { id: crypto.randomUUID(), url: result.url, file: undefined }])
+          } else {
+            const error = await response.json().catch(() => ({}))
+            console.error('[Edit Form] Optimized upload error:', error)
+
+            // Fallback to regular upload
+            const fallbackFormData = new FormData()
+            fallbackFormData.append('file', file)
+            const res = await fetch('/api/upload', { method: 'POST', body: fallbackFormData })
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}))
+              throw new Error(err.error || 'Upload failed')
+            }
+            const json = await res.json()
+            setImages(prev => [...prev, { id: crypto.randomUUID(), url: json.url, file: undefined }])
+          }
+        } catch (e) {
+          console.error('[Edit Form] Image upload error:', e)
+          alert('Failed to upload image: ' + (e instanceof Error ? e.message : 'Unknown error'))
+        }
+      }
+    } finally {
+      setUploadingImage(false)
+    }
   }
 
   const handleCropComplete = async (croppedImageUrl: string) => {
