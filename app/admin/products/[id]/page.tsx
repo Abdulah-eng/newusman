@@ -118,6 +118,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [cropModalOpen, setCropModalOpen] = useState<boolean>(false)
   const [imageToCrop, setImageToCrop] = useState<File | null>(null)
   const [croppedImages, setCroppedImages] = useState<Map<string, string>>(new Map())
+  const [croppingImageIndex, setCroppingImageIndex] = useState<number | null>(null)
 
   // Categories
   const categories = [
@@ -537,8 +538,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               const result = await response.json()
           console.log('[Edit Form] Cropped image optimized upload result:', result)
           
-          // Add the cropped image to the images array
-          setImages(prev => [...prev, { id: crypto.randomUUID(), url: result.url, file: undefined }])
+          // Replace cropped image at index if set, else append
+          setImages(prev => {
+            if (croppingImageIndex !== null && prev[croppingImageIndex]) {
+              const next = [...prev]
+              next[croppingImageIndex] = { ...next[croppingImageIndex], url: result.url }
+              return next
+            }
+            return [...prev, { id: crypto.randomUUID(), url: result.url, file: undefined }]
+          })
           setCroppedImages(prev => new Map(prev.set(imageToCrop.name, croppedImageUrl)))
           
           alert(`Image cropped and uploaded successfully!\n\n📁 File: ${file.name}\n📏 Original: ${(file.size / 1024 / 1024).toFixed(2)} MB\n🔄 New (WebP): ${(result.optimizedSize / 1024).toFixed(2)} MB\n💾 Savings: ${result.compressionRatio}%`)
@@ -563,8 +571,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           const json = await res.json()
           console.log('[Edit Form] Cropped image fallback upload result:', json)
           
-          // Add the cropped image to the images array
-          setImages(prev => [...prev, { id: crypto.randomUUID(), url: json.url, file: undefined }])
+          // Replace cropped image at index if set, else append
+          setImages(prev => {
+            if (croppingImageIndex !== null && prev[croppingImageIndex]) {
+              const next = [...prev]
+              next[croppingImageIndex] = { ...next[croppingImageIndex], url: json.url }
+              return next
+            }
+            return [...prev, { id: crypto.randomUUID(), url: json.url, file: undefined }]
+          })
           setCroppedImages(prev => new Map(prev.set(imageToCrop.name, croppedImageUrl)))
           
           alert('Image cropped and uploaded successfully (fallback mode)')
@@ -580,6 +595,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       setUploadingImage(false)
       setCropModalOpen(false)
       setImageToCrop(null)
+      setCroppingImageIndex(null)
     }
   }
 
@@ -1054,6 +1070,27 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                    </div>
                  </div>
                                   <div className="flex gap-1">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      onClick={async () => {
+                                        // Fetch the existing image and open crop modal
+                                        try {
+                                          const res = await fetch(image.url)
+                                          const blob = await res.blob()
+                                          const file = new File([blob], `image-${idx}.jpg`, { type: blob.type || 'image/jpeg' })
+                                          setImageToCrop(file)
+                                          setCroppingImageIndex(idx)
+                                          setCropModalOpen(true)
+                                        } catch (e) {
+                                          console.error('Failed to open image for cropping', e)
+                                          alert('Failed to open image for cropping')
+                                        }
+                                      }}
+                                      className="text-xs"
+                                    >
+                                      Open in crop mode
+                                    </Button>
                                     {mainImageIndex !== idx && (
                                       <Button 
                                         variant="outline" 

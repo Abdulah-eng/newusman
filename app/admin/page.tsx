@@ -2003,23 +2003,12 @@ function ProductForm() {
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
-    if (files && files[0]) {
-      setImageToCrop(files[0])
-      setCropModalOpen(true)
-    }
+    if (!files || files.length === 0) return
+    setUploadedFiles(prev => [...prev, ...Array.from(files)])
   }
 
-  const handleCropComplete = (croppedImageUrl: string) => {
-    if (imageToCrop) {
-      // Convert data URL to File
-      fetch(croppedImageUrl)
-        .then(res => res.blob())
-        .then(blob => {
-          const file = new File([blob], imageToCrop.name, { type: 'image/jpeg' })
-          setUploadedFiles(prev => [...prev, file])
-          setCroppedImages(prev => new Map(prev.set(imageToCrop.name, croppedImageUrl)))
-        })
-    }
+  const handleCropComplete = (_croppedImageUrl: string) => {
+    // Crop disabled in add form
     setCropModalOpen(false)
     setImageToCrop(null)
   }
@@ -2036,13 +2025,7 @@ function ProductForm() {
     setMainImageIndex(index)
   }
 
-  const getImageWebPSetting = (fileName: string) => {
-    return imageWebPSettings.get(fileName) || { convert: convertToWebP, quality: webpQuality }
-  }
-
-  const setImageWebPSetting = (fileName: string, convert: boolean, quality: number) => {
-    setImageWebPSettings(prev => new Map(prev.set(fileName, { convert, quality })))
-  }
+  // WebP settings are not configurable in add form; uploads are always converted to WebP (quality 90)
 
   const updateDescriptionParagraph = (index: number, field: 'heading' | 'content' | 'image' | 'uploadedFile', value: string | File | null) => {
     setDescriptionParagraphs(prev => prev.map((para, i) => 
@@ -2445,16 +2428,15 @@ function ProductForm() {
         
         for (let i = 0; i < uploadedFiles.length; i++) {
           const file = uploadedFiles[i]
-          const webpSetting = getImageWebPSetting(file.name)
           
           try {
             // Use optimized upload API instead of direct Supabase upload
             const formData = new FormData()
             formData.append('file', file)
             formData.append('preset', 'large') // Use large preset for product images
-            formData.append('convert', String(webpSetting.convert))
-            formData.append('format', webpSetting.convert ? 'webp' : 'original')
-            if (webpSetting.convert) formData.append('quality', String(webpSetting.quality))
+            formData.append('convert', 'true')
+            formData.append('format', 'webp')
+            formData.append('quality', '90')
             
             const response = await fetch('/api/upload-optimized', {
               method: 'POST',
@@ -2587,16 +2569,7 @@ function ProductForm() {
           }
           
           // Show WebP conversion summary
-          const webpConverted = successfulUploads.filter(r => r.fileName && getImageWebPSetting(r.fileName).convert).length
-          const originalFormat = successfulUploads.length - webpConverted
-          
-          if (webpConverted > 0 && originalFormat > 0) {
-            alertMessage += `\n🎯 ${webpConverted} images converted to WebP, ${originalFormat} kept in original format`
-          } else if (webpConverted > 0) {
-            alertMessage += `\n🎯 All images converted to WebP format for better performance!`
-          } else {
-            alertMessage += `\n📷 All images uploaded in original format (WebP conversion disabled)`
-          }
+          alertMessage += `\n🎯 All images converted to WebP (quality 90).`
           
           alert(alertMessage)
         }
@@ -3181,59 +3154,21 @@ function ProductForm() {
                         : 'bg-blue-50 border-transparent hover:border-blue-200'
                     }`}>
                       <div className="flex items-center gap-2">
-                        {croppedImages.has(file.name) ? (
-                          <img 
-                            src={croppedImages.get(file.name)} 
-                            alt="Cropped preview" 
-                            className="w-12 h-12 object-cover rounded cursor-pointer hover:opacity-80"
-                            onClick={() => {
-                              setImageToCrop(file)
-                              setCropModalOpen(true)
-                            }}
-                            title="Click to re-crop"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
-                            <span className="text-xs text-gray-500">IMG</span>
-                          </div>
-                        )}
+                        <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                          <span className="text-xs text-gray-500">IMG</span>
+                        </div>
                         <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-blue-800">{file.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-blue-800">{file.name}</span>
                             {mainImageIndex === idx && (
                               <span className="px-2 py-1 bg-green-500 text-white text-xs rounded-full font-medium">
                                 MAIN
                               </span>
                             )}
-                          </div>
+                      </div>
                           <span className="text-xs text-blue-600 block">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
                           
-                          {/* Individual WebP Settings */}
-                          <div className="mt-2 flex items-center gap-2">
-                            <label className="flex items-center gap-1 text-xs">
-                              <input
-                                type="checkbox"
-                                checked={getImageWebPSetting(file.name).convert}
-                                onChange={(e) => setImageWebPSetting(file.name, e.target.checked, getImageWebPSetting(file.name).quality)}
-                                className="w-3 h-3"
-                              />
-                              <span className="text-gray-600">WebP</span>
-                            </label>
-                            {getImageWebPSetting(file.name).convert && (
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs text-gray-500">Quality:</span>
-                                <input
-                                  type="range"
-                                  min="1"
-                                  max="100"
-                                  value={getImageWebPSetting(file.name).quality}
-                                  onChange={(e) => setImageWebPSetting(file.name, true, Number(e.target.value))}
-                                  className="w-16 h-1"
-                                />
-                                <span className="text-xs text-gray-500 w-6">{getImageWebPSetting(file.name).quality}</span>
-                              </div>
-                            )}
-                          </div>
+                          {/* WebP settings removed in add form; auto-convert on save */}
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -3247,7 +3182,7 @@ function ProductForm() {
                             Set as Main
                           </Button>
                         )}
-                        <Button variant="ghost" size="sm" onClick={() => removeUploadedFile(idx)}>Remove</Button>
+                      <Button variant="ghost" size="sm" onClick={() => removeUploadedFile(idx)}>Remove</Button>
                       </div>
                     </li>
                   ))}
@@ -5008,16 +4943,7 @@ function ProductForm() {
       )}
 
       {/* Image Crop Modal */}
-      <ImageCropModal
-        isOpen={cropModalOpen}
-        onClose={() => {
-          setCropModalOpen(false)
-          setImageToCrop(null)
-        }}
-        onCrop={handleCropComplete}
-        imageFile={imageToCrop}
-        aspectRatio={1}
-      />
+      {/* Crop modal intentionally kept but disabled in add form workflow */}
 
     </div>
   )

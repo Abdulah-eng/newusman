@@ -1795,9 +1795,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
             <div 
               className="relative w-full h-96 lg:h-[28rem] xl:h-[32rem] rounded-xl overflow-hidden bg-gray-50 cursor-pointer mb-4 flex items-center justify-center group" 
               onClick={() => {
-                const currentIndex = gallery.findIndex(img => img === selectedImage);
-                setModalImageIndex(currentIndex >= 0 ? currentIndex : 0);
-                setImageModalOpen(true);
+              const currentIndex = gallery.findIndex(img => img === selectedImage);
+              setModalImageIndex(currentIndex >= 0 ? currentIndex : 0);
+              setImageModalOpen(true);
               }}
               onKeyDown={(e) => {
                 if (gallery.length > 1) {
@@ -4585,23 +4585,23 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
             <div className="absolute top-4 right-4 z-10 flex gap-2">
 
-              <button
+            <button
 
-                onClick={() => setImageModalOpen(false)}
+              onClick={() => setImageModalOpen(false)}
 
                 className="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-700 backdrop-blur-sm transition-all duration-200 hover:scale-110"
 
-                aria-label="Close modal"
+              aria-label="Close modal"
 
-              >
+            >
 
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
 
-                </svg>
+              </svg>
 
-              </button>
+            </button>
 
             </div>
 
@@ -4612,8 +4612,8 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
             <div className="relative w-full h-full flex items-center justify-center min-h-[400px]">
 
               <ImageMagnifier
-                src={gallery[modalImageIndex] || "/placeholder.svg"}
-                alt={product.name}
+                src={gallery[modalImageIndex] || "/placeholder.svg"} 
+                alt={product.name} 
                 width={800}
                 height={600}
                 className="w-full h-full max-w-full max-h-full"
