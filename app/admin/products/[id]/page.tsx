@@ -174,7 +174,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       setPressureReliefLevel(productData.pressureReliefLevel || 'Medium')
       setAirCirculationLevel(productData.airCirculationLevel || 'Medium')
       setDurabilityLevel(productData.durabilityLevel || 'High')
-      setVariants(productData.variants || [])
+      // Ensure each variant has a stable local id so updates target only that row
+      setVariants((productData.variants || []).map((v: any, index: number) => ({
+        id: crypto.randomUUID(),
+        ...v,
+      })))
       
       
       // Set attribute flags based on variants
