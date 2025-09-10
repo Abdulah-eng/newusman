@@ -90,26 +90,13 @@ export async function GET(
     const fileBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || ''
     const buildUrl = (img: any) => {
       const src = img?.image_url || img?.file_name
-      console.log('[API /products/:id] buildUrl input:', { img, src, fileBase })
-      
-      if (!src) {
-        console.log('[API /products/:id] buildUrl: no src found')
-        return null
-      }
-      if (typeof src !== 'string') {
-        console.log('[API /products/:id] buildUrl: src is not a string:', typeof src)
-        return null
-      }
-      if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('/')) {
-        console.log('[API /products/:id] buildUrl: returning absolute URL:', src)
-        return src
-      }
-      if (fileBase) {
-        const fullUrl = `${fileBase.replace(/\/$/, '')}/${encodeURIComponent(src)}`
-        console.log('[API /products/:id] buildUrl: returning constructed URL:', fullUrl)
-        return fullUrl
-      }
-      console.log('[API /products/:id] buildUrl: no fileBase, returning null')
+      const bucket = process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images'
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+
+      if (!src || typeof src !== 'string') return null
+      if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('/')) return src
+      if (fileBase) return `${fileBase.replace(/\/$/, '')}/${encodeURIComponent(src)}`
+      if (supabaseUrl) return `${supabaseUrl.replace(/\/$/, '')}/storage/v1/object/public/${bucket}/${encodeURIComponent(src)}`
       return null
     }
 
@@ -252,7 +239,7 @@ export async function GET(
       descriptionParagraphs: product.product_description_paragraphs?.map((para: any) => ({
         heading: para.heading,
         content: para.content,
-        image: para.image_url || para.file_name
+        image: buildUrl(para)
       })) || [],
       faqs: product.product_faqs?.map((faq: any) => ({
         question: faq.question,
