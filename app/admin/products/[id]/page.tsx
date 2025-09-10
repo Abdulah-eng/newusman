@@ -67,17 +67,17 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     { heading: 'Terms', content: 'Warranty terms and conditions apply...' },
     { heading: 'Support', content: 'Dedicated customer support for warranty claims...' }
   ])
-    const [dimensions, setDimensions] = useState({
-      height: '25 cm',
-      length: 'L 190cm',
-      width: '135cm',
-      mattressSize: '135cm x L 190cm cm',
-      maxHeight: '25 cm',
-      weightCapacity: '200 kg',
-      pocketSprings: '1000 count',
-      comfortLayer: '8 cm',
-      supportLayer: '17 cm',
-    dimensionDisclaimer: 'All measurements are approximate and may vary slightly.',
+  const [dimensions, setDimensions] = useState({
+    height: '',
+    length: '',
+    width: '',
+    mattressSize: '',
+    maxHeight: '',
+    weightCapacity: '',
+    pocketSprings: '',
+    comfortLayer: '',
+    supportLayer: '',
+    dimensionDisclaimer: '',
     show_basic_dimensions: true,
     show_mattress_specs: true,
     show_technical_specs: true
@@ -216,16 +216,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       // Set dimensions
       if (productData.dimensions) {
         setDimensions({
-          height: productData.dimensions.height || '25 cm',
-          length: productData.dimensions.length || 'L 190cm',
-          width: productData.dimensions.width || '135cm',
-          mattressSize: productData.dimensions.mattress_size || '135cm x L 190cm cm',
-          maxHeight: productData.dimensions.max_height || '25 cm',
-          weightCapacity: productData.dimensions.weight_capacity || '200 kg',
-          pocketSprings: productData.dimensions.pocket_springs || '1000 count',
-          comfortLayer: productData.dimensions.comfort_layer || '8 cm',
-          supportLayer: productData.dimensions.support_layer || '17 cm',
-          dimensionDisclaimer: productData.dimensions.dimension_disclaimer || 'All measurements are approximate and may vary slightly.',
+          height: productData.dimensions.height || '',
+          length: productData.dimensions.length || '',
+          width: productData.dimensions.width || '',
+          mattressSize: productData.dimensions.mattress_size || '',
+          maxHeight: productData.dimensions.max_height || '',
+          weightCapacity: productData.dimensions.weight_capacity || '',
+          pocketSprings: productData.dimensions.pocket_springs || '',
+          comfortLayer: productData.dimensions.comfort_layer || '',
+          supportLayer: productData.dimensions.support_layer || '',
+          dimensionDisclaimer: productData.dimensions.dimension_disclaimer || '',
           show_basic_dimensions: productData.dimensions.show_basic_dimensions !== undefined ? productData.dimensions.show_basic_dimensions : true,
           show_mattress_specs: productData.dimensions.show_mattress_specs !== undefined ? productData.dimensions.show_mattress_specs : true,
           show_technical_specs: productData.dimensions.show_technical_specs !== undefined ? productData.dimensions.show_technical_specs : true
@@ -233,9 +233,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       }
       
       // Set important notices
-      if (productData.importantNotices && productData.importantNotices.length > 0) {
-        setImportantNotices(productData.importantNotices)
-      }
+      setImportantNotices(productData.importantNotices || [])
       
       // Set badges
       if (productData.badges && productData.badges.length > 0) {
@@ -768,13 +766,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       if (Array.isArray(payload.selectedPopularCategories) && payload.selectedPopularCategories.length === 0) {
         delete payload.selectedPopularCategories
       }
+      // Always include importantNotices, even if empty, so API can clear them if needed
+      // Don't delete importantNotices from payload
 
       // Debug logging
       console.log('Frontend payload being sent:', {
         selectedFeatures,
         reasonsToBuy,
         selectedReasonsToLove,
-        selectedPopularCategories
+        selectedPopularCategories,
+        importantNotices
       })
       
       console.log('Full payload being sent:', payload)

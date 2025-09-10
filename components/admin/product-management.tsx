@@ -1073,7 +1073,7 @@ export function ProductManagement({ category }: ProductManagementProps) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Height</label>
                 <EditableText
-                  value={selectedProduct.dimensions?.height || '25cm'}
+                  value={selectedProduct.dimensions?.height || ''}
                   onSave={(value) => setSelectedProduct((prev: any) => ({ 
                     ...prev, 
                     dimensions: { ...prev.dimensions, height: value }
@@ -1084,7 +1084,7 @@ export function ProductManagement({ category }: ProductManagementProps) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Length</label>
                 <EditableText
-                  value={selectedProduct.dimensions?.length || '200cm'}
+                  value={selectedProduct.dimensions?.length || ''}
                   onSave={(value) => setSelectedProduct((prev: any) => ({ 
                     ...prev, 
                     dimensions: { ...prev.dimensions, length: value }
@@ -1095,7 +1095,7 @@ export function ProductManagement({ category }: ProductManagementProps) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Width</label>
                 <EditableText
-                  value={selectedProduct.dimensions?.width || '150cm'}
+                  value={selectedProduct.dimensions?.width || ''}
                   onSave={(value) => setSelectedProduct((prev: any) => ({ 
                     ...prev, 
                     dimensions: { ...prev.dimensions, width: value }

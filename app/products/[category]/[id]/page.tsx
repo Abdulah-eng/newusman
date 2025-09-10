@@ -326,7 +326,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
     // Add warranty delivery line
     warrantyDeliveryLine: product.warrantyDeliveryLine || null,
     // Add trial information
-    trialInformation: product.trialInformation || null
+    trialInformation: product.trialInformation || null,
+    // Add important notices
+    importantNotices: product.importantNotices || []
   }
 
   // Debug care instructions
@@ -384,6 +386,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
   // Debug dimension images
   console.log('[Product Detail Page] dimensionImages from API:', product.dimensionImages)
   console.log('[Product Detail Page] dimensionImages in productDetail:', productDetail.dimensionImages)
+  
+  // Debug important notices
+  console.log('[Product Detail Page] importantNotices from API:', product.importantNotices)
+  console.log('[Product Detail Page] importantNotices in productDetail:', productDetail.importantNotices)
   // Debug: log variants clearly for troubleshooting
   try {
     const variants = (productDetail as any).variants || []

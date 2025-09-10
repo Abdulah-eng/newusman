@@ -45,6 +45,7 @@ export interface ProductDetailHappyProps {
       height: string
       length: string
       width: string
+      depth?: string
       mattress_size: string
       max_height: string
       weight_capacity: string
@@ -449,6 +450,21 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       if (text.includes('metal') || text.includes('frame')) return () => <Shield className="h-4 w-4" />
       if (text.includes('construction') || text.includes('built')) return () => <Wrench className="h-4 w-4" />
       if (text.includes('design') || text.includes('style')) return () => <Palette className="h-4 w-4" />
+      // Bunkbed specific mappings
+      if (text.includes('space') && text.includes('saving')) return () => <Minimize className="h-4 w-4" />
+      if (text.includes('multiple') && text.includes('sleeping')) return () => <Layers className="h-4 w-4" />
+      if (text.includes('solid') && text.includes('wood')) return () => <Trees className="h-4 w-4" />
+      if (text.includes('metal') && text.includes('frames')) return () => <Zap className="h-4 w-4" />
+      if (text.includes('single') && text.includes('over')) return () => <Bed className="h-4 w-4" />
+      if (text.includes('triple') && text.includes('bunk')) return () => <Layers className="h-4 w-4" />
+      if (text.includes('futon') && text.includes('bunk')) return () => <Bed className="h-4 w-4" />
+      if (text.includes('flat') && text.includes('pack')) return () => <Package className="h-4 w-4" />
+      if (text.includes('ladder') || text.includes('steps')) return () => <Square className="h-4 w-4" />
+      if (text.includes('guard') && text.includes('rails')) return () => <Shield className="h-4 w-4" />
+      if (text.includes('slatted') && text.includes('base')) return () => <Grid className="h-4 w-4" />
+      if (text.includes('easy') && text.includes('clean')) return () => <Droplet className="h-4 w-4" />
+      if (text.includes('heavy') && text.includes('duty')) return () => <Wrench className="h-4 w-4" />
+      if (text.includes('easy') && text.includes('assemble')) return () => <Wrench className="h-4 w-4" />
       // Fallback icon
       return () => <Star className="h-4 w-4" />
     }
@@ -541,12 +557,12 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     
     if (product.category === 'bunkbeds') {
       return [
-        { label: 'Space Saving', Icon: Minimize },
-        { label: 'Safety Rails', Icon: Shield },
-        { label: 'Easy Assembly', Icon: Wrench },
-        { label: 'Multiple Sizes', Icon: Ruler },
-        { label: 'Fast Delivery', Icon: Truck },
-        { label: 'Kids Safe', Icon: Baby }
+        { label: 'Space-Saving', Icon: Minimize },
+        { label: 'Multiple Sleeping Levels', Icon: Layers },
+        { label: 'Solid Wood Frames', Icon: Trees },
+        { label: 'Guard Rails', Icon: Shield },
+        { label: 'Easy Assemble', Icon: Wrench },
+        { label: 'Flat-Pack', Icon: Package }
       ]
     }
     
@@ -3274,29 +3290,26 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                                 {/* Basic Dimensions Section - Only show if enabled */}
                                 {(product.dimensions?.show_basic_dimensions !== false) && (
                                   <>
-                                    <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                                    {product.dimensions?.height && (
+                                      <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                                        <span className="font-medium text-gray-700">A: Height</span>
+                                        <span className="text-gray-900 font-semibold">{product.dimensions.height}</span>
+                                      </div>
+                                    )}
 
-                                      <span className="font-medium text-gray-700">A: Height</span>
+                                    {product.dimensions?.length && (
+                                      <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                                        <span className="font-medium text-gray-700">B: Length</span>
+                                        <span className="text-gray-900 font-semibold">{product.dimensions.length}</span>
+                                      </div>
+                                    )}
 
-                                      <span className="text-gray-900 font-semibold">{product.dimensions?.height || '25 cm'}</span>
-
-                                    </div>
-
-                                    <div className="flex items-center justify-between py-2 border-b border-gray-200">
-
-                                      <span className="font-medium text-gray-700">B: Length</span>
-
-                                      <span className="text-gray-900 font-semibold">{product.dimensions?.length || 'L 190cm'}</span>
-
-                                    </div>
-
-                                    <div className="flex items-center justify-between py-2 border-b border-gray-200">
-
-                                      <span className="font-medium text-gray-700">C: {product.category === 'sofas' ? 'Depth' : 'Width'}</span>
-
-                                      <span className="text-gray-900 font-semibold">{(product.category === 'sofas' ? (product.dimensions as any)?.depth : product.dimensions?.width) || '135cm'}</span>
-
-                                    </div>
+                                    {(product.category === 'sofas' ? (product.dimensions as any)?.depth : product.dimensions?.width) && (
+                                      <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                                        <span className="font-medium text-gray-700">C: {product.category === 'sofas' ? 'Depth' : 'Width'}</span>
+                                        <span className="text-gray-900 font-semibold">{product.category === 'sofas' ? (product.dimensions as any)?.depth : product.dimensions?.width}</span>
+                                      </div>
+                                    )}
                                   </>
                                 )}
                               </div>
@@ -3431,139 +3444,131 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                           
 
-                          {/* Technical Diagram */}
+                          {/* Technical Diagram - Only show if basic dimensions exist */}
+                          {(product.dimensions?.height || product.dimensions?.length || (product.category === 'sofas' ? (product.dimensions as any)?.depth : product.dimensions?.width)) && (
+                            <div className="relative h-80 lg:h-96 rounded-xl overflow-hidden bg-gray-50 border border-gray-200">
 
-                          <div className="relative h-80 lg:h-96 rounded-xl overflow-hidden bg-gray-50 border border-gray-200">
+                              <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
 
-                            <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+                                {/* Mattress Diagram */}
 
-                              {/* Mattress Diagram */}
+                                <div className="relative w-full h-full flex items-center justify-center">
 
-                              <div className="relative w-full h-full flex items-center justify-center">
+                                                                   {/* Main Mattress */}
 
-                                                                 {/* Main Mattress */}
+                                   <div className="relative w-48 h-32 bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-xl border-2 border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300">
 
-                                 <div className="relative w-48 h-32 bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-xl border-2 border-gray-200 shadow-xl hover:shadow-2xl transition-all duration-300">
+                                     {/* Quilted Pattern - Top Layer */}
 
-                                   {/* Quilted Pattern - Top Layer */}
+                                     <div className="absolute inset-2 grid grid-cols-12 grid-rows-6 gap-1">
 
-                                   <div className="absolute inset-2 grid grid-cols-12 grid-rows-6 gap-1">
+                                       {Array.from({ length: 72 }).map((_, i) => (
 
-                                     {Array.from({ length: 72 }).map((_, i) => (
+                                         <div key={i} className="w-1 h-1 bg-gray-300 rounded-full opacity-40 hover:opacity-80 transition-opacity duration-200"></div>
 
-                                       <div key={i} className="w-1 h-1 bg-gray-300 rounded-full opacity-40 hover:opacity-80 transition-opacity duration-200"></div>
+                                       ))}
 
-                                     ))}
+                                     </div>
 
-                                   </div>
+                                     
 
-                                   
+                                     {/* Memory Foam Layer - Light Blue */}
 
-                                   {/* Memory Foam Layer - Light Blue */}
+                                     <div className="absolute top-4 left-1 right-1 h-2 bg-gradient-to-r from-blue-100 to-blue-200 rounded-sm border border-blue-200"></div>
 
-                                   <div className="absolute top-4 left-1 right-1 h-2 bg-gradient-to-r from-blue-100 to-blue-200 rounded-sm border border-blue-200"></div>
+                                     
 
-                                   
+                                     {/* Pocket Springs Pattern - Subtle dots */}
 
-                                   {/* Pocket Springs Pattern - Subtle dots */}
+                                     <div className="absolute inset-4 grid grid-cols-10 grid-rows-5 gap-1">
 
-                                   <div className="absolute inset-4 grid grid-cols-10 grid-rows-5 gap-1">
+                                       {Array.from({ length: 50 }).map((_, i) => (
 
-                                     {Array.from({ length: 50 }).map((_, i) => (
+                                         <div key={i} className="w-1 h-1 bg-gray-400 rounded-full opacity-60 hover:opacity-80 transition-opacity duration-200"></div>
 
-                                       <div key={i} className="w-1 h-1 bg-gray-400 rounded-full opacity-60 hover:opacity-80 transition-opacity duration-200"></div>
+                                       ))}
 
-                                     ))}
+                                     </div>
 
-                                   </div>
+                                     
 
-                                   
+                                     {/* Elegant Inner Border */}
 
-                                   {/* Elegant Inner Border */}
+                                     <div className="absolute inset-1 border border-gray-200 rounded-lg opacity-60"></div>
 
-                                   <div className="absolute inset-1 border border-gray-200 rounded-lg opacity-60"></div>
+                                     
 
-                                   
+                                     {/* Hover Effect Overlay */}
 
-                                   {/* Hover Effect Overlay */}
+                                     <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/10 to-white/0 opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
 
-                                   <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-white/10 to-white/0 opacity-0 hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+                                    
+
+                                                                       {/* Dimension Labels - Only show if dimension exists */}
+
+                                     {product.dimensions?.height && (
+                                       <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
+                                         <div className="flex items-center gap-1 bg-white rounded px-2 py-1 shadow-sm border border-gray-200">
+                                           <span className="text-xs font-bold text-gray-700">A</span>
+                                           <span className="text-xs text-gray-600">{product.dimensions.height}</span>
+                                           <span className="text-xs text-gray-500">Height</span>
+                                         </div>
+                                       </div>
+                                     )}
+
+                                     {product.dimensions?.length && (
+                                       <div className="absolute -right-6 top-1/2 transform -translate-y-1/2">
+                                         <div className="flex items-center gap-1 bg-white rounded px-2 py-1 shadow-sm border border-gray-200">
+                                           <span className="text-xs font-bold text-gray-700">B</span>
+                                           <span className="text-xs text-gray-600">{product.dimensions.length}</span>
+                                           <span className="text-xs text-gray-500">Length</span>
+                                         </div>
+                                       </div>
+                                     )}
+
+                                     {(product.category === 'sofas' ? (product.dimensions as any)?.depth : product.dimensions?.width) && (
+                                       <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2">
+                                         <div className="flex items-center gap-1 bg-white rounded px-2 py-1 shadow-sm border border-gray-200">
+                                           <span className="text-xs font-bold text-gray-700">C</span>
+                                           <span className="text-xs text-gray-600">{product.category === 'sofas' ? (product.dimensions as any)?.depth : product.dimensions?.width}</span>
+                                           <span className="text-xs text-gray-500">{product.category === 'sofas' ? 'Depth' : 'Width'}</span>
+                                         </div>
+                                       </div>
+                                     )}
+
+                                    
+
+                                                                       {/* Comfort Layer Indicator - Blue */}
+
+                                     <div className="absolute top-1 left-1 right-1 h-3 bg-gradient-to-r from-blue-200 via-blue-300 to-blue-400 rounded-sm border border-blue-300"></div>
+
+                                     
+
+                                     {/* Support Layer Indicator - Green */}
+
+                                     <div className="absolute bottom-1 left-1 right-1 h-3 bg-gradient-to-r from-green-200 via-green-300 to-green-400 rounded-sm border border-green-300"></div>
+
+                                  </div>
 
                                   
 
-                                                                     {/* Dimension Labels */}
-
-                                   <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
-
-                                     <div className="flex items-center gap-1 bg-white rounded px-2 py-1 shadow-sm border border-gray-200">
-
-                                       <span className="text-xs font-bold text-gray-700">A</span>
-
-                                       <span className="text-xs text-gray-600">25cm</span>
-
-                                       <span className="text-xs text-gray-500">Height</span>
-
-                                     </div>
-
-                                   </div>
-
-                                   <div className="absolute -right-6 top-1/2 transform -translate-y-1/2">
-
-                                     <div className="flex items-center gap-1 bg-white rounded px-2 py-1 shadow-sm border border-gray-200">
-
-                                       <span className="text-xs font-bold text-gray-700">B</span>
-
-                                       <span className="text-xs text-gray-600">{product.dimensions?.length || 'L 190cm'}</span>
-
-                                       <span className="text-xs text-gray-500">Length</span>
-
-                                     </div>
-
-                                   </div>
-
-                                   <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2">
-
-                                     <div className="flex items-center gap-1 bg-white rounded px-2 py-1 shadow-sm border border-gray-200">
-
-                                       <span className="text-xs font-bold text-gray-700">C</span>
-
-                                       <span className="text-xs text-gray-600">{(product.category === 'sofas' ? (product.dimensions as any)?.depth : product.dimensions?.width) || '135cm'}</span>
-
-                                       <span className="text-xs text-gray-500">{product.category === 'sofas' ? 'Depth' : 'Width'}</span>
-
-                                     </div>
-
-                                   </div>
-
-                                  
-
-                                                                     {/* Comfort Layer Indicator - Blue */}
-
-                                   <div className="absolute top-1 left-1 right-1 h-3 bg-gradient-to-r from-blue-200 via-blue-300 to-blue-400 rounded-sm border border-blue-300"></div>
-
-                                   
-
-                                   {/* Support Layer Indicator - Green */}
-
-                                   <div className="absolute bottom-1 left-1 right-1 h-3 bg-gradient-to-r from-green-200 via-green-300 to-green-400 rounded-sm border border-green-300"></div>
+                                  {/* Dimension Lines - Only show if corresponding dimension exists */}
+                                  {product.dimensions?.height && (
+                                    <div className="absolute top-0 left-1/2 w-px h-8 bg-red-500"></div>
+                                  )}
+                                  {product.dimensions?.length && (
+                                    <div className="absolute top-1/2 right-0 w-8 h-px bg-red-500"></div>
+                                  )}
+                                  {(product.category === 'sofas' ? (product.dimensions as any)?.depth : product.dimensions?.width) && (
+                                    <div className="absolute bottom-0 left-1/2 w-px h-8 bg-red-500"></div>
+                                  )}
 
                                 </div>
-
-                                
-
-                                {/* Dimension Lines */}
-
-                                <div className="absolute top-0 left-1/2 w-px h-8 bg-red-500"></div>
-
-                                <div className="absolute top-1/2 right-0 w-8 h-px bg-red-500"></div>
-
-                                <div className="absolute bottom-0 left-1/2 w-px h-8 bg-red-500"></div>
 
                               </div>
 
                             </div>
-
-                          </div>
+                          )}
 
                         </div>
 
@@ -4007,7 +4012,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                         {/* Trial Period */}
                         {product.trialInformation && (
                         <div>
-                          <h4 className="text-lg font-semibold text-gray-900 mb-3">100-Night Trial</h4>
+                          <h4 className="text-lg font-semibold text-gray-900 mb-3">Trial</h4>
                           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                             <p className="text-blue-800 text-sm">
                                 {product.trialInformation}

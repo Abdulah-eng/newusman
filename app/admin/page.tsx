@@ -3841,7 +3841,7 @@ function ProductForm() {
             <Input 
               value={dimensions.height} 
               onChange={e => updateDimension('height', e.target.value)}
-              placeholder="25 cm"
+              placeholder="Enter height"
             />
           </div>
           <div>
@@ -3849,7 +3849,7 @@ function ProductForm() {
             <Input 
               value={dimensions.length} 
               onChange={e => updateDimension('length', e.target.value)}
-              placeholder="L 190cm"
+              placeholder="Enter length"
             />
           </div>
           <div>
@@ -3857,7 +3857,7 @@ function ProductForm() {
             <Input 
               value={dimensions.width} 
               onChange={e => updateDimension('width', e.target.value)}
-              placeholder="135cm"
+              placeholder="Enter width"
             />
             </div>
           </div>

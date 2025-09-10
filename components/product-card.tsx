@@ -255,12 +255,12 @@ export function ProductCard({ product }: ProductCardProps) {
     
     if (safeProduct.category === 'bunkbeds') {
       return [
-        { label: 'Space Saving', Icon: Minimize },
-        { label: 'Safety Rails', Icon: Shield },
-        { label: 'Easy Assembly', Icon: Wrench },
-        { label: 'Multiple Sizes', Icon: Ruler },
-        { label: 'Fast Delivery', Icon: Truck },
-        { label: 'Kids Safe', Icon: Baby }
+        { label: 'Space-Saving', Icon: Minimize },
+        { label: 'Multiple Sleeping Levels', Icon: Layers },
+        { label: 'Solid Wood Frames', Icon: Trees },
+        { label: 'Guard Rails', Icon: Shield },
+        { label: 'Easy Assemble', Icon: Wrench },
+        { label: 'Flat-Pack', Icon: Package }
       ]
     }
     

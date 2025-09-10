@@ -641,6 +641,13 @@ export async function PUT(
 
     // Update important notices if provided
     if (body.importantNotices) {
+      console.log('[API PUT] Important notices received:', {
+        hasImportantNotices: !!body.importantNotices,
+        importantNotices: body.importantNotices,
+        length: body.importantNotices?.length,
+        type: typeof body.importantNotices
+      })
+      
       // Always delete existing important notices first
       const { error: deleteNoticesError } = await supabase
         .from('product_important_notices')
@@ -659,14 +666,22 @@ export async function PUT(
           sort_order: notice.sortOrder || 0
         }))
 
+        console.log('[API PUT] Inserting important notices:', noticeData)
+
         const { error: noticeError } = await supabase
           .from('product_important_notices')
           .insert(noticeData)
 
         if (noticeError) {
           console.error('Important notices update error:', noticeError)
+        } else {
+          console.log('[API PUT] Important notices inserted successfully')
         }
+      } else {
+        console.log('[API PUT] No important notices to insert (empty array)')
       }
+    } else {
+      console.log('[API PUT] No importantNotices field in request body')
     }
 
     // Update description paragraphs if provided

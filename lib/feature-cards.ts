@@ -135,6 +135,23 @@ export const HARDCODED_FEATURE_CARDS: Record<string, FeatureCard[]> = {
     { id: 'easy-assembled', title: 'Easy Assembled', description: 'Quick assembly with minimal tools.', icon: 'easy-assembly' },
     { id: 'delivery-flat-pack', title: 'Delivery Flat Pack', description: 'Ships flat-packed for easier handling.', icon: 'truck' }
   ],
+  bunkbeds: [
+    { id: 'space-saving', title: 'Space-Saving', description: 'Maximizes floor space with vertical sleeping arrangement.', icon: 'minimize' },
+    { id: 'multiple-sleeping-levels', title: 'Multiple Sleeping Levels', description: 'Two or more sleeping levels for multiple occupants.', icon: 'layers' },
+    { id: 'solid-wood-frames', title: 'Solid Wood Frames', description: 'Durable solid wood construction for lasting stability.', icon: 'trees' },
+    { id: 'metal-frames', title: 'Metal Frames', description: 'Sturdy metal construction for reliable support.', icon: 'zap' },
+    { id: 'single-over-double', title: 'Single Over Double', description: 'Single bed above, double bed below configuration.', icon: 'bed' },
+    { id: 'single-over-single', title: 'Single Over Single', description: 'Two single beds stacked vertically.', icon: 'bed' },
+    { id: 'triple-bunk', title: 'Triple Bunk', description: 'Three-level bunk bed for maximum space efficiency.', icon: 'layers' },
+    { id: 'futon-bunk', title: 'Futon Bunk', description: 'Bunk bed with futon for versatile seating and sleeping.', icon: 'bed' },
+    { id: 'flat-pack', title: 'Flat-Pack', description: 'Easy-to-assemble flat-pack design for convenient delivery.', icon: 'package' },
+    { id: 'ladder-or-steps', title: 'Ladder or Steps', description: 'Safe access to upper level with ladder or built-in steps.', icon: 'stairs' },
+    { id: 'guard-rails', title: 'Guard Rails', description: 'Safety guard rails to prevent falls from upper level.', icon: 'shield' },
+    { id: 'slatted-base', title: 'Slatted Base', description: 'Slatted base for mattress support and ventilation.', icon: 'grid' },
+    { id: 'easy-clean-finishes', title: 'Easy-Clean Finishes', description: 'Wipeable finishes for simple maintenance and cleaning.', icon: 'droplet' },
+    { id: 'heavy-duty-bolts-joints', title: 'Heavy-Duty Bolts & Joints', description: 'Reinforced hardware for maximum stability and safety.', icon: 'wrench' },
+    { id: 'easy-assemble', title: 'Easy Assemble', description: 'Simple assembly process with clear instructions.', icon: 'wrench' }
+  ],
   toppers: [
     { id: 'memory-foam-topper', title: 'Memory Foam', description: 'Contours to your body for personalized comfort.', icon: 'brain' },
     { id: 'gel-infused-topper', title: 'Gel Infused', description: 'Gel-infused technology for temperature regulation.', icon: 'droplet' },
