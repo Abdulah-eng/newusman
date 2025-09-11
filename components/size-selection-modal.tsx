@@ -58,7 +58,7 @@ export function SizeSelectionModal({
       >
         {/* Modal */}
         <div 
-          className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+          className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -78,7 +78,7 @@ export function SizeSelectionModal({
           </div>
 
           {/* Content */}
-          <div className="p-6">
+          <div className="p-6 flex-1 overflow-y-auto">
             <div className="space-y-3">
               {sizes.map((size) => (
                 <div
@@ -143,8 +143,11 @@ export function SizeSelectionModal({
               ))}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3 mt-6">
+          </div>
+
+          {/* Sticky Footer Action Buttons */}
+          <div className="p-6 border-t border-gray-200 sticky bottom-0 bg-white">
+            <div className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={onClose}

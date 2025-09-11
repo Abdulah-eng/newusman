@@ -49,9 +49,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [rating, setRating] = useState(0)
   const [headline, setHeadline] = useState('')
   const [longDescription, setLongDescription] = useState('')
-  const [warrantyDeliveryLine, setWarrantyDeliveryLine] = useState('10-Year Warranty • Free Delivery • 100-Night Trial')
+  const [warrantyDeliveryLine, setWarrantyDeliveryLine] = useState('1-Year Warranty • Free Delivery • 100-Night Trial')
   const [careInstructions, setCareInstructions] = useState('')
   const [trialInformation, setTrialInformation] = useState('Try your mattress risk-free for 100 nights. If you are not completely satisfied, return it for a full refund. No questions asked.')
+  const [trialInformationHeading, setTrialInformationHeading] = useState('Trial')
   const [descriptionParagraphs, setDescriptionParagraphs] = useState([
     { heading: 'Comfort & Support', content: 'Experience exceptional comfort with our premium materials...', image: '' },
     { heading: 'Quality Materials', content: 'Crafted with the finest materials for lasting durability...', image: '' },
@@ -169,6 +170,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       setWarrantyDeliveryLine(productData.warrantyDeliveryLine || '')
       setCareInstructions(productData.careInstructions || '')
       setTrialInformation(productData.trialInformation || '')
+      setTrialInformationHeading((productData as any).trialInformationHeading || 'Trial')
       setFirmnessScale(productData.firmnessScale || 'Medium')
       setSupportLevel(productData.supportLevel || 'Medium')
       setPressureReliefLevel(productData.pressureReliefLevel || 'Medium')
@@ -731,6 +733,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         warrantyDeliveryLine,
         careInstructions,
         trialInformation,
+        trialInformationHeading,
         firmnessScale,
         supportLevel,
         pressureReliefLevel,
@@ -1353,6 +1356,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               />
             </div>
                   <div>
+                    <Label htmlFor="trialInformationHeading">Trial Heading</Label>
+            <Input 
+                      id="trialInformationHeading"
+                      value={trialInformationHeading}
+                      onChange={(e) => setTrialInformationHeading(e.target.value)}
+                      placeholder="Enter trial section heading"
+            />
+                  </div>
+                  <div>
                     <Label htmlFor="trialInformation">Trial Information</Label>
             <Textarea 
                       id="trialInformation"
@@ -1361,7 +1373,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                       placeholder="Enter trial information"
                       rows={3}
                     />
-          </div>
+                  </div>
         </div>
       </Card>
 

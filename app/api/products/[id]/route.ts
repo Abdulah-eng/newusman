@@ -297,6 +297,7 @@ export async function GET(
       sizes: uniqueSizes.length ? uniqueSizes : ['Standard'],
       warrantyDeliveryLine: product.warranty_delivery_line || null,
       trialInformation: product.trial_information || null,
+      trialInformationHeading: product.trial_information_heading || null,
       badges: product.badges || [],
       free_gift_product_id: product.free_gift_product_id || null,
       free_gift_enabled: product.free_gift_enabled || false,
@@ -413,6 +414,9 @@ export async function PUT(
     }
     if (body.trialInformation !== undefined) {
       updateData.trial_information = body.trialInformation
+    }
+    if (body.trialInformationHeading !== undefined) {
+      updateData.trial_information_heading = body.trialInformationHeading
     }
     if (body.firmnessScale !== undefined) {
       updateData.firmness_scale = body.firmnessScale

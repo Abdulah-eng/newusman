@@ -1512,12 +1512,19 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                   {/* Right Side: Size Selection Prompt and Base Dimensions */}
                   <div className="text-left sm:text-right sm:ml-4 min-w-0">
 
-                    {(!(product as any).variants || (product as any).variants.length <= 1) ? null : (
-                      <>
-                        <div className="text-lg font-semibold text-gray-600 mb-2">View details</div>
-                        <div className="text-sm text-gray-500">Choose colour and other options</div>
-                      </>
-                    )}
+                    {(() => {
+                      const hasMultiple = !!((product as any).variants && (product as any).variants.length > 1)
+                      if (!hasMultiple) return null
+                      const { hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
+                      const hasNonSize = hasColors || hasDepths || hasFirmness
+                      if (!hasNonSize) return null
+                      return (
+                        <>
+                          <div className="text-lg font-semibold text-gray-600 mb-2">View details</div>
+                          <div className="text-sm text-gray-500">Choose colour and other options</div>
+                        </>
+                      )
+                    })()}
 
                     
                     {/* Base Product Dimensions - Simple LxWxH */}
@@ -1564,8 +1571,11 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
 
 
-            {/* Choose Size - Clickable Option - White Button - Only show for multi-variant products */}
-            {!hasOnlyOneVariant && Array.isArray(sizeData) && sizeData.length > 0 && (
+            {/* Choose Size - Clickable Option - White Button - Only show when size is a variant feature */}
+            {(() => {
+              const { hasSizes } = getAvailableVariantOptions()
+              return (!hasOnlyOneVariant && hasSizes)
+            })() && (
 
             <div className="border-0 rounded-lg p-4 bg-white mb-2 cursor-pointer" onClick={() => startSmartSelectionWithPriority('size')}>
 
@@ -4010,9 +4020,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                         
 
                         {/* Trial Period */}
-                        {product.trialInformation && (
+                        {product.trialInformation && (product as any).trialInformationHeading && (
                         <div>
-                          <h4 className="text-lg font-semibold text-gray-900 mb-3">Trial</h4>
+                          <h4 className="text-lg font-semibold text-gray-900 mb-3">{(product as any).trialInformationHeading}</h4>
                           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                             <p className="text-blue-800 text-sm">
                                 {product.trialInformation}
@@ -4268,12 +4278,19 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                   {/* Right Side: Size Selection Prompt and Base Dimensions */}
                   <div className="text-right ml-4">
 
-                    {(!(product as any).variants || (product as any).variants.length <= 1) ? null : (
-                      <>
-                        <div className="text-lg font-semibold text-gray-600 mb-2">View details</div>
-                        <div className="text-sm text-gray-500">Choose colour and other options</div>
-                      </>
-                    )}
+                    {(() => {
+                      const hasMultiple = !!((product as any).variants && (product as any).variants.length > 1)
+                      if (!hasMultiple) return null
+                      const { hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
+                      const hasNonSize = hasColors || hasDepths || hasFirmness
+                      if (!hasNonSize) return null
+                      return (
+                        <>
+                          <div className="text-lg font-semibold text-gray-600 mb-2">View details</div>
+                          <div className="text-sm text-gray-500">Choose colour and other options</div>
+                        </>
+                      )
+                    })()}
 
                     
                     {/* Base Product Dimensions - Simple LxWxH */}
@@ -4345,8 +4362,12 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
             )}
 
-            {/* Color & Other Options Selection - Clickable Option - White Button - Only show for multi-variant products */}
-            {!hasOnlyOneVariant && (
+            {/* Color & Other Options Selection - Only show when there are non-size variant features */}
+            {(() => {
+              const { hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
+              const hasNonSize = hasColors || hasDepths || hasFirmness
+              return (!hasOnlyOneVariant && hasNonSize)
+            })() && (
 
             <div className="border-0 rounded-lg p-4 bg-white mb-2 cursor-pointer" onClick={() => startSmartSelectionWithPriority('color')}>
 

@@ -327,6 +327,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     warrantyDeliveryLine: product.warrantyDeliveryLine || null,
     // Add trial information
     trialInformation: product.trialInformation || null,
+    trialInformationHeading: (product as any).trialInformationHeading || null,
     // Add important notices
     importantNotices: product.importantNotices || []
   }

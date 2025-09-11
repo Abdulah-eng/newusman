@@ -1781,7 +1781,7 @@ function ProductForm() {
   const [rating, setRating] = useState<number>(4.5)
   const [headline, setHeadline] = useState('Premium Sleep Experience')
   const [longDescription, setLongDescription] = useState('Write a compelling description about comfort, materials and value.')
-  const [warrantyDeliveryLine, setWarrantyDeliveryLine] = useState('10-Year Warranty • Free Delivery • 100-Night Trial')
+  const [warrantyDeliveryLine, setWarrantyDeliveryLine] = useState('1-Year Warranty • Free Delivery • 100-Night Trial')
   
   // Description paragraphs with images
   const [descriptionParagraphs, setDescriptionParagraphs] = useState([
@@ -1809,6 +1809,7 @@ function ProductForm() {
   
   // Trial information
   const [trialInformation, setTrialInformation] = useState('Try your mattress risk-free for 100 nights. If you are not completely satisfied, return it for a full refund. No questions asked.')
+  const [trialInformationHeading, setTrialInformationHeading] = useState('Trial')
   
   // Dimensions and specifications
   const [dimensions, setDimensions] = useState({
@@ -2305,7 +2306,7 @@ function ProductForm() {
     setRating(4.5)
     setHeadline('Premium Sleep Experience')
     setLongDescription('Write a compelling description about comfort, materials and value.')
-    setWarrantyDeliveryLine('10-Year Warranty • Free Delivery • 100-Night Trial')
+    setWarrantyDeliveryLine('1-Year Warranty • Free Delivery • 100-Night Trial')
     setFirmnessScale('Medium')
     setSupportLevel('Medium')
     setPressureReliefLevel('Medium')
@@ -2788,6 +2789,7 @@ function ProductForm() {
         warrantySections,
         careInstructions,
         trialInformation,
+        trialInformationHeading,
         dimensions: {
           ...dimensions,
           // Include editable headings
@@ -3805,15 +3807,23 @@ function ProductForm() {
         <h2 className="text-xl font-semibold mb-4">Trial Information</h2>
         <p className="text-sm text-gray-600 mb-4">Enter the trial period information that will appear in the Warranty & Care section.</p>
         
-                    <div>
+        <div className="mb-4">
+          <Label className="text-sm font-medium mb-2 block">Trial Heading</Label>
+          <Input 
+            value={trialInformationHeading}
+            onChange={e => setTrialInformationHeading(e.target.value)}
+            placeholder="e.g., Trial"
+          />
+        </div>
+        <div>
           <Label className="text-sm font-medium mb-2 block">Trial Information</Label>
           <Textarea 
             value={trialInformation} 
             onChange={e => setTrialInformation(e.target.value)}
             placeholder="e.g., Try your mattress risk-free for 100 nights. If you are not completely satisfied, return it for a full refund. No questions asked."
             rows={3}
-                      />
-                    </div>
+          />
+        </div>
       </Card>
 
       {/* Dimensions & Specifications */}
