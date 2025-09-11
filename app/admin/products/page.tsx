@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Edit, Trash2, Eye, Plus, Search, Filter, SortAsc, SortDesc } from 'lucide-react'
+import { Edit, Trash2, Eye, Plus, Search, Filter, SortAsc, SortDesc, Copy } from 'lucide-react'
 import Link from 'next/link'
 import { AdminNav } from '@/components/admin/admin-nav'
 
@@ -116,6 +116,136 @@ export default function AdminProductsPage() {
       alert('Failed to fetch products: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setLoading(false)
+    }
+  }
+
+  const duplicateProduct = async (productId: string) => {
+    try {
+      // Fetch full product details
+      const detailRes = await fetch(`/api/products/${productId}`)
+      if (!detailRes.ok) {
+        const err = await detailRes.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to fetch product details')
+      }
+      const detailJson = await detailRes.json()
+      const product = detailJson.product
+
+      // Build payload compatible with POST /api/products
+      const payload: any = {
+        category: product.category,
+        name: `${product.name} (Copy)`,
+        rating: product.rating,
+        headline: product.headline,
+        longDescription: product.longDescription,
+        warrantyDeliveryLine: product.warrantyDeliveryLine,
+        careInstructions: product.careInstructions,
+        trialInformation: product.trialInformation,
+        trialInformationHeading: (product as any).trialInformationHeading || null,
+        firmnessScale: product.firmnessScale,
+        supportLevel: product.supportLevel,
+        pressureReliefLevel: product.pressureReliefLevel,
+        airCirculationLevel: product.airCirculationLevel,
+        durabilityLevel: product.durabilityLevel,
+        isKidsCategory: product.showInKidsCategory,
+        isSalesCategory: product.showInSalesCategory,
+        selectedBunkbedMattresses: product.selectedMattresses,
+        images: product.images || [],
+        mainImageIndex: 0,
+        // Variants
+        variants: (product.variants || []).map((v: any, idx: number) => ({
+          sku: v.sku ? `${v.sku}-COPY-${Date.now()}-${idx}` : '',
+          originalPrice: v.originalPrice,
+          currentPrice: v.currentPrice,
+          color: v.color,
+          depth: v.depth,
+          firmness: v.firmness,
+          size: v.size,
+          length: v.length,
+          width: v.width,
+          height: v.height,
+          availability: v.availability,
+          variant_image: v.variant_image || null
+        })),
+        // selectedAttributes tell the API which variant fields to persist
+        selectedAttributes: (() => {
+          const variants = product.variants || []
+          const hasColor = variants.some((v: any) => typeof v.color === 'string' && v.color.trim() !== '')
+          const hasDepth = variants.some((v: any) => typeof v.depth === 'string' && v.depth.trim() !== '')
+          const hasFirmness = variants.some((v: any) => typeof v.firmness === 'string' && v.firmness.trim() !== '')
+          const hasSize = variants.some((v: any) => typeof v.size === 'string' && v.size.trim() !== '')
+          return { useColor: hasColor, useDepth: hasDepth, useFirmness: hasFirmness, useSize: hasSize }
+        })(),
+        selectedFeatures: product.selectedFeatures || product.features || [],
+        selectedReasonsToLove: (() => {
+          const source = (product.selectedReasonsToLove && product.selectedReasonsToLove.length > 0)
+            ? product.selectedReasonsToLove
+            : (product.product_reasons_to_love || []).map((r: any) => ({
+                reason: r.reason_text,
+                description: r.description,
+                smalltext: r.smalltext,
+                icon: r.icon
+              }))
+          return (source || []).map((r: any) => ({
+            reason: r.reason,
+            description: r.description,
+            smalltext: r.smalltext,
+            icon: r.icon
+          }))
+        })(),
+        // Normalize description paragraphs
+        descriptionParagraphs: (product.descriptionParagraphs || (product.product_description_paragraphs || []).map((p: any) => ({ heading: p.heading, content: p.content, image: (p.image || p.image_url || null) })) ).map((p: any) => ({ heading: p.heading, content: p.content, image: p.image })),
+        // Normalize FAQs
+        faqs: (product.faqs || (product.product_faqs || []).map((f: any) => ({ question: f.question, answer: f.answer })) ).map((f: any) => ({ question: f.question, answer: f.answer })),
+        warrantySections: (product.warrantySections || (product.product_warranty_sections || []).map((w: any) => ({ heading: w.heading, content: w.content })) ).map((w: any) => ({ heading: w.heading, content: w.content })),
+        dimensions: product.dimensions ? {
+          height: product.dimensions.height,
+          length: product.dimensions.length,
+          width: product.dimensions.width,
+          mattressSize: product.dimensions.mattress_size,
+          maximumHeight: product.dimensions.max_height,
+          weightCapacity: product.dimensions.weight_capacity,
+          pocketSprings: product.dimensions.pocket_springs,
+          comfortLayer: product.dimensions.comfort_layer,
+          supportLayer: product.dimensions.support_layer,
+          mattressSizeHeading: product.dimensions.mattress_size_heading,
+          maximumHeightHeading: product.dimensions.maximum_height_heading,
+          weightCapacityHeading: product.dimensions.weight_capacity_heading,
+          pocketSpringsHeading: product.dimensions.pocket_springs_heading,
+          comfortLayerHeading: product.dimensions.comfort_layer_heading,
+          supportLayerHeading: product.dimensions.support_layer_heading,
+          dimensionDisclaimer: product.dimensions.dimension_disclaimer,
+          show_basic_dimensions: product.dimensions.show_basic_dimensions,
+          show_mattress_specs: product.dimensions.show_mattress_specs,
+          show_technical_specs: product.dimensions.show_technical_specs
+        } : null,
+        importantNotices: (product.importantNotices || (product.product_important_notices || []).map((n: any) => ({ noticeText: n.notice_text, sortOrder: n.sort_order })) ).map((n: any) => ({ noticeText: n.noticeText, sortOrder: n.sortOrder })),
+        dimensionImages: (product.dimensionImages || (product.product_dimension_images || []).map((img: any) => ({
+          imageUrl: img.imageUrl || img.image_url,
+          fileName: img.fileName || img.file_name,
+          fileSize: img.fileSize || img.file_size,
+          fileType: img.fileType || img.file_type,
+          sortOrder: img.sortOrder || img.sort_order
+        }))) || [],
+        badges: product.badges || [],
+        selectedPopularCategories: product.selectedPopularCategories || (product.product_popular_categories || []).map((c: any) => c.popular_category_name)
+      }
+
+      const createRes = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (!createRes.ok) {
+        const err = await createRes.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to duplicate product')
+      }
+      const result = await createRes.json()
+      alert('Product duplicated successfully')
+      // Refresh list
+      fetchProducts()
+    } catch (e: any) {
+      console.error('Duplicate product error:', e)
+      alert(e?.message || 'Failed to duplicate product')
     }
   }
 
@@ -354,6 +484,15 @@ export default function AdminProductsPage() {
                           >
                             <Eye className="w-3 h-3 mr-1" />
                             View
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2"
+                            onClick={() => duplicateProduct(product.id)}
+                          >
+                            <Copy className="w-3 h-3 mr-1" />
+                            Duplicate
                           </Button>
                           <Button
                             variant="outline"

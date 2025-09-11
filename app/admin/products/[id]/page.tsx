@@ -1219,46 +1219,38 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             placeholder="SKU"
               />
             </div>
-                        {useSize && (
-            <div>
-                            <Label>Size</Label>
-              <Input 
-                              value={variant.size || ''}
-                              onChange={(e) => updateVariant(variant.id, { size: e.target.value })}
-                              placeholder="Size"
-              />
-            </div>
-                        )}
-                        {useColor && (
-              <div>
-                            <Label>Color</Label>
-                <Input 
-                              value={variant.color || ''}
-                              onChange={(e) => updateVariant(variant.id, { color: e.target.value })}
-                              placeholder="Color"
-                />
-               </div>
-                        )}
-                        {useDepth && (
-              <div>
-                            <Label>Depth</Label>
-                            <Input
-                              value={variant.depth || ''}
-                              onChange={(e) => updateVariant(variant.id, { depth: e.target.value })}
-                              placeholder="Depth"
-                />
-              </div>
-                        )}
-                        {useFirmness && (
-        <div>
-                            <Label>Firmness</Label>
-                            <Input
-                              value={variant.firmness || ''}
-                              onChange={(e) => updateVariant(variant.id, { firmness: e.target.value })}
-                              placeholder="Firmness"
-          />
-        </div>
-                        )}
+                        <div>
+                          <Label>Size</Label>
+                          <Input 
+                            value={variant.size || ''}
+                            onChange={(e) => updateVariant(variant.id, { size: e.target.value })}
+                            placeholder="Size"
+                          />
+                        </div>
+                        <div>
+                          <Label>Color</Label>
+                          <Input 
+                            value={variant.color || ''}
+                            onChange={(e) => updateVariant(variant.id, { color: e.target.value })}
+                            placeholder="Color"
+                          />
+                        </div>
+                        <div>
+                          <Label>Depth</Label>
+                          <Input
+                            value={variant.depth || ''}
+                            onChange={(e) => updateVariant(variant.id, { depth: e.target.value })}
+                            placeholder="Depth"
+                          />
+                        </div>
+                        <div>
+                          <Label>Firmness</Label>
+                          <Input
+                            value={variant.firmness || ''}
+                            onChange={(e) => updateVariant(variant.id, { firmness: e.target.value })}
+                            placeholder="Firmness"
+                          />
+                        </div>
         <div>
                           <Label>Length</Label>
                           <Input
