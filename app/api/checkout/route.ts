@@ -24,10 +24,13 @@ export async function POST(req: NextRequest) {
     items.forEach((item: any, index: number) => {
       const price = Number(item.currentPrice || item.price || 0)
       if (isNaN(price) || price <= 0) {
-        throw new Error(`Item ${index + 1} (${item.name}) has invalid price: ${item.currentPrice || item.price}`)
+        throw new Error(`Item ${index + 1} (${item.name || 'Unknown'}) has invalid price: ${item.currentPrice || item.price}`)
       }
-      if (!item.name) {
+      if (!item.name || item.name.trim() === '') {
         throw new Error(`Item ${index + 1} is missing name`)
+      }
+      if (!item.id) {
+        throw new Error(`Item ${index + 1} (${item.name}) is missing ID`)
       }
     })
 
@@ -71,15 +74,15 @@ export async function POST(req: NextRequest) {
         customerCity: customer.city || '',
         customerPostcode: customer.postcode || '',
         customerCountry: customer.country || '',
+        itemCount: items.length.toString(),
+        totalAmount: items.reduce((sum: number, item: any) => sum + ((item.currentPrice || item.price || 0) * (item.quantity || 1)), 0).toString(),
+        // Store only essential item info to stay under 500 char limit
         items: JSON.stringify(items.map((item: any) => ({
           id: item.id,
-          name: item.name,
-          size: item.size,
-          color: item.color,
-          quantity: item.quantity,
-          price: item.currentPrice || item.price,
-          variantSku: item.variantSku || item.sku || null
-        })))
+          name: (item.name || 'Unknown').substring(0, 20), // Truncate name further
+          qty: item.quantity || 1,
+          price: item.currentPrice || item.price || 0
+        }))).substring(0, 150) // Truncate entire items string further
       },
     })
 

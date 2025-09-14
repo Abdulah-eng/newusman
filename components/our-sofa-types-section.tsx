@@ -2,8 +2,10 @@
 
 import { Sofa, User, Grid, ChevronLeft, ChevronRight } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useHomePageContent } from '@/hooks/use-homepage-content'
+import { getFeatureIcon } from '@/lib/icon-mapping'
 
 export function OurSofaTypesSection() {
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -13,6 +15,7 @@ export function OurSofaTypesSection() {
   // Fetch actual sofa products when content changes
   useEffect(() => {
     const fetchSofaProducts = async () => {
+      
       // Check if we have sofa types with features
       if (content.sofa_types?.length > 0) {
         try {
@@ -42,10 +45,13 @@ export function OurSofaTypesSection() {
                     product.longDescription || 
                     "Premium sofa offering exceptional comfort and style."
                   
+                  // Get the appropriate icon based on the feature
+                  const IconComponent = getFeatureIcon(featureTitle, undefined, 'sm')
+                  
                   return {
                     id: product.id,
                     title: featureTitle,
-                    icon: <Sofa className="h-5 w-5 text-orange-500" />,
+                    icon: <IconComponent className="h-5 w-5" />,
                     description: productDescription,
                     image: productImage
                   }
@@ -65,36 +71,18 @@ export function OurSofaTypesSection() {
         } catch (error) {
           // Handle error silently
         }
+      } else {
+        // No data available - reset products
+        setSofaProducts([])
       }
     }
     
     fetchSofaProducts()
   }, [content.sofa_types])
   
-  // Use database products if available, otherwise fallback to hardcoded data
-  const sofaTypes = sofaProducts.length > 0 ? sofaProducts : [
-    {
-      id: 1,
-      title: "Premium Fabric Sofas",
-      icon: <Sofa className="h-5 w-5 text-orange-500" />,
-      description: "Experience luxury with our premium fabric sofas. Crafted with the finest materials for ultimate comfort and durability.",
-      image: "/sofa.jpeg"
-    },
-    {
-      id: 2,
-      title: "Leather Upholstery",
-      icon: <User className="h-5 w-5 text-orange-500" />,
-      description: "Timeless elegance meets modern comfort. Our leather sofas offer sophisticated style with exceptional durability.",
-      image: "/hello.jpeg"
-    },
-    {
-      id: 3,
-      title: "Memory Foam Cushions",
-      icon: <Grid className="h-5 w-5 text-orange-500" />,
-      description: "Unmatched comfort with our memory foam cushion technology. Perfect support that adapts to your body shape.",
-      image: "/hi.jpeg"
-    }
-  ]
+  // Only use database products - no hardcoded fallback
+  const sofaTypes = sofaProducts
+
 
   const cardsPerView = 3
   const maxIndex = sofaTypes.length - cardsPerView
@@ -107,6 +95,42 @@ export function OurSofaTypesSection() {
     setCurrentIndex(prev => Math.max(prev - 1, 0))
   }
 
+  // Show section even when empty, but with a message to add content
+  if (sofaTypes.length === 0) {
+    return (
+      <section className="py-12 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-black mb-4 font-display">
+              Our Sofa Types
+            </h2>
+            <p className="text-lg text-gray-700 font-modern">
+              Discover comfort and style with our diverse sofa collection.
+            </p>
+          </div>
+          
+          <div className="text-center py-12">
+            <div className="bg-gray-50 rounded-lg p-8 max-w-md mx-auto">
+              <div className="text-gray-400 mb-4">
+                <Sofa className="h-16 w-16 mx-auto" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">No Sofa Types Added Yet</h3>
+              <p className="text-gray-500 mb-4">
+                Add sofa types in the admin panel to display them here.
+              </p>
+              <a 
+                href="/admin/homepage" 
+                className="inline-block bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+              >
+                Go to Admin Panel
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="py-12 bg-white">
         <div className="container mx-auto px-4">
@@ -117,8 +141,6 @@ export function OurSofaTypesSection() {
             <p className="text-lg text-gray-700 font-modern">
               Discover comfort and style with our diverse sofa collection.
             </p>
-            
-
           </div>
         
           <div className="relative">
@@ -146,43 +168,81 @@ export function OurSofaTypesSection() {
                 className="flex transition-transform duration-500 ease-in-out"
                 style={{ transform: `translateX(-${currentIndex * (100 / 3)}%)` }}
               >
-                {sofaTypes.map((type) => (
-                  <div key={type.id} className="text-center flex-shrink-0 w-full md:w-1/3 px-4">
-                    <div className="relative mb-6">
-                      <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden">
-                        <Image
-                          src={type.image || "/sofa.jpeg"}
-                          alt={type.title}
-                          fill
-                          className="object-cover"
-                          onError={(e) => {
-                            console.error('🔍 OurSofaTypesSection - Image failed to load:', type.image)
-                            // Fallback to a working image if the current one fails
-                            const target = e.target as HTMLImageElement
-                            target.src = "/sofa.jpeg"
-                          }}
-                        />
-                        {/* Database indicator */}
-                        {sofaProducts.length > 0 && (
-                          <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
-                            DB
+                {sofaTypes.map((type) => {
+                  // All products are from database now
+                  const isDatabaseProduct = typeof type.id === 'string' && type.id.includes('-')
+                  const categoryForLink = isDatabaseProduct ? 'sofas' : 'sofas' // Default category for database products
+                  
+                  return (
+                    <div key={type.id} className="text-center flex-shrink-0 w-full md:w-1/3 px-4">
+                      {isDatabaseProduct ? (
+                        <Link href={`/products/${categoryForLink}/${type.id}`} className="block group">
+                          <div className="relative mb-6">
+                            <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden group-hover:shadow-lg transition-shadow duration-300">
+                              <Image
+                                src={type.image || "/sofa.jpeg"}
+                                alt={type.title}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                onError={(e) => {
+                                  console.error('🔍 OurSofaTypesSection - Image failed to load:', type.image)
+                                  // Fallback to a working image if the current one fails
+                                  const target = e.target as HTMLImageElement
+                                  target.src = "/sofa.jpeg"
+                                }}
+                              />
+                            </div>
                           </div>
-                        )}
-                      </div>
+                          
+                          <div className="flex items-center justify-center mb-3">
+                            <div className="text-orange-500">
+                              {type.icon}
+                            </div>
+                            <h3 className="font-semibold text-black ml-2 text-lg font-display group-hover:text-orange-500 transition-colors duration-300">
+                              {type.title}
+                            </h3>
+                          </div>
+                          
+                          <p className="text-gray-700 text-sm leading-relaxed font-modern">
+                            {type.description}
+                          </p>
+                        </Link>
+                      ) : (
+                        <div>
+                          <div className="relative mb-6">
+                            <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden">
+                              <Image
+                                src={type.image || "/sofa.jpeg"}
+                                alt={type.title}
+                                fill
+                                className="object-cover"
+                                onError={(e) => {
+                                  console.error('🔍 OurSofaTypesSection - Image failed to load:', type.image)
+                                  // Fallback to a working image if the current one fails
+                                  const target = e.target as HTMLImageElement
+                                  target.src = "/sofa.jpeg"
+                                }}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-center mb-3">
+                            <div className="text-orange-500">
+                              {type.icon}
+                            </div>
+                            <h3 className="font-semibold text-black ml-2 text-lg font-display">
+                              {type.title}
+                            </h3>
+                          </div>
+                          
+                          <p className="text-gray-700 text-sm leading-relaxed font-modern">
+                            {type.description}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                    
-                    <div className="flex items-center justify-center mb-3">
-                      {type.icon}
-                      <h3 className="font-semibold text-black ml-2 text-lg font-display">
-                        {type.title}
-                      </h3>
-                    </div>
-                    
-                    <p className="text-gray-700 text-sm leading-relaxed font-modern">
-                      {type.description}
-                    </p>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </div>

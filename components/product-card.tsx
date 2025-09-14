@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import Image from "next/image"
 import { Star, Circle, Zap, Layers, Ruler, Truck, Leaf, Recycle, Feather, Snowflake, Sprout, Brain, PackageOpen, Mountain, Droplet, Umbrella, Scroll, ArrowLeftRight, SlidersHorizontal, Grid, Gem, Waves, Shield, Users, ShieldCheck, Palette, Package, DollarSign, Award, Wrench, Minimize, Baby, Check, Radio, VolumeX, Heart, Trees } from 'lucide-react'
 import { Card, CardContent } from "@/components/ui/card"
@@ -7,6 +8,7 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/lib/cart-context"
+import { useWishlist } from "@/lib/wishlist-context"
 import { getFeatureIcon } from "@/lib/icon-mapping"
 import { useState } from "react"
 
@@ -103,6 +105,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { dispatch } = useCart()
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
   const [selectedImage, setSelectedImage] = useState(0)
   const categoryForLink = product.category || 'mattresses'
 
@@ -144,36 +147,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const buildProductFeatures = (): Array<{ label: string; Icon: React.ComponentType<{ className?: string }> | (() => JSX.Element) }> => {
     // Prefer database-provided features with meaningful icons
     if (safeProduct.features && safeProduct.features.length > 0) {
-      const getFeatureIcon = (label: string) => {
-        const text = (label || '').toLowerCase()
-        if (text.includes('memory') || text.includes('foam')) return () => <Brain className="h-4 w-4" />
-        if (text.includes('pocket') || text.includes('spring')) return () => (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
-            <rect x="2" y="8" width="20" height="8" rx="1" ry="1"/>
-            <path d="M4 10h2M8 10h2M12 10h2M16 10h2M20 10h2"/>
-            <rect x="2" y="12" width="20" height="4" rx="1" ry="1"/>
-            <path d="M4 14h2M8 14h2M12 14h2M16 14h2M20 14h2"/>
-          </svg>
-        )
-        if (text.includes('cool') || text.includes('breath') || text.includes('air')) return () => <Waves className="h-4 w-4" />
-        if (text.includes('gel') || text.includes('temperature')) return () => <Snowflake className="h-4 w-4" />
-        if (text.includes('edge')) return () => <Shield className="h-4 w-4" />
-        if (text.includes('firm')) return () => <SlidersHorizontal className="h-4 w-4" />
-        if (text.includes('anti') || text.includes('bacterial') || text.includes('microbial')) return () => <ShieldCheck className="h-4 w-4" />
-        if (text.includes('eco') || text.includes('organic') || text.includes('sustain')) return () => <Leaf className="h-4 w-4" />
-        if (text.includes('waterproof') || text.includes('cover')) return () => <Umbrella className="h-4 w-4" />
-        if (text.includes('warranty')) return () => <Shield className="h-4 w-4" />
-        // Additional mappings aligned with "Features you'll love"
-        if (text.includes('adjustable') && (text.includes('height') || text.includes('base'))) return () => <SlidersHorizontal className="h-4 w-4" />
-        if (text.includes('easy') && text.includes('assembly')) return () => <Wrench className="h-4 w-4" />
-        if (text.includes('upholster') || text.includes('headboard')) return () => <Package className="h-4 w-4" />
-        if (text.includes('wood')) return () => <Trees className="h-4 w-4" />
-        if (text.includes('metal') || text.includes('frame')) return () => <Shield className="h-4 w-4" />
-        if (text.includes('construction') || text.includes('built')) return () => <Wrench className="h-4 w-4" />
-        if (text.includes('design') || text.includes('style')) return () => <Palette className="h-4 w-4" />
-        return () => <Star className="h-4 w-4" />
-      }
-      return safeProduct.features.slice(0, 6).map(label => ({ label, Icon: getFeatureIcon(label) }))
+      // Use centralized icon mapping
+      return safeProduct.features.slice(0, 6).map(label => ({ label, Icon: getFeatureIcon(label, undefined, 'sm') }))
     }
 
     if (safeProduct.category === 'mattresses') {
@@ -470,8 +445,38 @@ export function ProductCard({ product }: ProductCardProps) {
               </div>
             )}
 
-            {/* Sale and New In Badges - Top Right */}
-            <div className="absolute top-3 right-3 z-20 flex flex-col gap-2 items-end">
+            {/* Wishlist Button - Top Right */}
+            <div className="absolute top-3 right-3 z-30">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="bg-white/80 hover:bg-white text-gray-700 hover:text-red-500 transition-colors"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  const wishlistItem = {
+                    id: safeProduct.id,
+                    name: safeProduct.name,
+                    image: safeProduct.images?.[0] || safeProduct.image || '/mattress-image.svg',
+                    price: safeProduct.currentPrice || safeProduct.price || 0,
+                    originalPrice: safeProduct.originalPrice,
+                    category: safeProduct.category,
+                    rating: safeProduct.rating
+                  }
+                  
+                  if (isInWishlist(safeProduct.id)) {
+                    removeFromWishlist(safeProduct.id)
+                  } else {
+                    addToWishlist(wishlistItem)
+                  }
+                }}
+              >
+                <Heart className={`w-4 h-4 ${isInWishlist(safeProduct.id) ? 'fill-red-500 text-red-500' : ''}`} />
+              </Button>
+            </div>
+
+            {/* Sale and New In Badges - Top Right (moved down) */}
+            <div className="absolute top-12 right-3 z-20 flex flex-col gap-2 items-end">
               {/* Product Badge from data */}
               {safeProduct.badge && (
                 <Badge className="bg-gray-600 hover:bg-gray-700 text-white border-0 px-3 py-1.5 text-sm font-semibold transition-all duration-200 cursor-pointer transform hover:scale-105 shadow-lg min-w-[60px] text-center">
@@ -515,7 +520,7 @@ export function ProductCard({ product }: ProductCardProps) {
               {productFeatures.map(({ label, Icon }, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <div className="text-gray-700">
-                    {typeof Icon === 'function' ? <Icon /> : null}
+                    {typeof Icon === 'function' ? (Icon as () => JSX.Element)() : React.createElement(Icon as React.ComponentType<{ className?: string }>, { className: "h-4 w-4" })}
                   </div>
                   <span className="text-sm text-gray-700 font-medium truncate">{label}</span>
                 </div>

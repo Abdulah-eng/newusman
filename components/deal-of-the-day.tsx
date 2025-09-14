@@ -1,14 +1,17 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Clock, Zap, Star, ArrowRight } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useHomePageContent } from "@/hooks/use-homepage-content"
+import { useCart } from "@/lib/cart-context"
 
 export function DealOfTheDay() {
   const { content } = useHomePageContent()
+  const { dispatch } = useCart()
   const [dealProducts, setDealProducts] = useState<any[]>([])
   const [mainDealProduct, setMainDealProduct] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -119,6 +122,28 @@ export function DealOfTheDay() {
   // Format price
   const formatPrice = (price: number) => {
     return `£${price.toFixed(2)}`
+  }
+
+  // Add product to cart
+  const addToCart = (product: any) => {
+    if (!product) return
+
+    const payload = {
+      id: product.id,
+      name: product.name || 'Premium Product',
+      price: product.currentPrice || product.price || 0,
+      image: product.images?.[0] || product.image || '/placeholder.jpg',
+      category: product.category || 'mattresses',
+      quantity: 1,
+      size: 'Queen', // Default size
+      color: 'Default', // Default color
+      firmness: product.firmness || 'Medium'
+    }
+
+    dispatch({
+      type: 'ADD_ITEM',
+      payload
+    })
   }
 
   // Loading state
@@ -320,12 +345,22 @@ export function DealOfTheDay() {
                 </div>
               </div>
 
-              {/* CTA Button */}
-              <Button className="bg-gradient-to-r from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                <Zap className="w-5 h-5 mr-2" />
-                Claim This Deal Now
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
+              {/* CTA Buttons */}
+              <div className="flex gap-4">
+                <Link href={`/products/${mainDealProduct.category || 'mattresses'}/${mainDealProduct.id}`}>
+                  <Button variant="outline" className="border-orange-400 text-orange-600 hover:bg-orange-50 px-6 py-3 text-lg font-semibold rounded-xl">
+                    View Deal
+                  </Button>
+                </Link>
+                <Button 
+                  onClick={() => addToCart(mainDealProduct)}
+                  className="bg-gradient-to-r from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                >
+                  <Zap className="w-5 h-5 mr-2" />
+                  Claim This Deal Now
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -375,9 +410,11 @@ export function DealOfTheDay() {
                       </span>
                     )}
                   </div>
-                  <Button variant="outline" size="sm" className="border-orange-300 text-orange-600 hover:bg-orange-50">
-                    View Deal
-                  </Button>
+                  <Link href={`/products/${product.category || 'mattresses'}/${product.id}`}>
+                    <Button variant="outline" size="sm" className="border-orange-300 text-orange-600 hover:bg-orange-50">
+                      View Deal
+                    </Button>
+                  </Link>
                 </div>
               </div>
             )

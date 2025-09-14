@@ -8,8 +8,7 @@ export async function GET(
   try {
     const { id } = await params
 
-    // OPTIMIZATION: Add caching headers for better performance
-    const cacheControl = 'public, s-maxage=600, stale-while-revalidate=1200' // Cache for 10 minutes, stale for 20 minutes
+    // No caching - always fetch fresh data
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -342,7 +341,7 @@ export async function GET(
       product: transformedProduct
     }, {
       headers: {
-        'Cache-Control': cacheControl
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
       }
     })
 

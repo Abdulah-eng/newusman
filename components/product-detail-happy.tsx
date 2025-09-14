@@ -409,71 +409,12 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   // Build a list of "Features you'll love" for reuse in the Product Features section
   const buildProductFeatures = () => {
     // Use centralized icon mapping for consistent icons across all components
-    const getFeatureIconLocal = (label: string) => {
-      const text = (label || '').toLowerCase()
-      
-      if (text.includes('memory') || text.includes('foam')) return () => <Brain className="h-4 w-4" />
-      if (text.includes('pocket') || text.includes('spring')) return () => (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
-          <rect x="2" y="8" width="20" height="8" rx="1" ry="1"/>
-          <path d="M4 10h2M8 10h2M12 10h2M16 10h2M20 10h2"/>
-          <rect x="2" y="12" width="20" height="4" rx="1" ry="1"/>
-          <path d="M4 14h2M8 14h2M12 14h2M16 14h2M20 14h2"/>
-        </svg>
-      )
-      if (text.includes('cool') || text.includes('breath') || text.includes('air')) return () => <Waves className="h-4 w-4" />
-      if (text.includes('gel') || text.includes('temperature')) return () => <Snowflake className="h-4 w-4" />
-      if (text.includes('edge')) return () => <Shield className="h-4 w-4" />
-      if (text.includes('firm')) return () => <SlidersHorizontal className="h-4 w-4" />
-      if (text.includes('anti') || text.includes('bacterial') || text.includes('microbial')) return () => <ShieldCheck className="h-4 w-4" />
-      if (text.includes('eco') || text.includes('organic') || text.includes('sustain')) return () => <Leaf className="h-4 w-4" />
-      if (text.includes('waterproof') || text.includes('cover')) return () => <Umbrella className="h-4 w-4" />
-      if (text.includes('warranty')) return () => <Shield className="h-4 w-4" />
-      if (text.includes('adjustable-base') || (text.includes('adjustable') && text.includes('base'))) return () => (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
-          <path d="M3 14h18"/>
-          <path d="M5 10h8l2 2"/>
-          <rect x="3" y="14" width="18" height="4" rx="1"/>
-        </svg>
-      )
-      if (text.includes('support') || text.includes('orth')) return () => <Heart className="h-4 w-4" />
-      if (text.includes('hypo') || text.includes('allergen')) return () => <Feather className="h-4 w-4" />
-      if (text.includes('delivery') || text.includes('shipping')) return () => <Truck className="h-4 w-4" />
-      if (text.includes('washable') || text.includes('removable')) return () => <PackageOpen className="h-4 w-4" />
-      if (text.includes('value') || text.includes('price') || text.includes('save')) return () => <DollarSign className="h-4 w-4" />
-      if (text.includes('durable') || text.includes('long')) return () => <Zap className="h-4 w-4" />
-      if (text.includes('luxury') || text.includes('premium')) return () => <Gem className="h-4 w-4" />
-      // Extra mappings aligned with the "Features you'll love" section
-      if (text.includes('easy') && text.includes('assembly')) return () => <Wrench className="h-4 w-4" />
-      if (text.includes('upholster') || text.includes('headboard')) return () => <Package className="h-4 w-4" />
-      if (text.includes('wood')) return () => <Trees className="h-4 w-4" />
-      if (text.includes('metal') || text.includes('frame')) return () => <Shield className="h-4 w-4" />
-      if (text.includes('construction') || text.includes('built')) return () => <Wrench className="h-4 w-4" />
-      if (text.includes('design') || text.includes('style')) return () => <Palette className="h-4 w-4" />
-      // Bunkbed specific mappings
-      if (text.includes('space') && text.includes('saving')) return () => <Minimize className="h-4 w-4" />
-      if (text.includes('multiple') && text.includes('sleeping')) return () => <Layers className="h-4 w-4" />
-      if (text.includes('solid') && text.includes('wood')) return () => <Trees className="h-4 w-4" />
-      if (text.includes('metal') && text.includes('frames')) return () => <Zap className="h-4 w-4" />
-      if (text.includes('single') && text.includes('over')) return () => <Bed className="h-4 w-4" />
-      if (text.includes('triple') && text.includes('bunk')) return () => <Layers className="h-4 w-4" />
-      if (text.includes('futon') && text.includes('bunk')) return () => <Bed className="h-4 w-4" />
-      if (text.includes('flat') && text.includes('pack')) return () => <Package className="h-4 w-4" />
-      if (text.includes('ladder') || text.includes('steps')) return () => <Square className="h-4 w-4" />
-      if (text.includes('guard') && text.includes('rails')) return () => <Shield className="h-4 w-4" />
-      if (text.includes('slatted') && text.includes('base')) return () => <Grid className="h-4 w-4" />
-      if (text.includes('easy') && text.includes('clean')) return () => <Droplet className="h-4 w-4" />
-      if (text.includes('heavy') && text.includes('duty')) return () => <Wrench className="h-4 w-4" />
-      if (text.includes('easy') && text.includes('assemble')) return () => <Wrench className="h-4 w-4" />
-      // Fallback icon
-      return () => <Star className="h-4 w-4" />
-    }
 
     // PRIORITY 1: Use database-provided features (same as product cards)
     if (product.features && product.features.length > 0) {
       return product.features.slice(0, 6).map(label => ({ 
         label, 
-        Icon: getFeatureIconLocal(label) 
+        Icon: getFeatureIcon(label, undefined, 'sm')
       }))
     }
 
@@ -1556,7 +1497,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                     {productFeatures.map(({ label, Icon }, index) => (
                         <div key={index} className="flex items-center gap-2 min-w-0">
                         <div className="w-4 h-4 text-orange-500 flex-shrink-0">
-                          {typeof Icon === 'function' ? Icon({}) : <Check className="h-4 w-4" />}
+                          <Icon className="h-4 w-4" />
                           </div>
                         <span className="text-sm text-gray-700 break-words">{label}</span>
                         </div>
@@ -2530,7 +2471,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                       <div key={`${label}-${idx}`} className="text-center min-w-0">
 
                         <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 text-orange-500 flex items-center justify-center">
-                          {typeof IconComp === 'function' ? <IconComp /> : null}
+                          {IconComp()}
                         </div>
                         {/* Small text below icon */}
                         {(product as any).reasonsToLoveSmalltext?.[idx] && (
@@ -2634,7 +2575,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                     return (
                       <div key={`fallback-${feature.label}-${idx}`} className="text-center min-w-0">
                         <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 text-orange-500 flex items-center justify-center">
-                          {typeof feature.Icon === 'function' ? <feature.Icon /> : null}
+                          {feature.Icon({})}
                   </div>
                         {/* Small text below icon for fallback features */}
                         {(product as any).reasonsToLoveSmalltext?.[idx] && (
@@ -3598,13 +3539,13 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                                 key={size.name} 
 
-                                className={`bg-white p-4 rounded-lg border-2 transition-all duration-200 hover:scale-105 cursor-pointer ${
+                                className={`bg-white p-6 rounded-xl border-2 transition-all duration-300 hover:scale-105 cursor-pointer relative ${
 
                                   selectedSize === size.name 
 
-                                    ? 'border-blue-500 bg-blue-50 shadow-md' 
+                                    ? 'border-orange-500 bg-orange-50 shadow-lg ring-2 ring-orange-200' 
 
-                                    : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                                    : 'border-gray-200 hover:border-orange-300 hover:shadow-lg'
 
                                 }`}
 
@@ -3612,29 +3553,33 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                               >
 
-                                <div className="font-semibold text-gray-900 mb-2">{size.name}</div>
+                                {/* Selection Indicator */}
+                                {selectedSize === size.name && (
+                                  <div className="absolute top-3 right-3">
+                                    <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                                      <Check className="h-4 w-4 text-white" />
+                                    </div>
+                                  </div>
+                                )}
 
-                                <div className="text-sm text-gray-600 mb-2">{size.dimensions}</div>
-
-                                
+                                <div className="font-bold text-gray-900 text-lg mb-3">{size.name}</div>
 
                                 {/* Variant Dimensions */}
-
                                 {(size.length || size.width || size.height) && (
 
-                                  <div className="mb-3">
+                                  <div className="mb-4">
 
-                                    <div className="text-xs text-gray-500 font-medium mb-2">Dimensions:</div>
+                                    <div className="text-xs text-gray-500 font-semibold mb-3 uppercase tracking-wide">Dimensions</div>
 
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex flex-wrap gap-2">
 
                                       {size.length && (
 
-                                        <div className="flex items-center gap-1 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded px-2 py-1">
+                                        <div className="flex items-center gap-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg px-3 py-2 shadow-sm">
 
-                                          <span className="text-blue-700 font-semibold text-xs">L</span>
+                                          <span className="text-blue-700 font-bold text-xs">L</span>
 
-                                          <span className="text-blue-900 font-bold text-xs">{size.length}</span>
+                                          <span className="text-blue-900 font-semibold text-sm">{size.length}</span>
 
                                         </div>
 
@@ -3642,11 +3587,11 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                                       {size.width && (
 
-                                        <div className="flex items-center gap-1 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded px-2 py-1">
+                                        <div className="flex items-center gap-1.5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg px-3 py-2 shadow-sm">
 
-                                          <span className="text-green-700 font-semibold text-xs">W</span>
+                                          <span className="text-green-700 font-bold text-xs">W</span>
 
-                                          <span className="text-green-900 font-bold text-xs">{size.width}</span>
+                                          <span className="text-green-900 font-semibold text-sm">{size.width}</span>
 
                                         </div>
 
@@ -3654,11 +3599,11 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                                       {size.height && (
 
-                                        <div className="flex items-center gap-1 bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-200 rounded px-2 py-1">
+                                        <div className="flex items-center gap-1.5 bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-200 rounded-lg px-3 py-2 shadow-sm">
 
-                                          <span className="text-purple-700 font-semibold text-xs">H</span>
+                                          <span className="text-purple-700 font-bold text-xs">H</span>
 
-                                          <span className="text-purple-900 font-bold text-xs">{size.height}</span>
+                                          <span className="text-purple-900 font-semibold text-sm">{size.height}</span>
 
                                         </div>
 
@@ -3670,27 +3615,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                                 )}
 
-                                
-
-                                <div className="text-sm text-orange-600 font-semibold">£{size.currentPrice.toFixed(2)}</div>
-
-                                
-
-                                {/* Selection Indicator */}
-
-                                {selectedSize === size.name && (
-
-                                  <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-
-                                    <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-
-                                    </svg>
-
-                                  </div>
-
-                                )}
+                                <div className="text-lg text-orange-600 font-bold">£{size.currentPrice.toFixed(2)}</div>
 
                               </div>
 
@@ -4324,7 +4249,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                     {productFeatures.map(({ label, Icon }, index) => (
                         <div key={index} className="flex items-center gap-2 min-w-0">
                         <div className="w-4 h-4 text-orange-500 flex-shrink-0">
-                          {typeof Icon === 'function' ? Icon({}) : <Check className="h-4 w-4" />}
+                          <Icon className="h-4 w-4" />
                           </div>
                         <span className="text-sm text-gray-700 break-words">{label}</span>
                         </div>

@@ -24,7 +24,7 @@ export function IdeasGuides() {
           image: guide.image || "/placeholder.jpg",
           icon: <Lightbulb className="w-5 h-5" />, // Default icon
           featured: index === 0, // First guide is featured
-          href: `/guides/${guide.id || index + 1}` // Generate link
+          href: `/guides` // All guides go to main guides page
         }
       })
       setGuides(transformedGuides)
@@ -62,7 +62,7 @@ export function IdeasGuides() {
           image: "/hi.jpeg",
           icon: <BookOpen className="w-5 h-5" />,
           featured: false,
-          href: "/guides/duvet"
+          href: "/guides"
         },
         {
           id: 4,
@@ -73,7 +73,7 @@ export function IdeasGuides() {
           image: "/sofa.jpeg",
           icon: <Star className="w-5 h-5" />,
           featured: false,
-          href: "/guides/size"
+          href: "/guides"
         }
       ])
     }
@@ -244,11 +244,13 @@ export function IdeasGuides() {
 
         {/* Call to Action */}
         <div className="text-center mt-16">
-          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-orange-400 to-red-500 text-white px-8 py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-            <Star className="w-5 h-5" />
-            Explore All Guides
-            <ArrowRight className="w-5 h-5" />
-          </div>
+          <Link href="/guides">
+            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-orange-400 to-red-500 text-white px-8 py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+              <Star className="w-5 h-5" />
+              Explore All Guides
+              <ArrowRight className="w-5 h-5" />
+            </div>
+          </Link>
         </div>
       </div>
     </section>

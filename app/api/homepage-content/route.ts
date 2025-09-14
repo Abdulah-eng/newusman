@@ -19,7 +19,22 @@ export async function GET() {
       return acc
     }, {} as Record<string, any>)
 
-    return NextResponse.json(transformedData)
+    console.log('🔍 Homepage Content API - Raw data:', data)
+    console.log('🔍 Homepage Content API - Transformed data:', transformedData)
+    console.log('🔍 Homepage Content API - Sofa types:', transformedData.sofa_types)
+    console.log('🔍 Homepage Content API - Bedroom inspiration:', transformedData.bedroom_inspiration)
+    
+    // Check if bedroom inspiration has valid product IDs
+    if (transformedData.bedroom_inspiration?.productCards) {
+      console.log('🔍 Homepage Content API - Bedroom inspiration product cards:', transformedData.bedroom_inspiration.productCards)
+      console.log('🔍 Homepage Content API - Product IDs in bedroom inspiration:', transformedData.bedroom_inspiration.productCards.map(card => card.productId))
+    }
+
+    return NextResponse.json(transformedData, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      }
+    })
   } catch (error) {
     console.error('Error in homepage content API:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -2,9 +2,12 @@ import type { Metadata } from 'next'
 import { Inter, Poppins, Outfit, Playfair_Display } from 'next/font/google'
 import './globals.css'
 import { CartProvider } from "@/lib/cart-context"
+import { WishlistProvider } from "@/lib/wishlist-context"
+import { AuthProvider } from "@/lib/auth-context"
 import Header from "@/components/header"
 import { Footer } from "@/components/footer"
 import { CartNotificationWrapper } from "@/components/cart-notification-wrapper"
+import { AuthPopupWrapper } from "@/components/auth-popup-wrapper"
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -58,12 +61,17 @@ html {
         `}</style>
       </head>
       <body className={`${inter.variable} ${poppins.variable} ${outfit.variable} ${playfair.variable}`}>
-        <CartProvider>
-          <Header />
-          {children}
-          <Footer />
-          <CartNotificationWrapper />
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <Header />
+              {children}
+              <Footer />
+              <CartNotificationWrapper />
+              <AuthPopupWrapper />
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   )

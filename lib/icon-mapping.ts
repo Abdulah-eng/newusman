@@ -52,7 +52,18 @@ import {
   VolumeX,
   Scroll,
   Settings,
-  Circle
+  Circle,
+  Compass,
+  Timer,
+  Wind,
+  Activity,
+  Archive,
+  FoldHorizontal,
+  Stethoscope,
+  Plus,
+  Gift,
+  PoundSterling,
+  FileCheck
 } from 'lucide-react'
 
 // Centralized icon mapping utility for consistent icon usage across all components
@@ -133,6 +144,21 @@ export const getIconComponent = (iconName: string, size: 'sm' | 'md' | 'lg' = 'm
     'scroll-text': () => React.createElement(ScrollText, { className: sizeClasses[size] }),
     'settings': () => React.createElement(Settings, { className: sizeClasses[size] }),
     'circle': () => React.createElement(Circle, { className: sizeClasses[size] }),
+    
+    // New mattress feature icons
+    'comfort-layer': () => React.createElement(Layers, { className: sizeClasses[size] }),
+    'support-system': () => React.createElement(Shield, { className: sizeClasses[size] }),
+    'durability-lifespan': () => React.createElement(Timer, { className: sizeClasses[size] }),
+    'size-options': () => React.createElement(Compass, { className: sizeClasses[size] }),
+    'temperature-regulation': () => React.createElement(Thermometer, { className: sizeClasses[size] }),
+    'motion-isolation': () => React.createElement(VolumeX, { className: sizeClasses[size] }),
+    'vacuum-packed': () => React.createElement(Archive, { className: sizeClasses[size] }),
+    'foldable': () => React.createElement(FoldHorizontal, { className: sizeClasses[size] }),
+    'health-safety': () => React.createElement(Stethoscope, { className: sizeClasses[size] }),
+    'comfort-enhancements': () => React.createElement(Plus, { className: sizeClasses[size] }),
+    'free-shipping': () => React.createElement(Gift, { className: sizeClasses[size] }),
+    'budget-friendly': () => React.createElement(DollarSign, { className: sizeClasses[size] }),
+    'british-standards': () => React.createElement(FileCheck, { className: sizeClasses[size] }),
     
     // Legacy icon names (for backward compatibility)
     'memory-foam': () => React.createElement(Brain, { className: sizeClasses[size] }),
@@ -236,8 +262,8 @@ export const getSmartIcon = (text: string, size: 'sm' | 'md' | 'lg' = 'md') => {
   }
   
   // Temperature regulation
-  if (lowerText.includes('gel') || lowerText.includes('temperature')) {
-    return getIconComponent('snowflake', size)
+  if (lowerText.includes('gel') || lowerText.includes('temperature') || lowerText.includes('temperature regulation')) {
+    return getIconComponent('thermometer', size)
   }
   
   // Edge support
@@ -350,6 +376,47 @@ export const getSmartIcon = (text: string, size: 'sm' | 'md' | 'lg' = 'md') => {
     return getIconComponent('sliders', size)
   }
   
+  // New mattress feature patterns
+  if (lowerText.includes('comfort layer')) {
+    return getIconComponent('comfort-layer', size)
+  }
+  if (lowerText.includes('support system')) {
+    return getIconComponent('support-system', size)
+  }
+  if (lowerText.includes('durability') && lowerText.includes('lifespan')) {
+    return getIconComponent('durability-lifespan', size)
+  }
+  if (lowerText.includes('size options')) {
+    return getIconComponent('size-options', size)
+  }
+  if (lowerText.includes('temperature regulation')) {
+    return getIconComponent('temperature-regulation', size)
+  }
+  if (lowerText.includes('motion isolation')) {
+    return getIconComponent('motion-isolation', size)
+  }
+  if (lowerText.includes('vacuum packed') || lowerText.includes('rolled')) {
+    return getIconComponent('vacuum-packed', size)
+  }
+  if (lowerText.includes('foldable')) {
+    return getIconComponent('foldable', size)
+  }
+  if (lowerText.includes('health') && lowerText.includes('safety')) {
+    return getIconComponent('health-safety', size)
+  }
+  if (lowerText.includes('comfort enhancements')) {
+    return getIconComponent('comfort-enhancements', size)
+  }
+  if (lowerText.includes('free shipping')) {
+    return getIconComponent('free-shipping', size)
+  }
+  if (lowerText.includes('budget friendly') || lowerText.includes('budget-friendly')) {
+    return getIconComponent('budget-friendly', size)
+  }
+  if (lowerText.includes('british standards') || lowerText.includes('made to british')) {
+    return getIconComponent('british-standards', size)
+  }
+
   // Default fallback - use a meaningful icon instead of a tick mark
   return getIconComponent('star', size)
 }

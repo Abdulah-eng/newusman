@@ -1619,6 +1619,20 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
                         <option value="upholstery">Upholstery</option>
                         <option value="construction">Construction</option>
                         <option value="design">Design</option>
+                        {/* New mattress features */}
+                        <option value="comfort-layer">Comfort Layer</option>
+                        <option value="support-system">Support System</option>
+                        <option value="durability-lifespan">Durability & Lifespan</option>
+                        <option value="size-options">Size Options</option>
+                        <option value="temperature-regulation">Temperature Regulation</option>
+                        <option value="motion-isolation">Motion Isolation</option>
+                        <option value="vacuum-packed">Vacuum Packed & Rolled</option>
+                        <option value="foldable">Foldable</option>
+                        <option value="health-safety">Health & Safety</option>
+                        <option value="comfort-enhancements">Comfort Enhancements</option>
+                        <option value="free-shipping">Free Shipping</option>
+                        <option value="budget-friendly">Budget-Friendly</option>
+                        <option value="british-standards">Made to British Standards</option>
                       </select>
                     </div>
 

@@ -7,12 +7,14 @@ import { Search, ShoppingCart, Heart, Mail, X, Truck, HeadphonesIcon, ArrowRight
 import { Input } from "@/components/ui/input"
 import { Sora } from 'next/font/google'
 import { useCart } from "@/lib/cart-context"
+import { useWishlist } from "@/lib/wishlist-context"
 import { usePathname } from 'next/navigation'
 
 const sora = Sora({ subsets: ['latin'], weight: ['800'] })
 
 export default function Header() {
   const { state } = useCart()
+  const { wishlistCount } = useWishlist()
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isTopBarVisible, setIsTopBarVisible] = useState(true)
@@ -198,8 +200,13 @@ export default function Header() {
                 {/* Login/Logout */}
                 <AuthButton />
                 
-                <Link href="/wishlist" className="hover:text-orange-400 transition-colors">
+                <Link href="/wishlist" className="relative hover:text-orange-400 transition-colors">
                   <Heart className="w-5 h-5 lg:w-6 lg:h-6" />
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                      {wishlistCount > 99 ? '99+' : wishlistCount}
+                    </span>
+                  )}
                 </Link>
                 
                 <div className="relative group">
@@ -1976,7 +1983,7 @@ export default function Header() {
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-4 gap-4">
                       {/* Product Card 1 */}
-                    <Link href="/guides/mattress-buying-guide" className="group">
+                    <Link href="/guides" className="group">
                       <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                         <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                           <img src="/placeholder.jpg" alt="Mattress Buying Guide" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -2001,7 +2008,7 @@ export default function Header() {
                       </Link>
 
                       {/* Product Card 2 */}
-                    <Link href="/guides/sleep-tips-guide" className="group">
+                    <Link href="/guides" className="group">
                       <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                         <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                           <img src="/placeholder.jpg" alt="Sleep Tips Guide" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -2026,7 +2033,7 @@ export default function Header() {
                       </Link>
 
                       {/* Product Card 3 */}
-                    <Link href="/guides/bedroom-design-guide" className="group">
+                    <Link href="/guides" className="group">
                       <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                         <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                           <img src="/placeholder.jpg" alt="Bedroom Design Guide" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -2051,7 +2058,7 @@ export default function Header() {
                       </Link>
 
                       {/* Product Card 4 */}
-                    <Link href="/guides/furniture-care-guide" className="group">
+                    <Link href="/guides" className="group">
                       <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                         <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                           <img src="/placeholder.jpg" alt="Furniture Care Guide" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />

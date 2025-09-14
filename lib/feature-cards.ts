@@ -37,7 +37,21 @@ export const HARDCODED_FEATURE_CARDS: Record<string, FeatureCard[]> = {
     { id: 'revo-vasco-foam', title: 'Revo Vasco Foam', description: 'Innovative foam technology for superior comfort.', icon: 'brain' },
     { id: 'comfort-foam', title: 'Comfort Foam', description: 'Specially formulated foam for maximum comfort.', icon: 'heart' },
     { id: 'gel-infused', title: 'Gel Infused', description: 'Gel-infused technology for temperature regulation.', icon: 'droplet' },
-    { id: 'polyester-fillings', title: 'Polyester Fillings', description: 'Soft and durable polyester fiber fillings.', icon: 'layers' }
+    { id: 'polyester-fillings', title: 'Polyester Fillings', description: 'Soft and durable polyester fiber fillings.', icon: 'layers' },
+    // New mattress features
+    { id: 'comfort-layer', title: 'Comfort Layer', description: 'Premium comfort layer for enhanced sleep experience.', icon: 'comfort-layer' },
+    { id: 'support-system', title: 'Support System', description: 'Advanced support system for proper spinal alignment.', icon: 'support-system' },
+    { id: 'durability-lifespan', title: 'Durability & Lifespan', description: 'Built to last with exceptional durability and longevity.', icon: 'durability-lifespan' },
+    { id: 'size-options', title: 'Size Options', description: 'Available in multiple sizes to fit any bedroom.', icon: 'size-options' },
+    { id: 'temperature-regulation', title: 'Temperature Regulation', description: 'Advanced temperature control for comfortable sleep.', icon: 'temperature-regulation' },
+    { id: 'motion-isolation', title: 'Motion Isolation', description: 'Minimizes partner disturbance for undisturbed sleep.', icon: 'motion-isolation' },
+    { id: 'vacuum-packed', title: 'Vacuum Packed & Rolled', description: 'Convenient vacuum-packed delivery for easy handling.', icon: 'vacuum-packed' },
+    { id: 'foldable', title: 'Foldable', description: 'Foldable design for easy storage and transportation.', icon: 'foldable' },
+    { id: 'health-safety', title: 'Health & Safety', description: 'Certified safe materials for healthy sleep environment.', icon: 'health-safety' },
+    { id: 'comfort-enhancements', title: 'Comfort Enhancements', description: 'Additional comfort features for superior sleep quality.', icon: 'comfort-enhancements' },
+    { id: 'free-shipping', title: 'Free Shipping', description: 'Complimentary delivery to your doorstep.', icon: 'free-shipping' },
+    { id: 'budget-friendly', title: 'Budget-Friendly', description: 'Exceptional value without compromising on quality.', icon: 'budget-friendly' },
+    { id: 'british-standards', title: 'Made to British Standards', description: 'Manufactured to meet strict British quality standards.', icon: 'british-standards' }
   ],
   // Other categories intentionally abbreviated here; they already render correctly
   pillows: [

@@ -13,7 +13,7 @@ export async function GET(
     const offset = (page - 1) * limit
 
     // OPTIMIZATION: Add caching headers for better performance
-    const cacheControl = 'public, s-maxage=300, stale-while-revalidate=600' // Cache for 5 minutes, stale for 10 minutes
+    // No caching - always fetch fresh data
 
     // Handle special cases for kids and sales categories
     if (category === 'kids') {
@@ -179,7 +179,7 @@ export async function GET(
         totalPages: Math.ceil((totalCount || 0) / limit)
       }, {
         headers: {
-          'Cache-Control': cacheControl
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
         }
       })
     }
@@ -356,7 +356,7 @@ export async function GET(
         totalPages: Math.ceil((totalCount || 0) / limit)
       }, {
         headers: {
-          'Cache-Control': cacheControl
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
         }
       })
     }
@@ -547,7 +547,7 @@ export async function GET(
       totalPages: Math.ceil((totalCount || 0) / limit)
     }, {
       headers: {
-        'Cache-Control': cacheControl
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
       }
     })
 

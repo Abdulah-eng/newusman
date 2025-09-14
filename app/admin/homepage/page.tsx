@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 import { AdminNav } from '@/components/admin/admin-nav'
-import { CacheManager } from '@/components/admin/cache-manager'
 import { ImageUploadTest } from '@/components/admin/image-upload-test'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -282,7 +281,11 @@ export default function HomePageAdmin() {
         image: '/placeholder.jpg'
       })) || []
       
-      console.log('Loaded products:', transformedProducts)
+      console.log('🔍 Admin - Loaded products:', transformedProducts)
+      console.log('🔍 Admin - Total products available:', transformedProducts.length)
+      if (transformedProducts.length > 0) {
+        console.log('🔍 Admin - First few product IDs:', transformedProducts.slice(0, 3).map(p => p.id))
+      }
       setAllProducts(transformedProducts)
 
       // Load mattresses (products in mattress category)
@@ -301,7 +304,7 @@ export default function HomePageAdmin() {
         throw mattressesError
       }
       
-      const transformedMattresses = mattresses?.map(mattress => ({
+      let transformedMattresses = mattresses?.map(mattress => ({
         id: mattress.id,
         name: mattress.name,
         category: mattress.categories?.name || 'Unknown',
@@ -310,10 +313,16 @@ export default function HomePageAdmin() {
         image: '/placeholder.jpg'
       })) || []
       
+      // If no mattresses exist, use all products instead
+      if (transformedMattresses.length === 0) {
+        console.log('No mattresses found, using all products for mattresses')
+        transformedMattresses = transformedProducts
+      }
+      
       console.log('Loaded mattresses:', transformedMattresses)
       setAllMattresses(transformedMattresses)
 
-      // Load sofas (products in sofa category)
+      // Load sofas (products in sofa category) - if no sofas exist, load all products
       const { data: sofas, error: sofasError } = await supabase
         .from('products')
         .select(`
@@ -329,7 +338,7 @@ export default function HomePageAdmin() {
         throw sofasError
       }
       
-      const transformedSofas = sofas?.map(sofa => ({
+      let transformedSofas = sofas?.map(sofa => ({
         id: sofa.id,
         name: sofa.name,
         category: sofa.categories?.name || 'Unknown',
@@ -337,6 +346,12 @@ export default function HomePageAdmin() {
         original_price: 0,
         image: '/placeholder.jpg'
       })) || []
+      
+      // If no sofas exist, use all products instead
+      if (transformedSofas.length === 0) {
+        console.log('No sofas found, using all products for sofa types')
+        transformedSofas = transformedProducts
+      }
       
       console.log('Loaded sofas:', transformedSofas)
       setAllSofas(transformedSofas)
@@ -353,6 +368,38 @@ export default function HomePageAdmin() {
   const saveHomePageContent = async () => {
     setSaving(true)
     try {
+      // Validate product IDs before saving
+      const allProductIds = allProducts.map(p => p.id)
+      console.log('🔍 Admin - Available product IDs:', allProductIds)
+      
+      // Check bedroom inspiration product IDs
+      if (bedroomInspiration.productCards) {
+        const invalidIds = bedroomInspiration.productCards
+          .map(card => card.productId)
+          .filter(id => id && !allProductIds.includes(id))
+        
+        if (invalidIds.length > 0) {
+          console.error('❌ Invalid product IDs in bedroom inspiration:', invalidIds)
+          alert(`Invalid product IDs found: ${invalidIds.join(', ')}. Please select valid products.`)
+          setSaving(false)
+          return
+        }
+      }
+      
+      // Check mattress product IDs
+      if (mattressesSection.mattressCards) {
+        const invalidIds = mattressesSection.mattressCards
+          .map(card => card.productId)
+          .filter(id => id && !allProductIds.includes(id))
+        
+        if (invalidIds.length > 0) {
+          console.error('❌ Invalid product IDs in mattresses section:', invalidIds)
+          alert(`Invalid product IDs found: ${invalidIds.join(', ')}. Please select valid products.`)
+          setSaving(false)
+          return
+        }
+      }
+      
       const contentSections = [
         { section: 'hero', content: heroSection, order_index: 1 },
         { section: 'image_cards', content: imageCards, order_index: 2 },
@@ -370,6 +417,9 @@ export default function HomePageAdmin() {
         console.log(`Saving section: ${section.section}`)
         if (section.section === 'mattresses') {
           console.log('🔍 Admin - Saving mattresses section with content:', section.content)
+        }
+        if (section.section === 'bedroom_inspiration') {
+          console.log('🔍 Admin - Saving bedroom inspiration section with content:', section.content)
         }
         const { error } = await supabase
           .from('homepage_content')
@@ -529,10 +579,6 @@ export default function HomePageAdmin() {
         </div>
 
         <div className="space-y-6">
-          {/* Cache Management */}
-          <div className="flex justify-end">
-            <CacheManager />
-          </div>
           
           {/* Image Upload Test */}
           <Card className="p-6">
@@ -1030,11 +1076,18 @@ export default function HomePageAdmin() {
            <Card className="p-6">
              <div className="flex items-center justify-between mb-4">
                <h2 className="text-xl font-semibold">Turn Your Bedroom Into Inspiration</h2>
-               <Button onClick={() => setBedroomInspiration(prev => ({ 
-                 ...prev, 
-                 productIds: [...prev.productIds, ''],
-                 productCards: [...prev.productCards, { productId: '', featureToShow: '' }]
-               }))} size="sm">
+               <Button onClick={() => {
+                 console.log('🔍 Admin - Adding new bedroom inspiration product')
+                 setBedroomInspiration(prev => {
+                   const newState = {
+                     ...prev, 
+                     productIds: [...prev.productIds, ''],
+                     productCards: [...prev.productCards, { productId: '', featureToShow: '' }]
+                   }
+                   console.log('🔍 Admin - New bedroom inspiration state after add:', newState)
+                   return newState
+                 })
+               }} size="sm">
                  <Plus className="w-4 h-4 mr-2" />
                  Add Product
                </Button>
@@ -1048,11 +1101,18 @@ export default function HomePageAdmin() {
                      <Button
                        variant="ghost"
                        size="sm"
-                       onClick={() => setBedroomInspiration(prev => ({
-                         ...prev,
-                         productCards: prev.productCards.filter((_, i) => i !== index),
-                         productIds: prev.productIds.filter((_, i) => i !== index)
-                       }))}
+                       onClick={() => {
+                         console.log('🔍 Admin - Deleting bedroom inspiration product at index:', index)
+                         setBedroomInspiration(prev => {
+                           const newState = {
+                             ...prev,
+                             productCards: prev.productCards.filter((_, i) => i !== index),
+                             productIds: prev.productIds.filter((_, i) => i !== index)
+                           }
+                           console.log('🔍 Admin - New bedroom inspiration state after delete:', newState)
+                           return newState
+                         })
+                       }}
                        className="text-red-600 hover:text-red-700"
                      >
                        <Trash2 className="w-4 h-4" />
@@ -1065,20 +1125,25 @@ export default function HomePageAdmin() {
                        <select
                          value={productCard.productId}
                          onChange={(e) => {
-                           setBedroomInspiration(prev => ({
-                             ...prev,
-                             productCards: prev.productCards.map((card, i) => 
-                               i === index ? { ...card, productId: e.target.value } : card
-                             ),
-                             productIds: prev.productIds.map((id, i) => 
-                               i === index ? e.target.value : id
-                             )
-                           }))
+                           console.log('🔍 Admin - Updating bedroom inspiration product:', e.target.value, 'at index:', index)
+                           setBedroomInspiration(prev => {
+                             const newState = {
+                               ...prev,
+                               productCards: prev.productCards.map((card, i) => 
+                                 i === index ? { ...card, productId: e.target.value } : card
+                               ),
+                               productIds: prev.productIds.map((id, i) => 
+                                 i === index ? e.target.value : id
+                               )
+                             }
+                             console.log('🔍 Admin - New bedroom inspiration state:', newState)
+                             return newState
+                           })
                          }}
                          className="w-full border border-gray-300 rounded-md px-3 py-2"
                        >
                          <option value="">Choose a product</option>
-                                                   {allProducts.filter(p => ['beds', 'bedding', 'bed-frames'].includes(p.category.toLowerCase())).map((product) => (
+                         {allProducts.map((product) => (
                             <option key={product.id} value={product.id}>
                               {product.name} ({product.category})
                             </option>
@@ -1090,12 +1155,19 @@ export default function HomePageAdmin() {
                        <Label className="block mb-2">Feature to Show</Label>
                                                 <select
                            value={productCard.featureToShow}
-                           onChange={(e) => setBedroomInspiration(prev => ({
-                             ...prev,
-                             productCards: prev.productCards.map((card, i) => 
-                               i === index ? { ...card, featureToShow: e.target.value } : card
-                             )
-                           }))}
+                           onChange={(e) => {
+                             console.log('🔍 Admin - Updating bedroom inspiration feature:', e.target.value, 'at index:', index)
+                             setBedroomInspiration(prev => {
+                               const newState = {
+                                 ...prev,
+                                 productCards: prev.productCards.map((card, i) => 
+                                   i === index ? { ...card, featureToShow: e.target.value } : card
+                                 )
+                               }
+                               console.log('🔍 Admin - New bedroom inspiration state after feature update:', newState)
+                               return newState
+                             })
+                           }}
                            className="w-full border border-gray-300 rounded-md px-3 py-2"
                          >
                          <option value="">Choose a feature</option>

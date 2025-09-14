@@ -2,6 +2,7 @@
 
 import { Bed, User, Grid, ChevronLeft, ChevronRight } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useHomePageContent } from '@/hooks/use-homepage-content'
 
@@ -200,43 +201,77 @@ export function MattressTypesSection() {
               className="flex transition-transform duration-500 ease-in-out"
               style={{ transform: `translateX(-${currentIndex * (100 / 3)}%)` }}
             >
-              {mattressTypes.map((type) => (
-                <div key={type.id} className="text-center flex-shrink-0 w-full md:w-1/3 px-4">
-                  <div className="relative mb-6">
-                    <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden">
-                                             <Image
-                         src={type.image || "/bedcollect.jpeg"}
-                         alt={type.title}
-                         fill
-                         className="object-cover"
-                         onError={(e) => {
-                           console.error('🔍 MattressTypesSection - Image failed to load:', type.image)
-                           // Fallback to a working image if the current one fails
-                           const target = e.target as HTMLImageElement
-                           target.src = "/bedcollect.jpeg"
-                         }}
-                       />
-                      {/* Database indicator */}
-                      {mattressProducts.length > 0 && (
-                        <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
-                          DB
+              {mattressTypes.map((type) => {
+                // Check if this is a database product (has UUID format) or fallback
+                const isDatabaseProduct = typeof type.id === 'string' && type.id.includes('-')
+                const categoryForLink = isDatabaseProduct ? 'mattresses' : 'mattresses' // Default category for database products
+                
+                return (
+                  <div key={type.id} className="text-center flex-shrink-0 w-full md:w-1/3 px-4">
+                    {isDatabaseProduct ? (
+                      <Link href={`/products/${categoryForLink}/${type.id}`} className="block group">
+                        <div className="relative mb-6">
+                          <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden group-hover:shadow-lg transition-shadow duration-300">
+                            <Image
+                              src={type.image || "/bedcollect.jpeg"}
+                              alt={type.title}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform duration-300"
+                              onError={(e) => {
+                                console.error('🔍 MattressTypesSection - Image failed to load:', type.image)
+                                // Fallback to a working image if the current one fails
+                                const target = e.target as HTMLImageElement
+                                target.src = "/bedcollect.jpeg"
+                              }}
+                            />
+                          </div>
                         </div>
-                      )}
-                    </div>
+                        
+                        <div className="flex items-center justify-center mb-3">
+                          {type.icon}
+                          <h3 className="font-semibold text-black ml-2 text-lg font-display group-hover:text-orange-600 transition-colors">
+                            {type.title}
+                          </h3>
+                        </div>
+                        
+                        <p className="text-gray-700 text-sm leading-relaxed font-modern">
+                          {type.description}
+                        </p>
+                      </Link>
+                    ) : (
+                      <div>
+                        <div className="relative mb-6">
+                          <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden">
+                            <Image
+                              src={type.image || "/bedcollect.jpeg"}
+                              alt={type.title}
+                              fill
+                              className="object-cover"
+                              onError={(e) => {
+                                console.error('🔍 MattressTypesSection - Image failed to load:', type.image)
+                                // Fallback to a working image if the current one fails
+                                const target = e.target as HTMLImageElement
+                                target.src = "/bedcollect.jpeg"
+                              }}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-center mb-3">
+                          {type.icon}
+                          <h3 className="font-semibold text-black ml-2 text-lg font-display">
+                            {type.title}
+                          </h3>
+                        </div>
+                        
+                        <p className="text-gray-700 text-sm leading-relaxed font-modern">
+                          {type.description}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  
-                  <div className="flex items-center justify-center mb-3">
-                    {type.icon}
-                    <h3 className="font-semibold text-black ml-2 text-lg font-display">
-                      {type.title}
-                    </h3>
-                  </div>
-                  
-                  <p className="text-gray-700 text-sm leading-relaxed font-modern">
-                    {type.description}
-                  </p>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </div>

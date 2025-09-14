@@ -224,6 +224,49 @@ export default function CheckoutPage() {
   }
 
   const handleCheckout = async () => {
+    // Validate required fields
+    if (!customerInfo.firstName.trim()) {
+      alert('Please enter your first name')
+      return
+    }
+    if (!customerInfo.lastName.trim()) {
+      alert('Please enter your last name')
+      return
+    }
+    if (!customerInfo.email.trim()) {
+      alert('Please enter your email address')
+      return
+    }
+    if (!customerInfo.phone.trim()) {
+      alert('Please enter your phone number')
+      return
+    }
+    if (!customerInfo.address.trim()) {
+      alert('Please enter your address')
+      return
+    }
+    if (!customerInfo.city.trim()) {
+      alert('Please enter your city')
+      return
+    }
+    if (!customerInfo.postcode.trim()) {
+      alert('Please enter your postcode')
+      return
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(customerInfo.email)) {
+      alert('Please enter a valid email address')
+      return
+    }
+
+    // Validate cart has items
+    if (!state.items || state.items.length === 0) {
+      alert('Your cart is empty')
+      return
+    }
+
     setIsProcessing(true)
     
     // Debug logging

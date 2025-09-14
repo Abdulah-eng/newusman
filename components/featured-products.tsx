@@ -8,7 +8,7 @@ interface FeaturedProductsProps {
 }
 
 interface Product {
-  id: number
+  id: string
   name: string
   brand: string
   brandColor: string
@@ -74,7 +74,7 @@ export function FeaturedProducts({ selectedCategory = 'Silentnight mattresses' }
         
         // Transform database products to match Product interface
         const transformedProducts = data.products?.slice(0, 4).map((dbProduct: any) => ({
-          id: parseInt(dbProduct.id.replace(/-/g, '').slice(0, 8), 16) || Math.floor(Math.random() * 10000),
+          id: dbProduct.id, // Keep the original UUID string
           name: dbProduct.name,
           brand: dbProduct.brand || 'Premium Brand',
           brandColor: 'blue',
@@ -113,7 +113,7 @@ export function FeaturedProducts({ selectedCategory = 'Silentnight mattresses' }
         // Set fallback products
         setFallbackProducts([
           {
-            id: 1,
+            id: "fallback-1",
             name: "Premium Memory Foam Mattress",
             brand: "SLEEP COMFORT",
             brandColor: "blue",

@@ -286,7 +286,7 @@ export function ProductDetailCard({ product }: ProductDetailCardProps) {
                 {productFeatures.map(({ label, Icon }, index) => (
                   <div key={index} className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
                     <span className="text-blue-600">
-                      {typeof Icon === 'function' ? <Icon /> : <Icon className="h-4 w-4" />}
+                      <Icon className="h-4 w-4" />
                     </span>
                     <span className="text-sm font-medium text-gray-700">{label}</span>
                   </div>
