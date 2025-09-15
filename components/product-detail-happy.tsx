@@ -636,23 +636,36 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   // Smart variant selection logic
   const getAvailableVariantOptions = useCallback(() => {
     const variants = (product as any).variants || []
-    
-    // Check for meaningful variant values - exclude null, undefined, empty strings, and whitespace
-    const hasSizes = variants.some((v: any) => v.size && typeof v.size === 'string' && v.size.trim() !== '')
-    const hasColors = variants.some((v: any) => v.color && typeof v.color === 'string' && v.color.trim() !== '')
-    const hasDepths = variants.some((v: any) => v.depth && typeof v.depth === 'string' && v.depth.trim() !== '')
-    const hasFirmness = variants.some((v: any) => v.firmness && typeof v.firmness === 'string' && v.firmness.trim() !== '')
-    
-    // Debug: Log the actual depth values to see what's being detected
-    const depthValues = variants.map((v: any) => ({ depth: v.depth, type: typeof v.depth, trimmed: v.depth ? v.depth.trim() : v.depth }))
+
+    // Build distinct, meaningful values for each option
+    const distinct = (values: any[]) => {
+      return Array.from(
+        new Set(
+          values
+            .filter((v) => typeof v === 'string')
+            .map((v) => (v as string).trim())
+            .filter((v) => v.length > 0 && v.toLowerCase() !== 'n/a' && v.toLowerCase() !== 'na' && v.toLowerCase() !== 'standard')
+        )
+      )
+    }
+
+    const sizeSet = distinct(variants.map((v: any) => v.size))
+    const colorSet = distinct(variants.map((v: any) => v.color))
+    const depthSet = distinct(variants.map((v: any) => v.depth))
+    const firmnessSet = distinct(variants.map((v: any) => v.firmness))
+
+    // Only consider an option "available to choose" if there are 2+ distinct values
+    const hasSizes = sizeSet.length > 1
+    const hasColors = colorSet.length > 1
+    const hasDepths = depthSet.length > 1
+    const hasFirmness = firmnessSet.length > 1
+
+    // Debug: concise log to aid diagnosing unexpected detections in production
     console.log('getAvailableVariantOptions:', { 
-      hasSizes, 
-      hasColors, 
-      hasDepths, 
-      hasFirmness, 
-      depthValues,
-      variants: variants.map((v: any) => ({ size: v.size, color: v.color, depth: v.depth, firmness: v.firmness }))
+      sizes: sizeSet, colors: colorSet, depths: depthSet, firmnesses: firmnessSet,
+      hasSizes, hasColors, hasDepths, hasFirmness
     })
+
     return { hasSizes, hasColors, hasDepths, hasFirmness }
   }, [(product as any).variants])
 
