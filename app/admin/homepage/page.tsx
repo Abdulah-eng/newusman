@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
@@ -322,7 +324,7 @@ export default function HomePageAdmin() {
       console.log('Loaded mattresses:', transformedMattresses)
       setAllMattresses(transformedMattresses)
 
-      // Load sofas (products in sofa category) - if no sofas exist, load all products
+      // Load sofas (products in sofa category) - if no sofas exist, use all products
       const { data: sofas, error: sofasError } = await supabase
         .from('products')
         .select(`
@@ -1201,7 +1203,7 @@ export default function HomePageAdmin() {
              </div>
            </Card>
 
-                     {/* Our Sofa Types */}
+           {/* Our Sofa Types */}
            <Card className="p-6">
              <div className="flex items-center justify-between mb-4">
                <h2 className="text-xl font-semibold">Our Sofa Types</h2>
