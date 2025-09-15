@@ -965,6 +965,11 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       // Get selected size data
       const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
       
+      // Find the selected variant to get its SKU
+      const selectedVariant = (product as any).variants?.find((variant: any) => 
+        variant.size === (selectedSizeData?.name || 'Standard')
+      )
+      
       // Prepare payload with free gift details if available
       const payload: any = {
           id: String(product.id),
@@ -974,7 +979,8 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           currentPrice: currentVariantPrice,
           originalPrice: product.originalPrice,
           size: selectedSizeData?.name || 'Standard',
-          color: selectedColor
+          color: selectedColor,
+          variantSku: selectedVariant?.sku
       }
 
       // Add free gift details if available

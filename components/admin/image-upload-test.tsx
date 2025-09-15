@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Upload, Image as ImageIcon, CheckCircle, AlertCircle } from 'lucide-react'
@@ -11,21 +10,14 @@ import { Upload, Image as ImageIcon, CheckCircle, AlertCircle } from 'lucide-rea
 interface UploadResult {
   url: string
   fileName: string
-  preset: string
   originalSize: number
   optimizedSize: number
   format: string
-  dimensions: {
-    original: { width: number; height: number }
-    optimized: { width: number; height: number }
-  }
-  compressionRatio: string
   message: string
 }
 
 export function ImageUploadTest() {
   const [file, setFile] = useState<File | null>(null)
-  const [preset, setPreset] = useState<string>('large')
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [result, setResult] = useState<UploadResult | null>(null)
@@ -51,7 +43,6 @@ export function ImageUploadTest() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('preset', preset)
 
       // Simulate progress
       const progressInterval = setInterval(() => {
@@ -97,10 +88,10 @@ export function ImageUploadTest() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ImageIcon className="h-5 w-5" />
-          Image Upload Test (Sharp Optimized)
+          Image Upload Test
         </CardTitle>
         <CardDescription>
-          Test the new Sharp-optimized image upload API with different presets
+          Test the image upload API
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -121,22 +112,6 @@ export function ImageUploadTest() {
           )}
         </div>
 
-        {/* Preset Selection */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Optimization Preset</label>
-          <Select value={preset} onValueChange={setPreset} disabled={uploading}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="thumbnail">Thumbnail (300x300, 70% quality)</SelectItem>
-              <SelectItem value="medium">Medium (800x800, 80% quality)</SelectItem>
-              <SelectItem value="large">Large (1200x1200, 85% quality)</SelectItem>
-              <SelectItem value="original">Original (2000x2000, 90% quality)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* Upload Button */}
         <Button
           onClick={handleUpload}
@@ -151,7 +126,7 @@ export function ImageUploadTest() {
           ) : (
             <>
               <Upload className="h-4 w-4 mr-2" />
-              Upload & Optimize
+              Upload Image
             </>
           )}
         </Button>
@@ -185,16 +160,8 @@ export function ImageUploadTest() {
             
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="font-medium">Original Size:</span>
+                <span className="font-medium">File Size:</span>
                 <div className="text-gray-600">{formatFileSize(result.originalSize * 1024)}</div>
-              </div>
-              <div>
-                <span className="font-medium">Optimized Size:</span>
-                <div className="text-gray-600">{formatFileSize(result.optimizedSize * 1024)}</div>
-              </div>
-              <div>
-                <span className="font-medium">Compression:</span>
-                <div className="text-gray-600">{result.compressionRatio}% smaller</div>
               </div>
               <div>
                 <span className="font-medium">Format:</span>
@@ -204,14 +171,8 @@ export function ImageUploadTest() {
 
             <div className="space-y-2">
               <div className="text-sm">
-                <span className="font-medium">Dimensions: </span>
-                <span className="text-gray-600">
-                  {result.dimensions.original.width}×{result.dimensions.original.height} → {result.dimensions.optimized.width}×{result.dimensions.optimized.height}
-                </span>
-              </div>
-              <div className="text-sm">
-                <span className="font-medium">Preset: </span>
-                <Badge variant="outline">{result.preset}</Badge>
+                <span className="font-medium">File: </span>
+                <span className="text-gray-600">{result.fileName}</span>
               </div>
             </div>
 

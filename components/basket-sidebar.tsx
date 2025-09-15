@@ -40,8 +40,12 @@ export function BasketSidebar({ isOpen, onClose, product }: BasketSidebarProps) 
   const { state, dispatch } = useCart()
   const [isVisible, setIsVisible] = useState(false)
 
-  // Custom scrollbar styles
+  // Custom scrollbar styles with Chrome compatibility
   const scrollbarStyles = `
+    .custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 #f1f5f9;
+    }
     .custom-scrollbar::-webkit-scrollbar {
       width: 8px;
     }
@@ -55,6 +59,10 @@ export function BasketSidebar({ isOpen, onClose, product }: BasketSidebarProps) 
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background: #94a3b8;
+    }
+    /* Chrome-specific fixes */
+    .custom-scrollbar::-webkit-scrollbar-corner {
+      background: #f1f5f9;
     }
   `
 

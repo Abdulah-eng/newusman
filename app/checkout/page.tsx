@@ -20,12 +20,33 @@ import {
   Plus,
   Minus,
   CheckCircle,
-  X
+  X,
+  AlertCircle,
+  Loader2
 } from "lucide-react"
+import { useRouter } from 'next/navigation'
+
+interface CustomerInfo {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  address: string
+  city: string
+  postcode: string
+  country: string
+}
+
+interface ValidationErrors {
+  [key: string]: string
+}
 
 export default function CheckoutPage() {
-  const { state, dispatch, updateQuantity } = useCart()
-  const [customerInfo, setCustomerInfo] = useState({
+  const { state, dispatch } = useCart()
+  const router = useRouter()
+  
+  // State management
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     firstName: '',
     lastName: '',
     email: '',
@@ -35,253 +56,147 @@ export default function CheckoutPage() {
     postcode: '',
     country: 'GB'
   })
+  
   const [deliveryOption, setDeliveryOption] = useState('standard')
   const [isProcessing, setIsProcessing] = useState(false)
-  const [paymentSuccess, setPaymentSuccess] = useState(false)
-  const [paymentCanceled, setPaymentCanceled] = useState(false)
-  const [orderProcessed, setOrderProcessed] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'success' | 'canceled' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
 
-  // Check for payment success/canceled from URL parameters
+  // Check for payment result from URL parameters
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const success = urlParams.get('success')
     const canceled = urlParams.get('canceled')
     const sessionId = urlParams.get('session_id')
 
-    if (success === '1' && sessionId && !orderProcessed) {
-      setPaymentSuccess(true)
-      setOrderProcessed(true) // Prevent multiple processing
-      // Clear the cart after successful payment
+    if (success === '1' && sessionId) {
+      setPaymentStatus('success')
+      // Clear cart on successful payment
       dispatch({ type: 'CLEAR_CART' })
-      
-      // Process the order immediately since webhook might not work in development
-      processOrderSuccess(sessionId)
+      // Process the order
+      processOrder(sessionId)
+      // Clean URL
+      window.history.replaceState({}, '', '/checkout')
     } else if (canceled === '1') {
-      setPaymentCanceled(true)
+      setPaymentStatus('canceled')
+      // Clean URL
+      window.history.replaceState({}, '', '/checkout')
     }
-  }, [dispatch, orderProcessed])
+  }, [dispatch])
 
-  // Function to process order success - Simplified version without webhooks
-  const processOrderSuccess = async (sessionId: string) => {
+  // Process order after successful payment
+  const processOrder = async (sessionId: string) => {
     try {
-      console.log('Payment successful, processing order...')
-      console.log('Session ID:', sessionId)
-      
-      // Get cart items from state before clearing
-      const cartItems = state.items
-      const customerData = customerInfo
-      
-      // Additional guard: Check if order already exists
-      const checkOrderResponse = await fetch(`/api/orders?stripe_session_id=${sessionId}`)
-      if (checkOrderResponse.ok) {
-        const existingOrders = await checkOrderResponse.json()
-        if (existingOrders.orders && existingOrders.orders.length > 0) {
-          console.log('Order already exists, skipping creation')
-          return
-        }
-      }
-      
-      // Create order in database with duplicate prevention
-      const orderResponse = await fetch('/api/orders', {
+      const response = await fetch('/api/process-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          orderData: {
-            order_number: `ORD-${Date.now()}`,
-            customer_email: customerData.email,
-            customer_name: `${customerData.firstName} ${customerData.lastName}`,
-            total_amount: Number(state.total || 0),
-            status: 'completed', // Mark as completed since payment succeeded
-            stripe_session_id: sessionId,
-            shipping_address: `${customerData.address}, ${customerData.city}, ${customerData.postcode}`,
-            billing_address: `${customerData.address}, ${customerData.city}, ${customerData.postcode}`
-          },
-          items: cartItems.map(item => ({
-            ...item,
-            currentPrice: Number(item.currentPrice || item.price || 0),
-            price: Number(item.price || 0)
-          }))
+          sessionId,
+          customerInfo,
+          items: state.items,
+          deliveryOption
         })
       })
 
-      if (orderResponse.ok) {
-        const orderResult = await orderResponse.json()
-        console.log('Order created successfully:', orderResult)
-        
-        // Send confirmation email to customer
-        await fetch('/api/send-order-confirmation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: orderResult.orderId,
-            customerEmail: customerData.email,
-            customerName: `${customerData.firstName} ${customerData.lastName}`,
-            items: cartItems,
-            total: state.total || 0
-          })
-        })
-
-        // Send notification email to admin
-        await fetch('/api/send-admin-notification', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: orderResult.orderId,
-            customerEmail: customerData.email,
-            customerName: `${customerData.firstName} ${customerData.lastName}`,
-            items: cartItems,
-            total: state.total || 0
-          })
-        })
+      if (response.ok) {
+        const result = await response.json()
+        console.log('Order processed successfully:', result)
       } else {
-        console.error('Failed to create order:', await orderResponse.text())
+        const errorData = await response.json()
+        console.error('Failed to process order:', errorData.error)
       }
-      
     } catch (error) {
-      console.error('Error processing order success:', error)
+      console.error('Error processing order:', error)
     }
   }
 
-  // Show success message
-  if (paymentSuccess) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50 py-8">
-        <div className="container mx-auto px-4">
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Payment Successful!</h1>
-            <p className="text-lg text-gray-600 mb-4">Thank you for your order. You will receive a confirmation email shortly.</p>
-            <p className="text-sm text-gray-500 mb-8">Your cart has been cleared and your order is being processed.</p>
-            <Button 
-              onClick={() => window.location.href = '/'} 
-              className="bg-orange-600 hover:bg-orange-700 text-white"
-            >
-              Continue Shopping
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
+  // Handle input changes
+  const handleInputChange = (field: keyof CustomerInfo, value: string) => {
+    setCustomerInfo(prev => ({ ...prev, [field]: value }))
+    // Clear validation error when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => ({ ...prev, [field]: '' }))
+    }
   }
 
-  // Show canceled message
-  if (paymentCanceled) {
-  return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50 py-8">
-        <div className="container mx-auto px-4">
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <X className="h-8 w-8 text-red-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Payment Canceled</h1>
-            <p className="text-lg text-gray-600 mb-8">Your payment was canceled. Your cart items are still available.</p>
-            <Button 
-              onClick={() => setPaymentCanceled(false)} 
-              className="bg-orange-600 hover:bg-orange-700 text-white"
-            >
-              Try Again
-            </Button>
-            </div>
-              </div>
-                </div>
-    )
+  // Validate form
+  const validateForm = (): boolean => {
+    const errors: ValidationErrors = {}
+    
+    if (!customerInfo.firstName.trim()) {
+      errors.firstName = 'First name is required'
+    }
+    
+    if (!customerInfo.lastName.trim()) {
+      errors.lastName = 'Last name is required'
+    }
+    
+    if (!customerInfo.email.trim()) {
+      errors.email = 'Email address is required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerInfo.email)) {
+      errors.email = 'Please enter a valid email address'
+    }
+    
+    if (!customerInfo.phone.trim()) {
+      errors.phone = 'Phone number is required'
+    }
+    
+    if (!customerInfo.address.trim()) {
+      errors.address = 'Address is required'
+    }
+    
+    if (!customerInfo.city.trim()) {
+      errors.city = 'City is required'
+    }
+    
+    if (!customerInfo.postcode.trim()) {
+      errors.postcode = 'Postcode is required'
+    }
+    
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
-  if (state.itemCount === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50 py-8">
-        <div className="container mx-auto px-4">
-          <div className="text-center py-12">
-            <ShoppingCart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Your cart is empty</h1>
-            <p className="text-lg text-gray-600 mb-8">Please add items to your cart before checkout.</p>
-            <Button 
-              onClick={() => window.history.back()} 
-              className="bg-orange-600 hover:bg-orange-700 text-white"
-            >
-              Continue Shopping
-              </Button>
-            </div>
-          </div>
-        </div>
-    )
-  }
-
+  // Handle quantity changes
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
     if (newQuantity > 0) {
-      updateQuantity(itemId, newQuantity)
+      dispatch({ 
+        type: 'UPDATE_QUANTITY', 
+        payload: { id: itemId, quantity: newQuantity } 
+      })
     }
   }
 
+  // Handle item removal
   const handleRemoveItem = (itemId: string) => {
     dispatch({ type: 'REMOVE_ITEM', payload: itemId })
   }
 
-  const handleInputChange = (field: string, value: string) => {
-    setCustomerInfo(prev => ({ ...prev, [field]: value }))
-  }
-
+  // Handle checkout
   const handleCheckout = async () => {
-    // Validate required fields
-    if (!customerInfo.firstName.trim()) {
-      alert('Please enter your first name')
-      return
-    }
-    if (!customerInfo.lastName.trim()) {
-      alert('Please enter your last name')
-      return
-    }
-    if (!customerInfo.email.trim()) {
-      alert('Please enter your email address')
-      return
-    }
-    if (!customerInfo.phone.trim()) {
-      alert('Please enter your phone number')
-      return
-    }
-    if (!customerInfo.address.trim()) {
-      alert('Please enter your address')
-      return
-    }
-    if (!customerInfo.city.trim()) {
-      alert('Please enter your city')
-      return
-    }
-    if (!customerInfo.postcode.trim()) {
-      alert('Please enter your postcode')
+    // Validate form
+    if (!validateForm()) {
       return
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(customerInfo.email)) {
-      alert('Please enter a valid email address')
-      return
-    }
-
-    // Validate cart has items
+    // Validate cart
     if (!state.items || state.items.length === 0) {
-      alert('Your cart is empty')
+      setErrorMessage('Your cart is empty')
       return
     }
 
     setIsProcessing(true)
-    
-    // Debug logging
-    console.log('Cart state:', state)
-    console.log('Customer info:', customerInfo)
-    console.log('Items being sent to checkout:', state.items)
-    
+    setErrorMessage('')
+
     try {
-      // Create checkout session
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: state.items,
-          customer: customerInfo
+          customer: customerInfo,
+          deliveryOption
         })
       })
 
@@ -294,17 +209,85 @@ export default function CheckoutPage() {
       }
     } catch (error) {
       console.error('Checkout error:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Checkout failed. Please try again.'
-      alert(`Checkout failed: ${errorMessage}`)
+      setErrorMessage(error instanceof Error ? error.message : 'Checkout failed. Please try again.')
     } finally {
       setIsProcessing(false)
     }
   }
 
+  // Calculate totals
   const subtotal = state.total || 0
   const deliveryCost = deliveryOption === 'express' ? 15 : 0
   const vat = subtotal * 0.2
   const total = subtotal + deliveryCost + vat
+
+  // Success screen
+  if (paymentStatus === 'success') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50 py-8">
+        <div className="container mx-auto px-4">
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Payment Successful!</h1>
+            <p className="text-lg text-gray-600 mb-4">Thank you for your order. You will receive a confirmation email shortly.</p>
+            <p className="text-sm text-gray-500 mb-8">Your order is being processed and will be dispatched within 3-5 business days.</p>
+            <Button 
+              onClick={() => router.push('/')} 
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Continue Shopping
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Canceled screen
+  if (paymentStatus === 'canceled') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50 py-8">
+        <div className="container mx-auto px-4">
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <X className="h-8 w-8 text-red-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Payment Canceled</h1>
+            <p className="text-lg text-gray-600 mb-8">Your payment was canceled. Your cart items are still available.</p>
+            <Button 
+              onClick={() => setPaymentStatus('idle')} 
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Empty cart screen
+  if (state.itemCount === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50 py-8">
+        <div className="container mx-auto px-4">
+          <div className="text-center py-12">
+            <ShoppingCart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Your cart is empty</h1>
+            <p className="text-lg text-gray-600 mb-8">Please add items to your cart before checkout.</p>
+            <Button 
+              onClick={() => router.push('/')} 
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Continue Shopping
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50">
@@ -347,17 +330,22 @@ export default function CheckoutPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Section - Customer Information & Cart */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Error Message */}
+            {errorMessage && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
+                <AlertCircle className="h-5 w-5 text-red-600 mr-3" />
+                <span className="text-red-800">{errorMessage}</span>
+              </div>
+            )}
+
             {/* Customer Information */}
             <Card className="bg-white border-orange-200">
-                             <CardHeader>
-                 <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
-                   <CreditCard className="h-5 w-5 mr-2 text-orange-600" />
-                   Customer Information
-                 </CardTitle>
-                 <p className="text-sm text-gray-600 mt-2">
-                   💡 Form is pre-filled with test data. You can modify or use as-is for testing.
-                 </p>
-               </CardHeader>
+              <CardHeader>
+                <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
+                  <CreditCard className="h-5 w-5 mr-2 text-orange-600" />
+                  Customer Information
+                </CardTitle>
+              </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -366,9 +354,14 @@ export default function CheckoutPage() {
                       id="firstName"
                       value={customerInfo.firstName}
                       onChange={(e) => handleInputChange('firstName', e.target.value)}
-                      className="border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      className={`border-gray-300 focus:border-orange-500 focus:ring-orange-500 ${
+                        validationErrors.firstName ? 'border-red-500' : ''
+                      }`}
                       required
                     />
+                    {validationErrors.firstName && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.firstName}</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="lastName">Last Name *</Label>
@@ -376,35 +369,51 @@ export default function CheckoutPage() {
                       id="lastName"
                       value={customerInfo.lastName}
                       onChange={(e) => handleInputChange('lastName', e.target.value)}
-                      className="border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      className={`border-gray-300 focus:border-orange-500 focus:ring-orange-500 ${
+                        validationErrors.lastName ? 'border-red-500' : ''
+                      }`}
                       required
                     />
+                    {validationErrors.lastName && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.lastName}</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                  <div>
                     <Label htmlFor="email">Email Address *</Label>
                     <Input
                       id="email"
                       type="email"
                       value={customerInfo.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
-                      className="border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      className={`border-gray-300 focus:border-orange-500 focus:ring-orange-500 ${
+                        validationErrors.email ? 'border-red-500' : ''
+                      }`}
                       required
                     />
-                </div>
+                    {validationErrors.email && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+                    )}
+                  </div>
                   <div>
-                    <Label htmlFor="phone">Phone Number</Label>
+                    <Label htmlFor="phone">Phone Number *</Label>
                     <Input
                       id="phone"
                       type="tel"
                       value={customerInfo.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className="border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      className={`border-gray-300 focus:border-orange-500 focus:ring-orange-500 ${
+                        validationErrors.phone ? 'border-red-500' : ''
+                      }`}
+                      required
                     />
-              </div>
-            </div>
+                    {validationErrors.phone && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.phone}</p>
+                    )}
+                  </div>
+                </div>
 
                 <div>
                   <Label htmlFor="address">Address *</Label>
@@ -412,10 +421,15 @@ export default function CheckoutPage() {
                     id="address"
                     value={customerInfo.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
-                    className="border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                    className={`border-gray-300 focus:border-orange-500 focus:ring-orange-500 ${
+                      validationErrors.address ? 'border-red-500' : ''
+                    }`}
                     rows={3}
                     required
                   />
+                  {validationErrors.address && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.address}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -425,23 +439,30 @@ export default function CheckoutPage() {
                       id="city"
                       value={customerInfo.city}
                       onChange={(e) => handleInputChange('city', e.target.value)}
-                      className="border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      className={`border-gray-300 focus:border-orange-500 focus:ring-orange-500 ${
+                        validationErrors.city ? 'border-red-500' : ''
+                      }`}
                       required
                     />
-                    </div>
+                    {validationErrors.city && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.city}</p>
+                    )}
+                  </div>
                   <div>
                     <Label htmlFor="postcode">Postcode *</Label>
-                                         <Input
-                       id="postcode"
-                       value={customerInfo.postcode}
-                       onChange={(e) => handleInputChange('postcode', e.target.value)}
-                       className="border-gray-300 focus:border-orange-500 focus:ring-orange-500"
-                       placeholder="e.g., W1D 1BS"
-                       required
-                     />
-                     <p className="text-xs text-gray-500 mt-1">
-                       Use valid UK format: A1A 1AA or A1 1AA
-                     </p>
+                    <Input
+                      id="postcode"
+                      value={customerInfo.postcode}
+                      onChange={(e) => handleInputChange('postcode', e.target.value)}
+                      className={`border-gray-300 focus:border-orange-500 focus:ring-orange-500 ${
+                        validationErrors.postcode ? 'border-red-500' : ''
+                      }`}
+                      placeholder="e.g., W1D 1BS"
+                      required
+                    />
+                    {validationErrors.postcode && (
+                      <p className="text-red-500 text-sm mt-1">{validationErrors.postcode}</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="country">Country</Label>
@@ -482,7 +503,7 @@ export default function CheckoutPage() {
                     <div className="flex-1">
                       <div className="font-medium text-gray-900">Standard Delivery (3-5 business days)</div>
                       <div className="text-sm text-gray-600">Free delivery on orders over £50</div>
-                  </div>
+                    </div>
                     <div className="text-lg font-bold text-gray-900">Free</div>
                   </label>
                   
@@ -495,10 +516,10 @@ export default function CheckoutPage() {
                       onChange={(e) => setDeliveryOption(e.target.value)}
                       className="text-orange-600 focus:ring-orange-500"
                     />
-                  <div className="flex-1">
+                    <div className="flex-1">
                       <div className="font-medium text-gray-900">Express Delivery (1-2 business days)</div>
                       <div className="text-sm text-gray-600">Priority handling and tracking</div>
-                  </div>
+                    </div>
                     <div className="text-lg font-bold text-gray-900">£15.00</div>
                   </label>
                 </div>
@@ -514,8 +535,9 @@ export default function CheckoutPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                                 {state.items.map((item, index) => (
-                   <div key={`${item.id}-${item.size || 'standard'}-${item.color || 'default'}-${index}`} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
+                {state.items.map((item, index) => (
+                  <div key={`${item.id}-${item.size || 'standard'}-${item.color || 'default'}-${index}`} 
+                       className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
                     <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center">
                       {item.image ? (
                         <img 
@@ -531,7 +553,8 @@ export default function CheckoutPage() {
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900">{item.name}</h3>
                       {item.size && <p className="text-sm text-gray-600">{item.size}</p>}
-                      <p className="text-lg font-bold text-orange-600">£{item.currentPrice || item.price}</p>
+                      {item.variantSku && <p className="text-xs text-gray-500 font-mono">SKU: {item.variantSku}</p>}
+                      <p className="text-lg font-bold text-orange-600">£{item.currentPrice || item.originalPrice}</p>
                     </div>
                     
                     <div className="flex items-center space-x-2">
@@ -561,8 +584,8 @@ export default function CheckoutPage() {
                       onClick={() => handleRemoveItem(item.id)}
                     >
                       <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
+                    </Button>
+                  </div>
                 ))}
               </CardContent>
             </Card>
@@ -578,17 +601,17 @@ export default function CheckoutPage() {
                 {/* Price Breakdown */}
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                        <span>Subtotal</span>
+                    <span>Subtotal</span>
                     <span>£{subtotal.toFixed(2)}</span>
-                      </div>
+                  </div>
                   <div className="flex justify-between text-sm">
                     <span>Delivery</span>
                     <span>{deliveryCost === 0 ? 'Free' : `£${deliveryCost.toFixed(2)}`}</span>
-                      </div>
+                  </div>
                   <div className="flex justify-between text-sm">
                     <span>VAT (20%)</span>
                     <span>£{vat.toFixed(2)}</span>
-                      </div>
+                  </div>
                   <div className="border-t border-gray-200 pt-3">
                     <div className="flex justify-between text-lg font-bold text-gray-900">
                       <span>Total</span>
@@ -601,11 +624,11 @@ export default function CheckoutPage() {
                 <Button 
                   className="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 text-lg font-semibold"
                   onClick={handleCheckout}
-                  disabled={isProcessing || !customerInfo.firstName || !customerInfo.email || !customerInfo.address}
+                  disabled={isProcessing}
                 >
                   {isProcessing ? (
                     <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                       Processing...
                     </div>
                   ) : (
@@ -629,13 +652,13 @@ export default function CheckoutPage() {
                 <div className="border-t border-gray-200 pt-4">
                   <p className="text-sm text-gray-600 mb-2">We accept:</p>
                   <div className="flex items-center justify-center space-x-3 text-xs text-gray-500">
-                  <span>Visa</span>
-                  <span>•</span>
-                  <span>Mastercard</span>
-                  <span>•</span>
+                    <span>Visa</span>
+                    <span>•</span>
+                    <span>Mastercard</span>
+                    <span>•</span>
                     <span>American Express</span>
-                  <span>•</span>
-                  <span>PayPal</span>
+                    <span>•</span>
+                    <span>PayPal</span>
                   </div>
                 </div>
               </CardContent>
@@ -648,16 +671,16 @@ export default function CheckoutPage() {
                   <div className="flex items-center justify-center">
                     <CheckCircle className="h-8 w-8 text-orange-600 mr-2" />
                     <span className="font-semibold text-gray-900">100-Night Trial</span>
-            </div>
+                  </div>
                   <div className="flex items-center justify-center">
                     <Shield className="h-8 w-8 text-orange-600 mr-2" />
                     <span className="font-semibold text-gray-900">10-Year Warranty</span>
-          </div>
+                  </div>
                   <div className="flex items-center justify-center">
                     <Truck className="h-8 w-8 text-orange-600 mr-2" />
                     <span className="font-semibold text-gray-900">Free Delivery</span>
-        </div>
-      </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

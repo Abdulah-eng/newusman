@@ -28,6 +28,9 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
   // Load wishlist from localStorage on mount
   useEffect(() => {
+    // Chrome-specific fix: Ensure we're on client side
+    if (typeof window === 'undefined') return
+    
     try {
       const savedWishlist = localStorage.getItem('wishlist')
       if (savedWishlist) {

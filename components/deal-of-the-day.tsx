@@ -37,6 +37,14 @@ export function DealOfTheDay() {
                 const data = await response.json()
                 const product = data.product
                 
+                // Debug: Log the product data to see if variants are loaded
+                console.log('DealOfTheDay - Fetched product:', {
+                  id: product?.id,
+                  name: product?.name,
+                  variants: product?.variants,
+                  variantsCount: product?.variants?.length
+                })
+                
                 if (product && product.id) {
                   return {
                     ...product,
@@ -128,17 +136,37 @@ export function DealOfTheDay() {
   const addToCart = (product: any) => {
     if (!product) return
 
+    // Find the first available variant to get its SKU
+    const firstAvailableSize = product.variants?.[0]?.size
+    const selectedSize = product.selectedSize || firstAvailableSize || 'Queen'
+    
+    const selectedVariant = product.variants?.find((variant: any) => 
+      variant.size === selectedSize
+    )
+
     const payload = {
       id: product.id,
       name: product.name || 'Premium Product',
-      price: product.currentPrice || product.price || 0,
+      brand: product.brand || 'Premium Brand',
+      currentPrice: product.currentPrice || product.price || 0,
+      originalPrice: product.originalPrice || product.price || 0,
       image: product.images?.[0] || product.image || '/placeholder.jpg',
-      category: product.category || 'mattresses',
-      quantity: 1,
-      size: 'Queen', // Default size
-      color: 'Default', // Default color
-      firmness: product.firmness || 'Medium'
+      size: selectedSize,
+      color: selectedVariant?.color || 'Default',
+      variantSku: selectedVariant?.sku
     }
+
+    // Debug: Show variant SKU in alert
+    console.log('DealOfTheDay - Adding to cart:', {
+      productId: product.id,
+      productName: product.name,
+      variants: product.variants,
+      selectedSize,
+      selectedVariant,
+      variantSku: selectedVariant?.sku
+    })
+    
+    alert(`Adding to cart:\nProduct: ${product.name}\nSize: ${selectedSize}\nVariant SKU: ${selectedVariant?.sku || 'NOT FOUND'}\nProduct ID: ${product.id}`)
 
     dispatch({
       type: 'ADD_ITEM',

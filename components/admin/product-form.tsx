@@ -383,12 +383,10 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
             const result = await response.json()
             handleInputChange('main_image', result.url)
             
-            // Show size comparison alert for main image
-            const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
-            const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
-            const savingsPercent = result.compressionRatio
+            // Show upload success alert for main image
+            const fileSizeMB = (file.size / 1024 / 1024).toFixed(2)
             
-            alert(`Main product image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
+            alert(`Main product image uploaded successfully!\n\n📁 File: ${file.name}\n📏 Size: ${fileSizeMB} MB`)
             
             console.log('[Product Form] Main image optimized upload result:', result)
           } else {
@@ -464,8 +462,7 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
               uploadResults.push({
                 fileName: file.name,
                 originalSize: file.size,
-                optimizedSize: result.optimizedSize * 1024, // Convert KB to bytes for comparison
-                savingsPercent: result.compressionRatio,
+                optimizedSize: file.size, // No compression, same size
                 success: true
               })
               
@@ -547,25 +544,20 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
           let alertMessage = `📸 Additional Images Upload Summary\n\n`
           
           if (successfulUploads.length > 0) {
-            const totalOriginalSize = successfulUploads.reduce((sum, r) => sum + r.originalSize, 0)
-            const totalOptimizedSize = successfulUploads.reduce((sum, r) => sum + r.optimizedSize, 0)
-            const totalSavings = ((totalOriginalSize - totalOptimizedSize) / totalOriginalSize * 100).toFixed(1)
+            const totalSize = successfulUploads.reduce((sum, r) => sum + r.originalSize, 0)
             
-            alertMessage += `✅ Successfully Optimized: ${successfulUploads.length} images\n`
-            alertMessage += `📏 Total Original Size: ${(totalOriginalSize / 1024 / 1024).toFixed(2)} MB\n`
-            alertMessage += `🔄 Total Optimized Size: ${(totalOptimizedSize / 1024 / 1024).toFixed(2)} MB\n`
-            alertMessage += `💾 Total Savings: ${totalSavings}%\n\n`
+            alertMessage += `✅ Successfully Uploaded: ${successfulUploads.length} images\n`
+            alertMessage += `📏 Total Size: ${(totalSize / 1024 / 1024).toFixed(2)} MB\n\n`
             
             // Add individual file details
             successfulUploads.forEach(result => {
-              const originalMB = (result.originalSize / 1024 / 1024).toFixed(2)
-              const optimizedMB = (result.optimizedSize / 1024 / 1024).toFixed(2)
-              alertMessage += `📁 ${result.fileName}: ${originalMB} MB → ${optimizedMB} MB (${result.savingsPercent}% saved)\n`
+              const fileMB = (result.originalSize / 1024 / 1024).toFixed(2)
+              alertMessage += `📁 ${result.fileName}: ${fileMB} MB\n`
             })
           }
           
           if (failedUploads.length > 0) {
-            alertMessage += `\n❌ Failed/Unoptimized: ${failedUploads.length} images\n`
+            alertMessage += `\n❌ Failed: ${failedUploads.length} images\n`
             failedUploads.forEach(result => {
               const sizeMB = (result.originalSize / 1024 / 1024).toFixed(2)
               alertMessage += `📁 ${result.fileName}: ${sizeMB} MB (${result.error})\n`

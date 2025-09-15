@@ -1,55 +1,26 @@
 import { supabase } from './supabaseClient'
 
 export interface UploadOptions {
-  preset?: 'thumbnail' | 'medium' | 'large' | 'original'
   onProgress?: (progress: number) => void
-  convert?: boolean
-  format?: 'webp' | 'jpeg' | 'png' | 'avif' | 'original'
-  quality?: number // 1-100
-  promptUser?: boolean // if true, show confirm/prompt dialogs in browser
 }
 
 export interface UploadResult {
   url: string
   fileName: string
-  preset: string
   originalSize: number
   optimizedSize: number
   format: string
-  dimensions: {
-    original: { width: number; height: number }
-    optimized: { width: number; height: number }
-  }
-  compressionRatio: string
   message: string
 }
 
 /**
- * Upload and optimize an image using the Sharp-optimized API
+ * Upload an image without compression
  */
 export async function uploadOptimizedImage(
   file: File, 
   options: UploadOptions = {}
 ): Promise<UploadResult> {
-  const { preset = 'large', onProgress } = options
-
-  let convert = options.convert ?? true
-  let format = options.format ?? 'webp'
-  let quality = options.quality
-
-  if (options.promptUser && typeof window !== 'undefined') {
-    try {
-      const shouldConvert = window.confirm('Convert this image to WebP? Click Cancel to upload original format.')
-      convert = shouldConvert
-      if (shouldConvert) {
-        const qualityInput = window.prompt('Enter WebP quality (1-100). Higher = better quality, larger size.', (quality?.toString() || '90'))
-        const parsed = qualityInput ? parseInt(qualityInput, 10) : NaN
-        if (!isNaN(parsed)) {
-          quality = Math.max(1, Math.min(100, parsed))
-        }
-      }
-    } catch {}
-  }
+  const { onProgress } = options
 
   // Validate file
   if (!file) {
@@ -67,10 +38,6 @@ export async function uploadOptimizedImage(
   // Create form data
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('preset', preset)
-  if (typeof convert === 'boolean') formData.append('convert', String(convert))
-  if (format) formData.append('format', format)
-  if (typeof quality === 'number') formData.append('quality', String(Math.max(1, Math.min(100, quality))))
 
   // Simulate progress if callback provided
   if (onProgress) {
@@ -159,32 +126,6 @@ export async function uploadToSupabase(file: File): Promise<string> {
     .getPublicUrl(fileName)
 
   return urlData.publicUrl
-}
-
-/**
- * Get recommended preset based on use case
- */
-export function getRecommendedPreset(useCase: string): 'thumbnail' | 'medium' | 'large' | 'original' {
-  switch (useCase.toLowerCase()) {
-    case 'thumbnail':
-    case 'avatar':
-    case 'icon':
-      return 'thumbnail'
-    case 'card':
-    case 'gallery':
-    case 'medium':
-      return 'medium'
-    case 'hero':
-    case 'banner':
-    case 'large':
-      return 'large'
-    case 'full':
-    case 'original':
-    case 'high-quality':
-      return 'original'
-    default:
-      return 'large'
-  }
 }
 
 /**

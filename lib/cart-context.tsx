@@ -12,6 +12,7 @@ interface CartItem {
   size?: string
   color?: string
   quantity: number
+  variantSku?: string // Added for variant SKU
   freeGiftProductId?: string // Added for free gifts
 }
 
@@ -38,10 +39,10 @@ type CartAction =
       freeGiftProductName?: string; 
       freeGiftProductImage?: string; 
     } }
-  | { type: 'REMOVE_ITEM'; payload: string | { id: string; size?: string; color?: string } }
-  | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number; size?: string; color?: string } }
+  | { type: 'REMOVE_ITEM'; payload: string | { id: string; size?: string; color?: string; variantSku?: string } }
+  | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number; size?: string; color?: string; variantSku?: string } }
   | { type: 'CLEAR_CART' }
-  | { type: 'VALIDATE_ITEM'; payload: { id: string; size?: string; color?: string } }
+  | { type: 'VALIDATE_ITEM'; payload: { id: string; size?: string; color?: string; variantSku?: string } }
   | { type: 'HIDE_FREE_GIFT_NOTIFICATION' }
 
 const CartContext = createContext<{
@@ -51,10 +52,11 @@ const CartContext = createContext<{
     item: Omit<CartItem, 'quantity'>,
     size?: string,
     color?: string,
-    options?: { requireSize?: boolean; requireColor?: boolean }
+    variantSku?: string,
+    options?: { requireSize?: boolean; requireColor?: boolean; requireVariantSku?: boolean }
   ) => { isValid: boolean; missingFields: string[] }
   hideFreeGiftNotification: () => void
-  updateQuantity: (id: string, quantity: number, size?: string, color?: string) => void
+  updateQuantity: (id: string, quantity: number, size?: string, color?: string, variantSku?: string) => void
 } | null>(null)
 
 function cartReducer(state: CartState, action: CartAction): CartState {
@@ -65,14 +67,16 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       const existingItem = state.items.find(item => 
         item.id === action.payload.id && 
         item.size === action.payload.size && 
-        item.color === action.payload.color
+        item.color === action.payload.color &&
+        item.variantSku === action.payload.variantSku
       )
       
       if (existingItem) {
         const updatedItems = state.items.map(item =>
           item.id === action.payload.id && 
           item.size === action.payload.size && 
-          item.color === action.payload.color
+          item.color === action.payload.color &&
+          item.variantSku === action.payload.variantSku
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
@@ -108,6 +112,16 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         }
       } else {
         const newItem = { ...action.payload, quantity: 1 }
+        
+        // Debug: Log what's being added to cart
+        console.log('CartContext - Adding new item:', {
+          id: newItem.id,
+          name: newItem.name,
+          size: newItem.size,
+          variantSku: newItem.variantSku,
+          payload: action.payload
+        })
+        
         let updatedItems = [...state.items, newItem]
         
         // Check if this product has a free gift and add it automatically
@@ -168,15 +182,16 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     }
     
     case 'REMOVE_ITEM': {
-      // action.payload should be an object with id, size, and color for proper removal
-      const { id, size, color } = typeof action.payload === 'string' 
-        ? { id: action.payload, size: undefined, color: undefined }
+      // action.payload should be an object with id, size, color, and variantSku for proper removal
+      const { id, size, color, variantSku } = typeof action.payload === 'string' 
+        ? { id: action.payload, size: undefined, color: undefined, variantSku: undefined }
         : action.payload
       
       const updatedItems = state.items.filter(item => 
         !(item.id === id && 
           (size === undefined || item.size === size) && 
-          (color === undefined || item.color === color))
+          (color === undefined || item.color === color) &&
+          (variantSku === undefined || item.variantSku === variantSku))
       )
       
       const total = updatedItems.reduce((sum, item) => sum + (item.currentPrice * item.quantity), 0)
@@ -193,7 +208,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     
     case 'UPDATE_QUANTITY': {
       if (action.payload.quantity <= 0) {
-        // Find the item to get its size and color for proper removal
+        // Find the item to get its size, color, and variantSku for proper removal
         const itemToRemove = state.items.find(item => item.id === action.payload.id)
         if (itemToRemove) {
           return cartReducer(state, { 
@@ -201,7 +216,8 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             payload: { 
               id: action.payload.id, 
               size: itemToRemove.size, 
-              color: itemToRemove.color 
+              color: itemToRemove.color,
+              variantSku: itemToRemove.variantSku
             } 
           })
         }
@@ -211,7 +227,8 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       const updatedItems = state.items.map(item =>
         item.id === action.payload.id && 
         item.size === action.payload.size && 
-        item.color === action.payload.color
+        item.color === action.payload.color &&
+        item.variantSku === action.payload.variantSku
           ? { ...item, quantity: action.payload.quantity }
           : item
       )
@@ -251,41 +268,51 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 export function CartProvider({ children }: { children: ReactNode }) {
   // Initialize cart state from localStorage if available
   const getInitialState = (): CartState => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedCart = localStorage.getItem('cart')
-        if (savedCart) {
-          const parsedCart = JSON.parse(savedCart)
-          console.log('Loading cart from localStorage:', parsedCart)
-          // Ensure the parsed cart has the correct structure
-          if (parsedCart.items && Array.isArray(parsedCart.items)) {
-            // Recompute totals to avoid stale/zero values
-            const sanitizedItems = parsedCart.items.map((it: any) => ({
-              ...it,
-              currentPrice: Number(it.currentPrice) || 0,
-              quantity: Number(it.quantity) || 1,
-            }))
-            const total = sanitizedItems.reduce(
-              (sum: number, item: any) => sum + (Number(item.currentPrice) * (Number(item.quantity) || 1)),
-              0
-            )
-            const itemCount = sanitizedItems.reduce((sum: number, item: any) => sum + (Number(item.quantity) || 1), 0)
-            
-            const result = {
-              items: sanitizedItems,
-              total,
-              itemCount,
-              showFreeGiftNotification: parsedCart.showFreeGiftNotification || false,
-              freeGiftInfo: parsedCart.freeGiftInfo || null
-            }
-            console.log('Cart loaded with state:', result)
-            return result
-          }
-        }
-      } catch (error) {
-        console.error('Error loading cart from localStorage:', error)
+    // Chrome-specific fix: Always return default state during SSR
+    if (typeof window === 'undefined') {
+      return {
+        items: [],
+        total: 0,
+        itemCount: 0,
+        showFreeGiftNotification: false,
+        freeGiftInfo: null
       }
     }
+
+    try {
+      const savedCart = localStorage.getItem('cart')
+      if (savedCart) {
+        const parsedCart = JSON.parse(savedCart)
+        console.log('Loading cart from localStorage:', parsedCart)
+        // Ensure the parsed cart has the correct structure
+        if (parsedCart.items && Array.isArray(parsedCart.items)) {
+          // Recompute totals to avoid stale/zero values
+          const sanitizedItems = parsedCart.items.map((it: any) => ({
+            ...it,
+            currentPrice: Number(it.currentPrice) || 0,
+            quantity: Number(it.quantity) || 1,
+          }))
+          const total = sanitizedItems.reduce(
+            (sum: number, item: any) => sum + (Number(item.currentPrice) * (Number(item.quantity) || 1)),
+            0
+          )
+          const itemCount = sanitizedItems.reduce((sum: number, item: any) => sum + (Number(item.quantity) || 1), 0)
+          
+          const result = {
+            items: sanitizedItems,
+            total,
+            itemCount,
+            showFreeGiftNotification: parsedCart.showFreeGiftNotification || false,
+            freeGiftInfo: parsedCart.freeGiftInfo || null
+          }
+          console.log('Cart loaded with state:', result)
+          return result
+        }
+      }
+    } catch (error) {
+      console.error('Error loading cart from localStorage:', error)
+    }
+    
     return {
       items: [],
       total: 0,
@@ -313,11 +340,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     item: Omit<CartItem, 'quantity'>,
     size?: string,
     color?: string,
-    options?: { requireSize?: boolean; requireColor?: boolean }
+    variantSku?: string,
+    options?: { requireSize?: boolean; requireColor?: boolean; requireVariantSku?: boolean }
   ) => {
     const missingFields: string[] = []
     const requireSize = options?.requireSize ?? true
     const requireColor = options?.requireColor ?? true
+    const requireVariantSku = options?.requireVariantSku ?? false
     
     // Check if size is required and selected
     if (requireSize && (!size || size === 'Standard Size')) {
@@ -327,6 +356,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     // Check if color is required and selected
     if (requireColor && (!color || color === 'Standard')) {
       missingFields.push('color')
+    }
+    
+    // Check if variant SKU is required and provided
+    if (requireVariantSku && !variantSku) {
+      missingFields.push('variantSku')
     }
     
     return {
@@ -341,8 +375,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'HIDE_FREE_GIFT_NOTIFICATION' })
   }
 
-  const updateQuantity = (id: string, quantity: number, size?: string, color?: string) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity, size, color } })
+  const updateQuantity = (id: string, quantity: number, size?: string, color?: string, variantSku?: string) => {
+    dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity, size, color, variantSku } })
   }
 
   return (

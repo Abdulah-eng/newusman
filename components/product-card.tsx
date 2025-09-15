@@ -369,6 +369,15 @@ export function ProductCard({ product }: ProductCardProps) {
       safeProduct.badges?.some(b => b.type === 'free_gift' && b.enabled)
     )
     
+    // Find the selected variant to get its SKU
+    // Use the first available variant size if no selectedSize is set
+    const firstAvailableSize = safeProduct.variants?.[0]?.size
+    const selectedSize = safeProduct.selectedSize || firstAvailableSize || 'Queen'
+    
+    const selectedVariant = safeProduct.variants?.find(variant => 
+      variant.size === selectedSize
+    )
+    
     // Debug logging
     console.log('Product being added to cart:', {
       id: safeProduct.id,
@@ -378,7 +387,10 @@ export function ProductCard({ product }: ProductCardProps) {
       free_gift_enabled: safeProduct.free_gift_enabled,
       free_gift_product_name: safeProduct.free_gift_product_name,
       free_gift_product_image: safeProduct.free_gift_product_image,
-      hasFreeGift
+      hasFreeGift,
+      variants: safeProduct.variants,
+      selectedSize,
+      selectedVariant
     })
     
     const payload = {
@@ -388,7 +400,8 @@ export function ProductCard({ product }: ProductCardProps) {
       image: safeProduct.images?.[0] || safeProduct.image || '',
       currentPrice: cheapestPrice,
       originalPrice: safeProduct.originalPrice || safeProduct.price || cheapestPrice,
-      size: safeProduct.selectedSize || 'Queen'
+      size: selectedSize,
+      variantSku: selectedVariant?.sku
     }
     
     // Add free gift details if available

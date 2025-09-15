@@ -30,8 +30,18 @@ interface Order {
   created_at: string
   tracking_number?: string
   dispatched_at?: string
-  shipping_address?: string
-  billing_address?: string
+  shipping_address?: string | {
+    address: string
+    city: string
+    postcode: string
+    country: string
+  }
+  billing_address?: string | {
+    address: string
+    city: string
+    postcode: string
+    country: string
+  }
   order_items: OrderItem[]
 }
 
@@ -44,6 +54,9 @@ export function OrderManagement() {
   const [searchQuery, setSearchQuery] = useState('')
   const [trackingNumber, setTrackingNumber] = useState('')
   const [isDispatching, setIsDispatching] = useState(false)
+  const [statusChangeTracking, setStatusChangeTracking] = useState('')
+  const [showTrackingInput, setShowTrackingInput] = useState(false)
+  const [pendingStatusChange, setPendingStatusChange] = useState<{orderId: string, status: string} | null>(null)
 
 
   useEffect(() => {
@@ -63,12 +76,12 @@ export function OrderManagement() {
     }
   }
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+  const updateOrderStatus = async (orderId: string, newStatus: string, trackingNumber?: string) => {
     try {
-      const res = await fetch('/api/admin/orders/status', {
-        method: 'PUT',
+      const res = await fetch('/api/orders/status-change', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, status: newStatus })
+        body: JSON.stringify({ orderId, newStatus, trackingNumber })
       })
       
       if (res.ok) {
@@ -76,10 +89,44 @@ export function OrderManagement() {
         if (selectedOrder?.id === orderId) {
           setSelectedOrder({ ...selectedOrder, status: newStatus })
         }
+        alert(`Order status updated to ${newStatus}${newStatus === 'dispatched' ? ` with tracking number ${trackingNumber}` : ''}`)
+      } else {
+        const errorData = await res.json()
+        alert(`Failed to update order status: ${errorData.error}`)
       }
     } catch (error) {
       console.error('Error updating order status:', error)
+      alert('Failed to update order status')
     }
+  }
+
+  const handleStatusChange = (orderId: string, newStatus: string) => {
+    if (newStatus === 'dispatched') {
+      setPendingStatusChange({ orderId, status: newStatus })
+      setShowTrackingInput(true)
+      setStatusChangeTracking('')
+    } else {
+      updateOrderStatus(orderId, newStatus)
+    }
+  }
+
+  const confirmStatusChange = () => {
+    if (pendingStatusChange) {
+      if (pendingStatusChange.status === 'dispatched' && !statusChangeTracking.trim()) {
+        alert('Please enter a tracking number for dispatch')
+        return
+      }
+      updateOrderStatus(pendingStatusChange.orderId, pendingStatusChange.status, statusChangeTracking)
+      setShowTrackingInput(false)
+      setPendingStatusChange(null)
+      setStatusChangeTracking('')
+    }
+  }
+
+  const cancelStatusChange = () => {
+    setShowTrackingInput(false)
+    setPendingStatusChange(null)
+    setStatusChangeTracking('')
   }
 
   const deleteOrder = async (id: string) => {
@@ -283,7 +330,7 @@ export function OrderManagement() {
                     <div className="flex items-center gap-2">
                       <Select 
                         value={order.status} 
-                        onValueChange={(newStatus) => updateOrderStatus(order.id, newStatus)}
+                        onValueChange={(newStatus) => handleStatusChange(order.id, newStatus)}
                       >
                         <SelectTrigger className="w-40">
                           <SelectValue />
@@ -393,7 +440,25 @@ export function OrderManagement() {
                          <MapPin className="h-4 w-4 text-gray-500 mt-1" />
                          <div>
                            <span className="text-gray-600">Shipping Address:</span>
-                           <p className="font-medium">{selectedOrder.shipping_address}</p>
+                           <div className="font-medium">
+                             {typeof selectedOrder.shipping_address === 'string' 
+                               ? selectedOrder.shipping_address 
+                               : selectedOrder.shipping_address.address && (
+                                 <div>
+                                   <div>{selectedOrder.shipping_address.address}</div>
+                                   {selectedOrder.shipping_address.city && (
+                                     <div>{selectedOrder.shipping_address.city}</div>
+                                   )}
+                                   {selectedOrder.shipping_address.postcode && (
+                                     <div>{selectedOrder.shipping_address.postcode}</div>
+                                   )}
+                                   {selectedOrder.shipping_address.country && (
+                                     <div>{selectedOrder.shipping_address.country}</div>
+                                   )}
+                                 </div>
+                               )
+                             }
+                           </div>
                          </div>
                        </div>
                      )}
@@ -506,7 +571,7 @@ export function OrderManagement() {
                 </Button>
                 <Select 
                   value={selectedOrder.status} 
-                  onValueChange={(newStatus) => updateOrderStatus(selectedOrder.id, newStatus)}
+                  onValueChange={(newStatus) => handleStatusChange(selectedOrder.id, newStatus)}
                 >
                   <SelectTrigger className="w-40">
                     <SelectValue />
@@ -522,6 +587,44 @@ export function OrderManagement() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Tracking Number Input Modal */}
+      <Dialog open={showTrackingInput} onOpenChange={setShowTrackingInput}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5" />
+              Enter Tracking Number
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              Please enter the tracking number for this order before marking it as dispatched.
+            </p>
+            <Input
+              placeholder="Enter tracking number"
+              value={statusChangeTracking}
+              onChange={(e) => setStatusChangeTracking(e.target.value)}
+              className="w-full"
+            />
+            <div className="flex justify-end gap-3">
+              <Button 
+                variant="outline" 
+                onClick={cancelStatusChange}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={confirmStatusChange}
+                disabled={!statusChangeTracking.trim()}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                Confirm Dispatch
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

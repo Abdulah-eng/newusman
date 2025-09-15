@@ -473,12 +473,10 @@ export default function HomePageAdmin() {
         const result = await response.json()
         setImageFunction(result.url)
         
-        // Show size comparison alert for homepage images
-        const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
-        const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
-        const savingsPercent = result.compressionRatio
+        // Show upload success alert
+        const fileSizeMB = (file.size / 1024 / 1024).toFixed(2)
         
-        alert(`Homepage image optimized successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New (WebP): ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\nImage converted to WebP format for better performance.`)
+        alert(`Homepage image uploaded successfully!\n\n📁 File: ${file.name}\n📏 Size: ${fileSizeMB} MB`)
         
         console.log('[Homepage Upload] Optimized upload result:', result)
       } else {

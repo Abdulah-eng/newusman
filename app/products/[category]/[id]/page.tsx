@@ -274,7 +274,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     setupCost: product.setupCost !== undefined ? Number(product.setupCost) : (product.setup_cost ? Number(product.setup_cost) : undefined),
     certifications: product.certifications || ['OEKO-TEX', 'Made in UK'],
     sizes: product.sizes || ['Single', 'Double', 'King', 'Super King'],
-    selectedSize: product.selectedSize || product.sizes?.[0] || 'Queen',
+    selectedSize: product.selectedSize || product.variants?.[0]?.size || product.sizes?.[0] || 'Queen',
     monthlyPrice: product.monthlyPrice !== undefined ? Number(product.monthlyPrice) : (product.monthly_price ? Number(product.monthly_price) : Math.floor(Number(product.currentPrice || product.current_price || 0) / 12)),
     images: product.images || [],
     variants: product.variants || [],

@@ -24,6 +24,9 @@ export default function WishlistPage() {
   const { addToCart } = useCart()
 
   useEffect(() => {
+    // Chrome-specific fix: Ensure we're on client side
+    if (typeof window === 'undefined') return
+    
     // Load wishlist from localStorage
     const loadWishlist = () => {
       try {

@@ -2452,8 +2452,7 @@ function ProductForm() {
               uploadResults.push({
                 fileName: file.name,
                 originalSize: file.size,
-                optimizedSize: result.optimizedSize * 1024, // Convert KB to bytes for comparison
-                savingsPercent: result.compressionRatio,
+                optimizedSize: file.size, // No compression, same size
                 success: true
               })
               
@@ -2544,25 +2543,20 @@ function ProductForm() {
           let alertMessage = `📸 Image Upload Summary\n\n`
           
           if (successfulUploads.length > 0) {
-            const totalOriginalSize = successfulUploads.reduce((sum, r) => sum + r.originalSize, 0)
-            const totalOptimizedSize = successfulUploads.reduce((sum, r) => sum + r.optimizedSize, 0)
-            const totalSavings = ((totalOriginalSize - totalOptimizedSize) / totalOriginalSize * 100).toFixed(1)
+            const totalSize = successfulUploads.reduce((sum, r) => sum + r.originalSize, 0)
             
-            alertMessage += `✅ Successfully Optimized: ${successfulUploads.length} images\n`
-            alertMessage += `📏 Total Original Size: ${(totalOriginalSize / 1024 / 1024).toFixed(2)} MB\n`
-            alertMessage += `🔄 Total Optimized Size: ${(totalOptimizedSize / 1024 / 1024).toFixed(2)} MB\n`
-            alertMessage += `💾 Total Savings: ${totalSavings}%\n\n`
+            alertMessage += `✅ Successfully Uploaded: ${successfulUploads.length} images\n`
+            alertMessage += `📏 Total Size: ${(totalSize / 1024 / 1024).toFixed(2)} MB\n\n`
             
             // Add individual file details
             successfulUploads.forEach(result => {
-              const originalMB = (result.originalSize / 1024 / 1024).toFixed(2)
-              const optimizedMB = (result.optimizedSize / 1024 / 1024).toFixed(2)
-              alertMessage += `📁 ${result.fileName}: ${originalMB} MB → ${optimizedMB} MB (${result.savingsPercent}% saved)\n`
+              const fileMB = (result.originalSize / 1024 / 1024).toFixed(2)
+              alertMessage += `📁 ${result.fileName}: ${fileMB} MB\n`
             })
           }
           
           if (failedUploads.length > 0) {
-            alertMessage += `\n❌ Failed/Unoptimized: ${failedUploads.length} images\n`
+            alertMessage += `\n❌ Failed: ${failedUploads.length} images\n`
             failedUploads.forEach(result => {
               const sizeMB = (result.originalSize / 1024 / 1024).toFixed(2)
               alertMessage += `📁 ${result.fileName}: ${sizeMB} MB (${result.error})\n`
@@ -2620,8 +2614,7 @@ function ProductForm() {
                 descriptionUploadResults.push({
                   fileName: file.name,
                   originalSize: file.size,
-                  optimizedSize: result.optimizedSize * 1024, // Convert KB to bytes for comparison
-                  savingsPercent: result.compressionRatio,
+                  optimizedSize: file.size, // No compression, same size
                   success: true
                 })
                 
@@ -2712,25 +2705,20 @@ function ProductForm() {
           let descAlertMessage = `📸 Description Images Upload Summary\n\n`
           
           if (successfulDescUploads.length > 0) {
-            const totalOriginalSize = successfulDescUploads.reduce((sum, r) => sum + r.originalSize, 0)
-            const totalOptimizedSize = successfulDescUploads.reduce((sum, r) => sum + r.optimizedSize, 0)
-            const totalSavings = ((totalOriginalSize - totalOptimizedSize) / totalOriginalSize * 100).toFixed(1)
+            const totalSize = successfulDescUploads.reduce((sum, r) => sum + r.originalSize, 0)
             
-            descAlertMessage += `✅ Successfully Optimized: ${successfulDescUploads.length} images\n`
-            descAlertMessage += `📏 Total Original Size: ${(totalOriginalSize / 1024 / 1024).toFixed(2)} MB\n`
-            descAlertMessage += `🔄 Total Optimized Size: ${(totalOptimizedSize / 1024 / 1024).toFixed(2)} MB\n`
-            descAlertMessage += `💾 Total Savings: ${totalSavings}%\n\n`
+            descAlertMessage += `✅ Successfully Uploaded: ${successfulDescUploads.length} images\n`
+            descAlertMessage += `📏 Total Size: ${(totalSize / 1024 / 1024).toFixed(2)} MB\n\n`
             
             // Add individual file details
             successfulDescUploads.forEach(result => {
-              const originalMB = (result.originalSize / 1024 / 1024).toFixed(2)
-              const optimizedMB = (result.optimizedSize / 1024 / 1024).toFixed(2)
-              descAlertMessage += `📁 ${result.fileName}: ${originalMB} MB → ${optimizedMB} MB (${result.savingsPercent}% saved)\n`
+              const fileMB = (result.originalSize / 1024 / 1024).toFixed(2)
+              descAlertMessage += `📁 ${result.fileName}: ${fileMB} MB\n`
             })
           }
           
           if (failedDescUploads.length > 0) {
-            descAlertMessage += `\n❌ Failed/Unoptimized: ${failedDescUploads.length} images\n`
+            descAlertMessage += `\n❌ Failed: ${failedDescUploads.length} images\n`
             failedDescUploads.forEach(result => {
               const sizeMB = (result.originalSize / 1024 / 1024).toFixed(2)
               descAlertMessage += `📁 ${result.fileName}: ${sizeMB} MB (${result.error})\n`

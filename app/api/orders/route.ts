@@ -41,13 +41,20 @@ export async function GET(req: NextRequest) {
     
     if (error) {
       console.error('Error fetching orders:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ 
+        error: error.message 
+      }, { status: 500 })
     }
     
-    return NextResponse.json({ orders: data || [] })
-  } catch (error) {
+    return NextResponse.json({ 
+      orders: data || [] 
+    })
+    
+  } catch (error: any) {
     console.error('Error in orders API:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Internal server error' 
+    }, { status: 500 })
   }
 }
 
@@ -56,23 +63,35 @@ export async function POST(req: NextRequest) {
     const { orderData, items } = await req.json()
     
     if (!orderData || !items) {
-      return NextResponse.json({ error: 'Order data and items are required' }, { status: 400 })
+      return NextResponse.json({ 
+        error: 'Order data and items are required' 
+      }, { status: 400 })
     }
     
-    // Guard against duplicate orders by stripe_session_id (if available)
+    // Log incoming items with SKU details
+    try {
+      console.log('[Orders POST] Incoming items SKU details:', items.map((it: any) => ({
+        id: it?.id,
+        variantSku: it?.variantSku,
+        name: it?.name,
+        size: it?.size,
+        color: it?.color,
+      })))
+    } catch {}
+    
+    // Check for duplicate orders by stripe_session_id
     if (orderData.stripe_session_id) {
-      const { data: existingBySession, error: existingCheckError } = await supabase
+      const { data: existingOrder } = await supabase
         .from('orders')
         .select('id')
         .eq('stripe_session_id', orderData.stripe_session_id)
-        .limit(1)
-        .maybeSingle()
+        .single()
 
-      if (!existingCheckError && existingBySession) {
+      if (existingOrder) {
         return NextResponse.json({
           success: true,
-          orderId: existingBySession.id,
-          message: 'Order already exists for this session'
+          orderId: existingOrder.id,
+          message: 'Order already exists'
         })
       }
     }
@@ -81,26 +100,32 @@ export async function POST(req: NextRequest) {
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert(orderData)
-      .select('id')
+      .select('id, order_number')
       .single()
     
     if (orderError) {
       console.error('Error creating order:', orderError)
-      return NextResponse.json({ error: orderError.message }, { status: 500 })
+      return NextResponse.json({ 
+        error: orderError.message 
+      }, { status: 500 })
     }
     
     // Create order items
     if (items.length > 0) {
-      const orderItems = items.map((item: any) => ({
-        order_id: order.id,
-        sku: item.id, // Product ID as SKU
-        product_name: item.name, // Store product name
-        product_size: item.size || null, // Store size if available
-        product_color: item.color || null, // Store color if available
-        quantity: item.quantity || 1,
-        unit_price: Number(item.currentPrice || item.price || 0),
-        total_price: Number((item.currentPrice || item.price || 0) * (item.quantity || 1))
-      }))
+      const orderItems = items.map((item: any) => {
+        const resolvedSku = item?.variantSku || item?.sku || item?.id
+        console.log('[Orders POST] Resolved SKU for item:', { name: item?.name, variantSku: item?.variantSku, fallbackSku: item?.id, resolvedSku })
+        return ({
+          order_id: order.id,
+          sku: resolvedSku,
+          product_name: item.name,
+          product_size: item.size || null,
+          product_color: item.color || null,
+          quantity: item.quantity || 1,
+          unit_price: Number(item.currentPrice || item.price || 0),
+          total_price: Number((item.currentPrice || item.price || 0) * (item.quantity || 1))
+        })
+      })
       
       const { error: itemsError } = await supabase
         .from('order_items')
@@ -115,13 +140,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       orderId: order.id,
+      orderNumber: order.order_number,
       message: 'Order created successfully' 
     })
-  } catch (error) {
+    
+  } catch (error: any) {
     console.error('Error creating order:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Internal server error' 
+    }, { status: 500 })
   }
 }
-
-
-

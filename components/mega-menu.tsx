@@ -99,6 +99,14 @@ export function MegaMenu({ category, isVisible, onClose }: MegaMenuProps) {
   }, [category, isVisible])
 
   const handleAddToCart = (product: MegaMenuProduct) => {
+    // Find the first available variant to get its SKU
+    const firstAvailableSize = product.variants?.[0]?.size
+    const selectedSize = product.selectedSize || firstAvailableSize || 'Queen'
+    
+    const selectedVariant = product.variants?.find((variant: any) => 
+      variant.size === selectedSize
+    )
+
     dispatch({
       type: 'ADD_ITEM',
       payload: {
@@ -108,7 +116,9 @@ export function MegaMenu({ category, isVisible, onClose }: MegaMenuProps) {
         image: product.image || product.images?.[0] || '',
         currentPrice: product.currentPrice || product.price || 0,
         originalPrice: product.originalPrice || product.price || 0,
-        size: product.selectedSize || 'Queen'
+        size: selectedSize,
+        color: selectedVariant?.color || 'Default',
+        variantSku: selectedVariant?.sku
       }
     })
   }

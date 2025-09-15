@@ -593,7 +593,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           })
           setCroppedImages(prev => new Map(prev.set(imageToCrop.name, croppedImageUrl)))
           
-          alert(`Image cropped and uploaded successfully!\n\n📁 File: ${file.name}\n📏 Original: ${(file.size / 1024 / 1024).toFixed(2)} MB\n🔄 New (WebP): ${(result.optimizedSize / 1024).toFixed(2)} MB\n💾 Savings: ${result.compressionRatio}%`)
+          alert(`Image cropped and uploaded successfully!\n\n📁 File: ${file.name}\n📏 Size: ${(file.size / 1024 / 1024).toFixed(2)} MB`)
             } else {
               const error = await response.json()
           console.error('[Edit Form] Cropped image optimized upload error:', error)
@@ -670,14 +670,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               if (response.ok) {
                 const result = await response.json()
           
-          // Show size comparison alert for description image
-          const originalSizeMB = (file.size / 1024 / 1024).toFixed(2)
-          const optimizedSizeMB = (result.optimizedSize / 1024).toFixed(2)
-          const savingsPercent = result.compressionRatio
+          // Show upload success alert for description image
+          const fileSizeMB = (file.size / 1024 / 1024).toFixed(2)
           
-          // Show appropriate message based on WebP conversion setting
-          const conversionMessage = convert ? "Image converted to WebP format for better performance." : "Image uploaded in original format (WebP conversion disabled)."
-          alert(`Description image ${convert ? 'optimized' : 'uploaded'} successfully!\n\n📁 File: ${file.name}\n📏 Original: ${originalSizeMB} MB\n🔄 New: ${optimizedSizeMB} MB\n💾 Savings: ${savingsPercent}%\n\n${conversionMessage}`)
+          alert(`Description image uploaded successfully!\n\n📁 File: ${file.name}\n📏 Size: ${fileSizeMB} MB`)
           
           // Update the description paragraph with the optimized image URL
           const newParagraphs = [...descriptionParagraphs]
