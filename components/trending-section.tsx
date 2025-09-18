@@ -240,7 +240,7 @@ export function TrendingSection() {
         </div>
 
         {/* Trending Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1">
           {displayItems.map((item, index) => (
             <Link key={item.id || index} href={item.href} className="group block">
               <div className="bg-white overflow-hidden hover:shadow-md transition-all duration-300 h-full">

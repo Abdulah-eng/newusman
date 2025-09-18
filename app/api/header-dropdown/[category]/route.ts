@@ -15,7 +15,7 @@ export async function GET(
     // Read configured items, ordered by slot_index ASC
     const { data: items, error } = await supabase
       .from('header_dropdown_items')
-      .select('product_id, slot_index')
+      .select('product_id, slot_index, custom_image, discount_percentage, discount_price')
       .eq('category_slug', category)
       .order('slot_index', { ascending: true })
       .limit(limit)
@@ -48,16 +48,20 @@ export async function GET(
       return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 })
     }
 
-    // Keep original slot order
+    // Keep original slot order and include custom fields
     const normalized = (products || []).map((p: any) => {
       const variants = Array.isArray(p.product_variants) ? p.product_variants : []
       const minCurrent = variants.length > 0 ? Math.min(...variants.map((v: any) => parseFloat(v.current_price) || Infinity)) : null
+      const item = items.find(i => i.product_id === p.id)
       return {
         id: p.id,
         name: p.name,
         current_price: Number.isFinite(minCurrent) ? minCurrent : null,
         category_slug: p.categories?.slug || null,
-        product_images: p.product_images || []
+        product_images: p.product_images || [],
+        custom_image: item?.custom_image || null,
+        discount_percentage: item?.discount_percentage || null,
+        discount_price: item?.discount_price || null
       }
     })
 
@@ -90,7 +94,10 @@ export async function PUT(
     const upsertRows = body.items.map((it: any) => ({
       category_slug: category,
       slot_index: Number(it.slot_index) || 0,
-      product_id: it.product_id
+      product_id: it.product_id,
+      custom_image: it.custom_image || null,
+      discount_percentage: it.discount_percentage || null,
+      discount_price: it.discount_price || null
     }))
 
     const { error: upsertError } = await supabase

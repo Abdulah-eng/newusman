@@ -713,7 +713,7 @@ const HARDCODED_FEATURE_CARDS = {
       icon: 'feather'
     },
     {
-      id: 'eco-friendly-sofa',
+      id: 'eco-friendly-materials',
       title: 'Eco-Friendly',
       description: 'Environmentally conscious materials and processes.',
       icon: 'leaf'

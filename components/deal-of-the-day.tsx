@@ -15,6 +15,35 @@ export function DealOfTheDay() {
   const [dealProducts, setDealProducts] = useState<any[]>([])
   const [mainDealProduct, setMainDealProduct] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 })
+
+  // Countdown timer effect
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date().getTime()
+      const endOfDay = new Date()
+      endOfDay.setHours(23, 59, 59, 999) // End of day
+      const difference = endOfDay.getTime() - now
+
+      if (difference > 0) {
+        const hours = Math.floor(difference / (1000 * 60 * 60))
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000)
+
+        setTimeLeft({ hours, minutes, seconds })
+      } else {
+        setTimeLeft({ hours: 0, minutes: 0, seconds: 0 })
+      }
+    }
+
+    // Calculate immediately
+    calculateTimeLeft()
+
+    // Update every second
+    const timer = setInterval(calculateTimeLeft, 1000)
+
+    return () => clearInterval(timer)
+  }, [])
 
   // Fetch deal products when content changes
   useEffect(() => {
@@ -226,6 +255,38 @@ export function DealOfTheDay() {
                 </Badge>
               </div>
             )}
+            {/* Countdown Timer for empty state too */}
+            <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl p-6 shadow-lg border border-red-100 mb-6 max-w-md mx-auto">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <Clock className="w-5 h-5 text-red-500" />
+                  <p className="text-gray-700 font-semibold text-sm font-modern">Next deal starts in:</p>
+                </div>
+                <div className="flex justify-center items-center gap-3">
+                  <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                    <div className="text-3xl font-bold text-red-600 font-display leading-none">
+                      {timeLeft.hours.toString().padStart(2, '0')}
+                    </div>
+                    <div className="text-xs text-gray-500 font-modern mt-1">Hours</div>
+                  </div>
+                  <div className="text-2xl text-red-400 font-bold">:</div>
+                  <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                    <div className="text-3xl font-bold text-red-600 font-display leading-none">
+                      {timeLeft.minutes.toString().padStart(2, '0')}
+                    </div>
+                    <div className="text-xs text-gray-500 font-modern mt-1">Minutes</div>
+                  </div>
+                  <div className="text-2xl text-red-400 font-bold">:</div>
+                  <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                    <div className="text-3xl font-bold text-red-600 font-display leading-none">
+                      {timeLeft.seconds.toString().padStart(2, '0')}
+                    </div>
+                    <div className="text-xs text-gray-500 font-modern mt-1">Seconds</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-6 font-modern">
               No deals available at the moment. Check back soon for amazing offers!
             </p>
@@ -259,23 +320,32 @@ export function DealOfTheDay() {
           )}
           
           {/* Countdown Timer - Moved below description */}
-          <div className="bg-white rounded-xl p-4 shadow-none mb-6 max-w-sm mx-auto">
+          <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl p-6 shadow-lg border border-red-100 mb-6 max-w-md mx-auto">
             <div className="text-center">
-              <p className="text-gray-600 mb-3 text-sm font-modern">Offer ends in:</p>
-              <div className="flex justify-center items-center gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600 font-display">23</div>
-                  <div className="text-xs text-gray-500 font-modern">Hours</div>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Clock className="w-5 h-5 text-red-500" />
+                <p className="text-gray-700 font-semibold text-sm font-modern">Offer ends in:</p>
+              </div>
+              <div className="flex justify-center items-center gap-3">
+                <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                  <div className="text-3xl font-bold text-red-600 font-display leading-none">
+                    {timeLeft.hours.toString().padStart(2, '0')}
+                  </div>
+                  <div className="text-xs text-gray-500 font-modern mt-1">Hours</div>
                 </div>
-                <div className="text-xl text-gray-300">:</div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600 font-display">45</div>
-                  <div className="text-xs text-gray-500 font-modern">Minutes</div>
+                <div className="text-2xl text-red-400 font-bold">:</div>
+                <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                  <div className="text-3xl font-bold text-red-600 font-display leading-none">
+                    {timeLeft.minutes.toString().padStart(2, '0')}
+                  </div>
+                  <div className="text-xs text-gray-500 font-modern mt-1">Minutes</div>
                 </div>
-                <div className="text-xl text-gray-300">:</div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600 font-display">12</div>
-                  <div className="text-xs text-gray-500 font-modern">Seconds</div>
+                <div className="text-2xl text-red-400 font-bold">:</div>
+                <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                  <div className="text-3xl font-bold text-red-600 font-display leading-none">
+                    {timeLeft.seconds.toString().padStart(2, '0')}
+                  </div>
+                  <div className="text-xs text-gray-500 font-modern mt-1">Seconds</div>
                 </div>
               </div>
             </div>

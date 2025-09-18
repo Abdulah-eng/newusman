@@ -90,6 +90,30 @@ export default function Header() {
   const [dropdownProducts, setDropdownProducts] = useState<Record<string, any[]>>({})
   const [guideItems, setGuideItems] = useState<any[]>([])
 
+  // Helper function to calculate display price with discount
+  const getDisplayPrice = (product: any) => {
+    if (product.discount_price) {
+      return {
+        current: product.discount_price,
+        original: product.current_price,
+        hasDiscount: true
+      }
+    } else if (product.discount_percentage && product.current_price) {
+      const discountAmount = (product.current_price * product.discount_percentage) / 100
+      return {
+        current: product.current_price - discountAmount,
+        original: product.current_price,
+        hasDiscount: true
+      }
+    } else {
+      return {
+        current: product.current_price,
+        original: null,
+        hasDiscount: false
+      }
+    }
+  }
+
   useEffect(() => {
     const cat = activeDropdown
     if (!cat || isOnCategoryPage) return
@@ -643,21 +667,34 @@ export default function Header() {
                       <div className="text-center">
                         <h2 className="text-xl font-bold text-gray-900 mb-4">Mattresses</h2>
                         {/* 3rd Product Card */}
-                        {(dropdownProducts['mattresses'] || []).slice(2, 3).map((p: any) => (
-                          <Link key={p.id} href={`/products/mattresses/${p.id}`} className="group">
-                            <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                              <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                        </div>
-                              <div className="p-3">
-                                <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">{p.name}</h4>
-                                {p.current_price != null && (
-                                  <p className="text-xs text-gray-700">£{Number(p.current_price).toFixed(2)}</p>
-                                )}
+                        {(dropdownProducts['mattresses'] || []).slice(2, 3).map((p: any) => {
+                          const price = getDisplayPrice(p)
+                          return (
+                            <Link key={p.id} href={`/products/mattresses/${p.id}`} className="group">
+                              <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
+                                <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
+                                  <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                  {price.hasDiscount && (
+                                    <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                                      {p.discount_percentage ? `${p.discount_percentage}% OFF` : 'SALE'}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="p-3">
+                                  <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">{p.name}</h4>
+                                  {price.current != null && (
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-gray-700">£{Number(price.current).toFixed(2)}</p>
+                                      {price.hasDiscount && price.original && (
+                                        <p className="text-xs text-gray-400 line-through">£{Number(price.original).toFixed(2)}</p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          </Link>
-                        ))}
+                            </Link>
+                          )
+                        })}
                           </div>
                     </div>
 
@@ -865,21 +902,34 @@ export default function Header() {
                     {/* Dynamic Products (2 for mattresses) */}
                     <div className="col-span-2">
                       <div className="grid grid-cols-2 gap-4">
-                        {(dropdownProducts['mattresses'] || []).slice(0,2).map((p: any) => (
-                          <Link key={p.id} href={`/products/mattresses/${p.id}`} className="group">
-                            <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                              <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        {(dropdownProducts['mattresses'] || []).slice(0,2).map((p: any) => {
+                          const price = getDisplayPrice(p)
+                          return (
+                            <Link key={p.id} href={`/products/mattresses/${p.id}`} className="group">
+                              <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
+                                <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
+                                  <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                  {price.hasDiscount && (
+                                    <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                                      {p.discount_percentage ? `${p.discount_percentage}% OFF` : 'SALE'}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="p-3">
+                                  <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">{p.name}</h4>
+                                  {price.current != null && (
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-gray-700">£{Number(price.current).toFixed(2)}</p>
+                                      {price.hasDiscount && price.original && (
+                                        <p className="text-xs text-gray-400 line-through">£{Number(price.original).toFixed(2)}</p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              <div className="p-3">
-                              <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">{p.name}</h4>
-                                {p.current_price != null && (
-                                <p className="text-xs text-gray-700">£{Number(p.current_price).toFixed(2)}</p>
-                                )}
-                            </div>
-                          </div>
-                        </Link>
-                        ))}
+                            </Link>
+                          )
+                        })}
                       </div>
                     </div>
                   </div>
@@ -909,21 +959,34 @@ export default function Header() {
                       <div className="text-center">
                         <h2 className="text-xl font-bold text-gray-900 mb-4">Beds</h2>
                         {/* 3rd Product Card */}
-                        {(dropdownProducts['beds'] || []).slice(2, 3).map((p: any) => (
-                          <Link key={p.id} href={`/products/beds/${p.id}`} className="group">
-                            <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                              <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                        </div>
-                              <div className="p-3">
-                                <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">{p.name}</h4>
-                                {p.current_price != null && (
-                                  <p className="text-xs text-gray-700">£{Number(p.current_price).toFixed(2)}</p>
-                                )}
+                        {(dropdownProducts['beds'] || []).slice(2, 3).map((p: any) => {
+                          const price = getDisplayPrice(p)
+                          return (
+                            <Link key={p.id} href={`/products/beds/${p.id}`} className="group">
+                              <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
+                                <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
+                                  <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                  {price.hasDiscount && (
+                                    <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                                      {p.discount_percentage ? `${p.discount_percentage}% OFF` : 'SALE'}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="p-3">
+                                  <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">{p.name}</h4>
+                                  {price.current != null && (
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-gray-700">£{Number(price.current).toFixed(2)}</p>
+                                      {price.hasDiscount && price.original && (
+                                        <p className="text-xs text-gray-400 line-through">£{Number(price.original).toFixed(2)}</p>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          </Link>
-                        ))}
+                            </Link>
+                          )
+                        })}
                           </div>
                     </div>
 
@@ -1100,13 +1163,29 @@ export default function Header() {
                           <Link key={p.id} href={`/products/beds/${p.id}`} className="group">
                           <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                             <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                {(() => {
+                                  const price = getDisplayPrice(p)
+                                  return price.hasDiscount && (
+                                    <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                                      {p.discount_percentage ? `${p.discount_percentage}% OFF` : 'SALE'}
+                                    </div>
+                                  )
+                                })()}
                             </div>
                             <div className="p-3">
                                 <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors">{p.name}</h4>
-                                {p.current_price != null && (
-                                  <p className="text-xs text-gray-700 mb-2">£{Number(p.current_price).toFixed(2)}</p>
-                                )}
+                                {(() => {
+                                  const price = getDisplayPrice(p)
+                                  return price.current != null && (
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-gray-700 mb-2">£{Number(price.current).toFixed(2)}</p>
+                                      {price.hasDiscount && price.original && (
+                                        <p className="text-xs text-gray-400 line-through">£{Number(price.original).toFixed(2)}</p>
+                                      )}
+                                    </div>
+                                  )
+                                })()}
                             </div>
                           </div>
                         </Link>
@@ -1144,7 +1223,7 @@ export default function Header() {
                           <Link key={p.id} href={`/products/sofas/${p.id}`} className="group">
                             <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                               <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         </div>
                               <div className="p-3">
                                 <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">{p.name}</h4>
@@ -1364,13 +1443,29 @@ export default function Header() {
                           <Link key={p.id} href={`/products/sofas/${p.id}`} className="group">
                           <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                             <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                {(() => {
+                                  const price = getDisplayPrice(p)
+                                  return price.hasDiscount && (
+                                    <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                                      {p.discount_percentage ? `${p.discount_percentage}% OFF` : 'SALE'}
+                                    </div>
+                                  )
+                                })()}
                             </div>
                             <div className="p-3">
                                 <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors">{p.name}</h4>
-                                {p.current_price != null && (
-                                  <p className="text-xs text-gray-700 mb-2">£{Number(p.current_price).toFixed(2)}</p>
-                                )}
+                                {(() => {
+                                  const price = getDisplayPrice(p)
+                                  return price.current != null && (
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-gray-700 mb-2">£{Number(price.current).toFixed(2)}</p>
+                                      {price.hasDiscount && price.original && (
+                                        <p className="text-xs text-gray-400 line-through">£{Number(price.original).toFixed(2)}</p>
+                                      )}
+                                    </div>
+                                  )
+                                })()}
                             </div>
                           </div>
                         </Link>
@@ -1403,7 +1498,15 @@ export default function Header() {
                       <Link key={p.id} href={`/products/pillows/${p.id}`} className="group">
                       <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                         <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                            <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            {(() => {
+                              const price = getDisplayPrice(p)
+                              return price.hasDiscount && (
+                                <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                                  {p.discount_percentage ? `${p.discount_percentage}% OFF` : 'SALE'}
+                                </div>
+                              )
+                            })()}
                         </div>
                         <div className="p-4">
                             <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">{p.name}</h4>
@@ -1440,7 +1543,15 @@ export default function Header() {
                       <Link key={p.id} href={`/products/toppers/${p.id}`} className="group">
                       <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                         <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                            <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            {(() => {
+                              const price = getDisplayPrice(p)
+                              return price.hasDiscount && (
+                                <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                                  {p.discount_percentage ? `${p.discount_percentage}% OFF` : 'SALE'}
+                                </div>
+                              )
+                            })()}
                         </div>
                         <div className="p-4">
                             <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">{p.name}</h4>
@@ -1477,7 +1588,15 @@ export default function Header() {
                       <Link key={p.id} href={`/products/bunkbeds/${p.id}`} className="group">
                       <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                         <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                            <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            {(() => {
+                              const price = getDisplayPrice(p)
+                              return price.hasDiscount && (
+                                <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                                  {p.discount_percentage ? `${p.discount_percentage}% OFF` : 'SALE'}
+                                </div>
+                              )
+                            })()}
                         </div>
                         <div className="p-4">
                             <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">{p.name}</h4>
@@ -1519,7 +1638,7 @@ export default function Header() {
                           <Link key={p.id} href={`/products/kids/${p.id}`} className="group">
                             <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                               <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         </div>
                               <div className="p-3">
                                 <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">{p.name}</h4>
@@ -1640,13 +1759,21 @@ export default function Header() {
                           <Link key={p.id} href={`/products/kids/${p.id}`} className="group">
                           <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                             <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         </div>
                         <div className="p-4">
                                 <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors">{p.name}</h4>
-                                {p.current_price != null && (
-                                  <p className="text-xs text-gray-700 mb-2">£{Number(p.current_price).toFixed(2)}</p>
-                                )}
+                                {(() => {
+                                  const price = getDisplayPrice(p)
+                                  return price.current != null && (
+                                    <div className="space-y-1">
+                                      <p className="text-xs text-gray-700 mb-2">£{Number(price.current).toFixed(2)}</p>
+                                      {price.hasDiscount && price.original && (
+                                        <p className="text-xs text-gray-400 line-through">£{Number(price.original).toFixed(2)}</p>
+                                      )}
+                                    </div>
+                                  )
+                                })()}
                           </div>
                         </div>
                       </Link>

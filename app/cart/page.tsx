@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Trash2, ShoppingCart, Shield, Truck, Clock, Star } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 export default function CartPage() {
   const { state, dispatch } = useCart()
@@ -57,7 +58,19 @@ export default function CartPage() {
             <div className="bg-white rounded-lg shadow-sm border">
               {state.items.map((item) => (
                 <div key={`${item.id}-${item.size || 'default'}-${item.color || 'default'}`} className="flex items-center p-6 border-b last:border-b-0">
-                  <div className="w-20 h-20 bg-gray-100 rounded-lg mr-4"></div>
+                  <div className="w-20 h-20 bg-gray-100 rounded-lg mr-4 flex-shrink-0 overflow-hidden">
+                    <Image
+                      src={item.image || "/placeholder.jpg"}
+                      alt={item.name}
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = "/placeholder.jpg"
+                      }}
+                    />
+                  </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900">{item.name}</h3>
                     <p className="text-gray-600">{item.brand}</p>

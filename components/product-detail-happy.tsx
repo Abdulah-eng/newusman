@@ -834,6 +834,28 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   // Get the selected size data with fallback
   const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
 
+  // Get current variant based on selected options
+  const getCurrentVariant = useCallback(() => {
+    const variants = (product as any).variants || []
+    if (variants.length === 0) return null
+    
+    // If no size or color selected, return first variant
+    if (!selectedSize && !selectedColor) {
+      return variants[0]
+    }
+    
+    // Find variant that matches selected size and color
+    const matchingVariant = variants.find((variant: any) => {
+      const sizeMatch = !selectedSize || variant.size === selectedSize
+      const colorMatch = !selectedColor || variant.color === selectedColor
+      return sizeMatch && colorMatch
+    })
+    
+    return matchingVariant || variants[0] // Fallback to first variant
+  }, [selectedSize, selectedColor, product])
+
+  const currentVariant = getCurrentVariant()
+
   const addToCart = useCallback(() => {
     console.log('addToCart function called')
     console.log('Product data:', product)
@@ -1487,19 +1509,38 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                     })()}
 
                     
-                    {/* Base Product Dimensions - Simple LxWxH */}
-                    {product.dimensions && (product.dimensions.length || product.dimensions.width || product.dimensions.height) && (
-                      <div className="mt-3">
-                        <div className="text-sm text-gray-600 font-medium mb-1">Dimensions:</div>
-                        <div className="text-lg font-bold text-gray-800">
-                          {product.dimensions.length && `${product.dimensions.length.replace('L ', '').replace('cm', '')}cm`}
-                          {product.dimensions.width && product.dimensions.length && ' × '}
-                          {product.dimensions.width && `${product.dimensions.width.replace('cm', '')}cm`}
-                          {product.dimensions.height && (product.dimensions.length || product.dimensions.width) && ' × '}
-                          {product.dimensions.height && `${product.dimensions.height.replace('cm', '')}cm`}
+                    {/* Variant Dimensions - Show selected variant dimensions */}
+                    {(() => {
+                      // Get dimensions from current variant or fallback to product dimensions
+                      const dimensions = currentVariant ? {
+                        length: currentVariant.length,
+                        width: currentVariant.width,
+                        height: currentVariant.height
+                      } : (product.dimensions ? {
+                        length: product.dimensions.length,
+                        width: product.dimensions.width,
+                        height: product.dimensions.height
+                      } : null)
+
+                      if (!dimensions || (!dimensions.length && !dimensions.width && !dimensions.height)) {
+                        return null
+                      }
+
+                      return (
+                        <div className="mt-3">
+                          <div className="text-sm text-gray-600 font-medium mb-1">
+                            Dimensions {currentVariant ? `(${currentVariant.size || 'Selected'})` : ''}:
+                          </div>
+                          <div className="text-lg font-bold text-gray-800">
+                            {dimensions.length && `${dimensions.length.replace('L ', '').replace('cm', '')}cm`}
+                            {dimensions.width && dimensions.length && ' × '}
+                            {dimensions.width && `${dimensions.width.replace('cm', '')}cm`}
+                            {dimensions.height && (dimensions.length || dimensions.width) && ' × '}
+                            {dimensions.height && `${dimensions.height.replace('cm', '')}cm`}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )
+                    })()}
                 </div>
 
               </div>
@@ -4237,19 +4278,38 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                     })()}
 
                     
-                    {/* Base Product Dimensions - Simple LxWxH */}
-                    {product.dimensions && (product.dimensions.length || product.dimensions.width || product.dimensions.height) && (
-                      <div className="mt-3">
-                        <div className="text-sm text-gray-600 font-medium mb-1">Dimensions:</div>
-                        <div className="text-lg font-bold text-gray-800">
-                          {product.dimensions.length && `${product.dimensions.length.replace('L ', '').replace('cm', '')}cm`}
-                          {product.dimensions.width && product.dimensions.length && ' × '}
-                          {product.dimensions.width && `${product.dimensions.width.replace('cm', '')}cm`}
-                          {product.dimensions.height && (product.dimensions.length || product.dimensions.width) && ' × '}
-                          {product.dimensions.height && `${product.dimensions.height.replace('cm', '')}cm`}
+                    {/* Variant Dimensions - Show selected variant dimensions */}
+                    {(() => {
+                      // Get dimensions from current variant or fallback to product dimensions
+                      const dimensions = currentVariant ? {
+                        length: currentVariant.length,
+                        width: currentVariant.width,
+                        height: currentVariant.height
+                      } : (product.dimensions ? {
+                        length: product.dimensions.length,
+                        width: product.dimensions.width,
+                        height: product.dimensions.height
+                      } : null)
+
+                      if (!dimensions || (!dimensions.length && !dimensions.width && !dimensions.height)) {
+                        return null
+                      }
+
+                      return (
+                        <div className="mt-3">
+                          <div className="text-sm text-gray-600 font-medium mb-1">
+                            Dimensions {currentVariant ? `(${currentVariant.size || 'Selected'})` : ''}:
+                          </div>
+                          <div className="text-lg font-bold text-gray-800">
+                            {dimensions.length && `${dimensions.length.replace('L ', '').replace('cm', '')}cm`}
+                            {dimensions.width && dimensions.length && ' × '}
+                            {dimensions.width && `${dimensions.width.replace('cm', '')}cm`}
+                            {dimensions.height && (dimensions.length || dimensions.width) && ' × '}
+                            {dimensions.height && `${dimensions.height.replace('cm', '')}cm`}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )
+                    })()}
                 </div>
 
               </div>

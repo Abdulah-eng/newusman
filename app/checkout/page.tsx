@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import Image from "next/image"
 import { 
   ShoppingCart, 
   Truck, 
@@ -538,16 +539,18 @@ export default function CheckoutPage() {
                 {state.items.map((item, index) => (
                   <div key={`${item.id}-${item.size || 'standard'}-${item.color || 'default'}-${index}`} 
                        className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-                    <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center">
-                      {item.image ? (
-                        <img 
-                          src={item.image} 
-                          alt={item.name} 
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div className="text-gray-400 text-xs text-center">No Image</div>
-                      )}
+                    <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+                      <Image
+                        src={item.image || "/placeholder.jpg"}
+                        alt={item.name}
+                        width={80}
+                        height={80}
+                        className="w-full h-full object-cover rounded-lg"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = "/placeholder.jpg"
+                        }}
+                      />
                     </div>
                     
                     <div className="flex-1">

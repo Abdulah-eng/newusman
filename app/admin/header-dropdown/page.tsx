@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Package, Search, Save, ArrowLeft, Check } from 'lucide-react'
+import { Package, Search, Save, ArrowLeft, Check, Upload, X } from 'lucide-react'
 import Link from 'next/link'
+import { uploadToSupabase } from '@/lib/image-upload'
 
 interface SimpleProduct {
   id: string
@@ -14,6 +15,14 @@ interface SimpleProduct {
   current_price?: number
   product_images?: { image_url?: string }[]
   category_slug?: string
+}
+
+interface DropdownItem {
+  slot_index: number
+  product_id: string | null
+  custom_image?: string
+  discount_percentage?: number
+  discount_price?: number
 }
 
 const CATEGORY_SLOTS: Record<string, number> = {
@@ -42,7 +51,7 @@ export default function HeaderDropdownAdminPage() {
   const [category, setCategory] = useState<string>('mattresses')
   const [allProducts, setAllProducts] = useState<SimpleProduct[]>([])
   const [search, setSearch] = useState('')
-  const [slots, setSlots] = useState<Array<{ slot_index: number; product_id: string | null }>>([])
+  const [slots, setSlots] = useState<DropdownItem[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -50,7 +59,13 @@ export default function HeaderDropdownAdminPage() {
 
   useEffect(() => {
     // initialize slots when category changes
-    setSlots(Array.from({ length: maxSlots }, (_, i) => ({ slot_index: i, product_id: null })))
+    setSlots(Array.from({ length: maxSlots }, (_, i) => ({ 
+      slot_index: i, 
+      product_id: null,
+      custom_image: '',
+      discount_percentage: undefined,
+      discount_price: undefined
+    })))
   }, [category, maxSlots])
 
   useEffect(() => {
@@ -63,10 +78,21 @@ export default function HeaderDropdownAdminPage() {
           const data = await res.json()
           if (Array.isArray(data.products)) {
             const byIndex = data.products.reduce((acc: any, p: any, idx: number) => {
-              acc[idx] = p.id
+              acc[idx] = {
+                product_id: p.id,
+                custom_image: p.custom_image || '',
+                discount_percentage: p.discount_percentage || undefined,
+                discount_price: p.discount_price || undefined
+              }
               return acc
             }, {})
-            setSlots(prev => prev.map(s => ({ ...s, product_id: byIndex[s.slot_index] || s.product_id })))
+            setSlots(prev => prev.map(s => ({ 
+              ...s, 
+              product_id: byIndex[s.slot_index]?.product_id || s.product_id,
+              custom_image: byIndex[s.slot_index]?.custom_image || s.custom_image,
+              discount_percentage: byIndex[s.slot_index]?.discount_percentage || s.discount_percentage,
+              discount_price: byIndex[s.slot_index]?.discount_price || s.discount_price
+            })))
           }
         }
       } catch (error) {
@@ -169,7 +195,13 @@ export default function HeaderDropdownAdminPage() {
         // Handle other categories normally
         const items = slots
           .filter(s => s.product_id)
-          .map(s => ({ slot_index: s.slot_index, product_id: s.product_id }))
+          .map(s => ({ 
+            slot_index: s.slot_index, 
+            product_id: s.product_id,
+            custom_image: s.custom_image || null,
+            discount_percentage: s.discount_percentage || null,
+            discount_price: s.discount_price || null
+          }))
         
         const res = await fetch(`/api/header-dropdown/${category}`, {
           method: 'PUT',
@@ -253,27 +285,9 @@ export default function HeaderDropdownAdminPage() {
                 {slots.map((slot) => {
                   const selectedProduct = getSelectedProduct(slot.slot_index)
                   return (
-                    <div key={slot.slot_index} className="border border-gray-200 rounded-lg p-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                          {selectedProduct?.product_images?.[0]?.image_url ? (
-                            <img 
-                              src={selectedProduct.product_images[0].image_url} 
-                              alt={selectedProduct.name} 
-                              className="w-full h-full object-cover" 
-                            />
-                          ) : (
-                            <Package className="w-5 h-5 text-gray-400" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-gray-900 truncate">
-                            {selectedProduct?.name || `Slot ${slot.slot_index + 1} - Empty`}
-                          </div>
-                          {selectedProduct?.current_price && (
-                            <div className="text-xs text-gray-600">£{selectedProduct.current_price}</div>
-                          )}
-                        </div>
+                    <div key={slot.slot_index} className="border border-gray-200 rounded-lg p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-gray-900">Slot {slot.slot_index + 1}</h4>
                         {selectedProduct && (
                           <Button
                             size="sm"
@@ -285,6 +299,128 @@ export default function HeaderDropdownAdminPage() {
                           </Button>
                         )}
                       </div>
+                      
+                      {selectedProduct ? (
+                        <div className="space-y-4">
+                          {/* Product Info */}
+                          <div className="flex items-center gap-3">
+                            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                              <img 
+                                src={slot.custom_image || selectedProduct.product_images?.[0]?.image_url || '/placeholder.jpg'} 
+                                alt={selectedProduct.name} 
+                                className="w-full h-full object-cover" 
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-gray-900 truncate">
+                                {selectedProduct.name}
+                              </div>
+                              <div className="text-xs text-gray-600">£{selectedProduct.current_price}</div>
+                            </div>
+                          </div>
+
+                          {/* Custom Image Upload */}
+                          <div>
+                            <Label className="block mb-2 text-sm font-medium">Custom Image (Optional)</Label>
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-3">
+                              {slot.custom_image ? (
+                                <div className="relative">
+                                  <img 
+                                    src={slot.custom_image} 
+                                    alt="Custom preview" 
+                                    className="w-full h-24 object-cover rounded-lg"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setSlots(prev => prev.map(s => 
+                                      s.slot_index === slot.slot_index ? { ...s, custom_image: '' } : s
+                                    ))}
+                                    className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="text-center">
+                                  <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+                                  <p className="text-xs text-gray-600 mb-2">Upload custom image</p>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={async (e) => {
+                                      const file = e.target.files?.[0]
+                                      if (file) {
+                                        try {
+                                          const imageUrl = await uploadToSupabase(file)
+                                          setSlots(prev => prev.map(s => 
+                                            s.slot_index === slot.slot_index ? { ...s, custom_image: imageUrl } : s
+                                          ))
+                                        } catch (error) {
+                                          console.error('Error uploading image:', error)
+                                          alert('Error uploading image. Please try again.')
+                                        }
+                                      }
+                                    }}
+                                    className="hidden"
+                                    id={`slot-image-${slot.slot_index}`}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => document.getElementById(`slot-image-${slot.slot_index}`)?.click()}
+                                  >
+                                    <Upload className="w-3 h-3 mr-1" />
+                                    Choose Image
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Discount Configuration */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="block mb-1 text-sm font-medium">Discount %</Label>
+                              <Input
+                                type="number"
+                                placeholder="e.g., 30"
+                                value={slot.discount_percentage || ''}
+                                onChange={(e) => setSlots(prev => prev.map(s => 
+                                  s.slot_index === slot.slot_index ? { 
+                                    ...s, 
+                                    discount_percentage: e.target.value ? parseInt(e.target.value) : undefined 
+                                  } : s
+                                ))}
+                                className="text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label className="block mb-1 text-sm font-medium">Discount Price</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="e.g., 299.99"
+                                value={slot.discount_price || ''}
+                                onChange={(e) => setSlots(prev => prev.map(s => 
+                                  s.slot_index === slot.slot_index ? { 
+                                    ...s, 
+                                    discount_price: e.target.value ? parseFloat(e.target.value) : undefined 
+                                  } : s
+                                ))}
+                                className="text-sm"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-gray-500">
+                          <Package className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                          <p className="text-sm">No product selected</p>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
