@@ -16,7 +16,7 @@ export function ProductGridNew({ products, title }: ProductGridNewProps) {
             {title}
           </h2>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1">
           {products.map((product) => (
             <div key={product.id} className="h-full">
               <ProductCard product={product} />

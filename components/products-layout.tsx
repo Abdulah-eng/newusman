@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { ProductGrid } from "@/components/product-grid"
 import { PopularCategories } from "@/components/popular-categories"
 import { HorizontalFilterBar } from "@/components/horizontal-filter-bar"
@@ -15,6 +16,27 @@ export function ProductsLayout({ category }: ProductsLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [productCount, setProductCount] = useState(0)
   const [sortBy, setSortBy] = useState("popular")
+  const [filters, setFilters] = useState<Record<string, any>>({})
+  const searchParams = useSearchParams()
+
+  // Read URL parameters and set filters
+  useEffect(() => {
+    const newFilters: Record<string, any> = {}
+    
+    // Handle firmness filter
+    const firmness = searchParams.get('firmness')
+    if (firmness) {
+      newFilters.firmness = [firmness]
+    }
+    
+    // Handle features filter
+    const features = searchParams.get('features')
+    if (features) {
+      newFilters.features = [features]
+    }
+    
+    setFilters(newFilters)
+  }, [searchParams])
 
   // Disable API fetching for product count
   useEffect(() => {
@@ -34,8 +56,16 @@ export function ProductsLayout({ category }: ProductsLayoutProps) {
   }
 
   const handlePopularCategorySelect = (filterKey: string, filterValue: string) => {
-    // This function is no longer needed as filters are removed
+    // Update filters based on category selection
+    setFilters(prev => ({
+      ...prev,
+      [filterKey.toLowerCase()]: [filterValue]
+    }))
   };
+
+  const handleFiltersChange = (newFilters: Record<string, any>) => {
+    setFilters(newFilters)
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -95,8 +125,8 @@ export function ProductsLayout({ category }: ProductsLayoutProps) {
       {/* Horizontal Filter Bar */}
       <HorizontalFilterBar 
         category={category}
-        filters={{}} // Pass an empty object as filters are removed
-        onFiltersChange={() => {}} // No-op as filters are removed
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
         onOpenAllFilters={() => setSidebarOpen(true)}
         sortBy={sortBy}
         onSortByChange={setSortBy}
@@ -123,7 +153,7 @@ export function ProductsLayout({ category }: ProductsLayoutProps) {
           </div>
         )}
 
-        <ProductGrid category={category} filters={{}} sortBy={sortBy} />
+        <ProductGrid category={category} filters={filters} sortBy={sortBy} />
       </div>
     </div>
   )

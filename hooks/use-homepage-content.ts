@@ -27,6 +27,7 @@ interface HomePageContent {
       productId: string
       description: string
       percentageOff: string
+      customImage?: string
     }>
   }
   mattresses?: {

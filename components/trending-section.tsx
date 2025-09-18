@@ -240,12 +240,12 @@ export function TrendingSection() {
         </div>
 
         {/* Trending Grid */}
-        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {displayItems.map((item, index) => (
             <Link key={item.id || index} href={item.href} className="group block">
-              <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 h-full">
+              <div className="bg-white overflow-hidden hover:shadow-md transition-all duration-300 h-full">
                 {/* Product Image */}
-                <div className="relative mb-6 -mx-6 -mt-6">
+                <div className="relative mb-6">
                   <div className="relative w-full h-56 bg-gray-100 overflow-hidden">
                     <Image 
                       src={item.image} 
@@ -268,7 +268,7 @@ export function TrendingSection() {
                 </div>
 
                 {/* Content */}
-                <div className="p-6 pr-0 flex flex-col h-full">
+                <div className="p-6 flex flex-col h-full">
                   {/* Header - Product Title with Fixed Height */}
                   <div className="mb-4 h-16 flex flex-col justify-center">
                     <h3 className="text-xl font-bold text-gray-900 leading-tight">{item.title}</h3>

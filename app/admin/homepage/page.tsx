@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 import { AdminNav } from '@/components/admin/admin-nav'
 import { ImageUploadTest } from '@/components/admin/image-upload-test'
+import { uploadToSupabase } from '@/lib/image-upload'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -59,6 +60,7 @@ interface DealOfDay {
     productId: string
     description: string
     percentageOff: string
+    customImage?: string
   }>
 }
 
@@ -951,6 +953,78 @@ export default function HomePageAdmin() {
                         className="w-full"
                         rows={3}
                       />
+                    </div>
+
+                    {/* Custom Image Upload */}
+                    <div className="mt-4">
+                      <Label className="block mb-2">Custom Deal Image (Optional)</Label>
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                        {productCard.customImage ? (
+                          <div className="relative">
+                            <img 
+                              src={productCard.customImage} 
+                              alt="Deal preview" 
+                              className="w-full h-32 object-cover rounded-lg"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDealOfDay(prev => ({
+                                ...prev,
+                                productCards: prev.productCards.map((card, i) => 
+                                  i === index ? { ...card, customImage: '' } : card
+                                )
+                              }))}
+                              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                            <p className="text-sm text-gray-600 mb-2">
+                              Upload a custom image for this deal
+                            </p>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0]
+                                if (file) {
+                                  try {
+                                    const imageUrl = await uploadToSupabase(file)
+                                    setDealOfDay(prev => ({
+                                      ...prev,
+                                      productCards: prev.productCards.map((card, i) => 
+                                        i === index ? { ...card, customImage: imageUrl } : card
+                                      )
+                                    }))
+                                  } catch (error) {
+                                    console.error('Error uploading image:', error)
+                                    alert('Error uploading image. Please try again.')
+                                  }
+                                }
+                              }}
+                              className="hidden"
+                              id={`deal-image-${index}`}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => document.getElementById(`deal-image-${index}`)?.click()}
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Choose Image
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        This image will be used instead of the product's default image in the deal display
+                      </p>
                     </div>
                   </div>
                 ))}

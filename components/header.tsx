@@ -86,12 +86,57 @@ export default function Header() {
     }
   }
 
+  // Fetch dropdown products for category when active
+  const [dropdownProducts, setDropdownProducts] = useState<Record<string, any[]>>({})
+  const [guideItems, setGuideItems] = useState<any[]>([])
+
+  useEffect(() => {
+    const cat = activeDropdown
+    if (!cat || isOnCategoryPage) return
+    
+    // Handle guides separately
+    if (cat === 'guides') {
+      if (guideItems.length > 0) return
+      fetch('/api/homepage-content')
+        .then(res => res.ok ? res.json() : { ideas_guides: [] })
+        .then(data => {
+          const ideasGuides = data.ideas_guides || []
+          // Transform to match the expected format for the dropdown
+          const transformedGuides = ideasGuides.slice(0, 4).map((guide: any) => ({
+            id: guide.id || `guide-${Math.random()}`,
+            title: guide.heading || guide.title || 'Untitled Guide',
+            description: guide.description || 'Guide description',
+            image_url: guide.image || '/placeholder.jpg',
+            link_url: '/guides',
+            badge_text: 'GUIDE',
+            badge_color: 'blue',
+            rating: 4.5,
+            tags: ['Guide']
+          }))
+          setGuideItems(transformedGuides)
+        })
+        .catch(() => {})
+      return
+    }
+    
+    // Handle other categories
+    const already = dropdownProducts[cat]
+    if (already && already.length > 0) return
+    const limit = (cat === 'mattresses' || cat === 'beds' || cat === 'sofas') ? 3 : 4
+    fetch(`/api/header-dropdown/${cat}?limit=${limit}`)
+      .then(res => res.ok ? res.json() : { products: [] })
+      .then(data => {
+        setDropdownProducts(prev => ({ ...prev, [cat]: data.products || [] }))
+      })
+      .catch(() => {})
+  }, [activeDropdown, isOnCategoryPage, guideItems.length])
+
   return (
     <header className="relative z-50">
       {/* Top Bar - Dark Grey - Hidden on mobile */}
       <div className={`text-white border-b-2 border-gray-600 transition-all duration-300 ${isTopBarVisible ? 'block' : 'hidden'} lg:block`} style={{ backgroundColor: '#33373E' }}>
         <div className="px-4 sm:px-6 lg:px-8 xl:px-12">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between py-2 text-sm">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between py-0.5 text-sm">
             {/* Left Side - Navigation Links */}
             <div className="flex items-center justify-center lg:justify-start space-x-4 mb-2 lg:mb-0">
               <Link href="/contact" className="hover:text-orange-400 transition-colors text-xs lg:text-sm">Contact</Link>
@@ -131,7 +176,7 @@ export default function Header() {
       {/* Main Header - Dark Grey Background */}
       <div className="text-white" style={{ backgroundColor: '#33373E' }}>
         <div className="px-4 sm:px-6 lg:px-8 xl:px-12">
-          <div className="flex items-center justify-between py-4 lg:py-6">
+          <div className="flex items-center justify-between py-2 lg:py-3">
             {/* Left: Logo and Brand */}
             <Link href="/" className="flex items-center" style={{ gap: '-20px' }}>
               <div className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 flex items-center justify-center">
@@ -376,7 +421,9 @@ export default function Header() {
       {/* Desktop Navigation Bar - Dark Grey with Product Categories */}
       <div className="hidden lg:block text-white relative" style={{ backgroundColor: '#33373E' }}>
         <div className="px-4 sm:px-6 lg:px-8 xl:px-12">
-          <div className="flex items-center justify-center pt-8 pb-3">
+          {/* Partition line above categories */}
+          <div className="border-t border-gray-500 mx-4"></div>
+          <div className="flex items-center justify-center pt-3 pb-1.5">
             <div className="flex items-center gap-4 lg:gap-6 xl:gap-8 text-sm font-medium">
               {/* Mattresses Dropdown */}
               <div className={`group relative ${isOnCategoryPage && pathname.startsWith('/mattresses') ? 'opacity-50 cursor-not-allowed' : ''}`} onMouseEnter={() => handleCategoryHover('mattresses')} onMouseLeave={handleCategoryLeave}>
@@ -591,20 +638,30 @@ export default function Header() {
               >
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-5 gap-2">
-                    {/* Category Name & Image - Left Side */}
+                    {/* Category Name - Left Side */}
                     <div className="col-span-1">
                       <div className="text-center">
                         <h2 className="text-xl font-bold text-gray-900 mb-4">Mattresses</h2>
-                        <div className="w-full h-48 mx-auto bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center mb-2 overflow-hidden">
-                          <img src="/mattress-image.svg" alt="Mattresses" className="w-full h-full object-cover" />
+                        {/* 3rd Product Card */}
+                        {(dropdownProducts['mattresses'] || []).slice(2, 3).map((p: any) => (
+                          <Link key={p.id} href={`/products/mattresses/${p.id}`} className="group">
+                            <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
+                              <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
+                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         </div>
-                        <p className="text-xs text-gray-600">Premium sleep solutions for every comfort preference</p>
-                        
-
+                              <div className="p-3">
+                                <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">{p.name}</h4>
+                                {p.current_price != null && (
+                                  <p className="text-xs text-gray-700">£{Number(p.current_price).toFixed(2)}</p>
+                                )}
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
                           </div>
                     </div>
 
-                                         {/* Popular Categories - 4 Cards Only */}
+                    {/* Popular Categories - Middle Left */}
                      <div className="col-span-1">
                        <div className="grid grid-cols-3 gap-2">
                          {/* Most Cooling */}
@@ -765,125 +822,64 @@ export default function Header() {
                        </div>
                      </div>
 
-                    {/* Luxury & Premium - Middle */}
+                    {/* Mattress Types - Middle */}
                     <div className="col-span-1">
-
                       <div className="space-y-3">
-                        {/* Luxury Collection */}
-                        <Link href="/mattresses?collection=luxury" className="block">
-                          <div className="bg-gray-50 rounded-lg p-3 border-2 border-white hover:border-orange-400 hover:shadow-lg transition-all duration-200 cursor-pointer">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
-                                <div className="w-4 h-4 bg-gray-600 rounded-full"></div>
-                        </div>
-                              <div>
-                                <p className="font-bold text-gray-800 text-sm">Luxury Collection</p>
-                                <p className="text-xs text-gray-600 font-medium">Premium Materials</p>
-                              </div>
-                          </div>
-                        </div>
+                        <h3 className="font-semibold text-gray-900 text-sm mb-3">Mattress Types</h3>
+                        
+                        <Link href="/mattresses?mattress-type=hybrid" className="block text-sm text-gray-700 hover:text-orange-600 transition-colors">
+                          Hybrid Mattresses
                       </Link>
 
-                        {/* Organic & Natural */}
-                        <Link href="/mattresses?material=organic" className="block">
-                          <div className="bg-gray-50 rounded-lg p-3 border-2 border-white hover:border-orange-400 hover:shadow-lg transition-all duration-200 cursor-pointer">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
-                                <div className="w-4 h-4 bg-gray-600 rounded-full"></div>
-                        </div>
-                              <div>
-                                <p className="font-bold text-gray-800 text-sm">Organic & Natural</p>
-                                <p className="text-xs text-gray-600 font-medium">Eco-Friendly</p>
-                              </div>
-                          </div>
-                        </div>
+                        <Link href="/mattresses?mattress-type=foam" className="block text-sm text-gray-700 hover:text-orange-600 transition-colors">
+                          Memory Foam
                       </Link>
 
-                        {/* Smart Technology */}
-                        <Link href="/mattresses?features=smart" className="block">
-                          <div className="bg-gray-50 rounded-lg p-3 border-2 border-white hover:border-orange-400 hover:shadow-lg transition-all duration-200 cursor-pointer">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
-                                <div className="w-4 h-4 bg-gray-600 rounded-full"></div>
-                        </div>
-                              <div>
-                                <p className="font-bold text-gray-800 text-sm">Smart Technology</p>
-                                <p className="text-xs text-gray-600 font-medium">Connected Sleep</p>
-                              </div>
-                          </div>
-                        </div>
+                        <Link href="/mattresses?mattress-type=latex" className="block text-sm text-gray-700 hover:text-orange-600 transition-colors">
+                          Pocket Sprung
                       </Link>
 
-                        {/* Award Winning */}
-                        <Link href="/mattresses?awards=yes" className="block">
-                          <div className="bg-gray-50 rounded-lg p-3 border-2 border-white hover:border-orange-400 hover:shadow-lg transition-all duration-200 cursor-pointer">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
-                                <div className="w-4 h-4 bg-gray-600 rounded-full"></div>
-                        </div>
-                              <div>
-                                <p className="font-bold text-gray-800 text-sm">Award Winning</p>
-                                <p className="text-xs text-gray-600 font-medium">Best in Class</p>
-                              </div>
-                          </div>
-                        </div>
+                        <Link href="/mattresses?mattress-type=standard-foam" className="block text-sm text-gray-700 hover:text-orange-600 transition-colors">
+                          Coil Sprung
                       </Link>
-                    </div>
+                        
+                        <Link href="/mattresses?mattress-type=luxury" className="block text-sm text-gray-700 hover:text-orange-600 transition-colors">
+                          Luxury Mattresses
+                        </Link>
+
+                        <Link href="/mattresses?mattress-type=kids" className="block text-sm text-gray-700 hover:text-orange-600 transition-colors">
+                          Kids Mattresses
+                        </Link>
+
+                        <Link href="/mattresses?mattress-type=latex-foam" className="block text-sm text-gray-700 hover:text-orange-600 transition-colors">
+                          Latex Foam
+                        </Link>
+
+                        <Link href="/mattresses?features=orthopedic" className="block text-sm text-gray-700 hover:text-orange-600 transition-colors">
+                          Orthopedic
+                        </Link>
+                      </div>
                     </div>
 
-                    {/* Product Cards - Right Side */}
+
+                    {/* Dynamic Products (2 for mattresses) */}
                     <div className="col-span-2">
-
                       <div className="grid grid-cols-2 gap-4">
-                        {/* Product Card 1 */}
-                        <Link href="/mattresses/memory-foam" className="group">
-                          <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                            <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                              <img src="/mattress-image.svg" alt="Memory Foam Mattress" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                              {/* Badge */}
-                              <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                                20% Off
+                        {(dropdownProducts['mattresses'] || []).slice(0,2).map((p: any) => (
+                          <Link key={p.id} href={`/products/mattresses/${p.id}`} className="group">
+                            <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
+                              <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
+                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                               </div>
-                              {/* Rating Badge */}
-                              <div className="absolute top-2 right-2 bg-white text-gray-800 text-xs font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                                ⭐ 4.8
-                              </div>
-                            </div>
-                            <div className="p-3">
-                              <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors">Memory Foam Pro</h4>
-                              <p className="text-xs text-gray-600 mb-2">Premium comfort with cooling technology</p>
-                              <div className="flex flex-col gap-1">
-                                <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full font-medium">Free Delivery</span>
-                                <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full font-medium">100 Night Trial</span>
-                              </div>
+                              <div className="p-3">
+                              <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">{p.name}</h4>
+                                {p.current_price != null && (
+                                <p className="text-xs text-gray-700">£{Number(p.current_price).toFixed(2)}</p>
+                                )}
                             </div>
                           </div>
                         </Link>
-
-                        {/* Product Card 2 */}
-                        <Link href="/mattresses/spring" className="group">
-                          <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                            <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                              <img src="/placeholder.jpg" alt="Spring Mattress" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                              {/* Badge */}
-                              <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                                15% Off
-                              </div>
-                              {/* Rating Badge */}
-                              <div className="absolute top-2 right-2 bg-white text-gray-800 text-xs font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                                ⭐ 4.6
-                              </div>
-                            </div>
-                            <div className="p-3">
-                              <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors">Spring Comfort</h4>
-                              <p className="text-xs text-gray-600 mb-2">Traditional support with modern comfort</p>
-                              <div className="flex flex-col gap-1">
-                                <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full font-medium">Free Delivery</span>
-                                <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full font-medium">10 Year Warranty</span>
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -908,14 +904,26 @@ export default function Header() {
               >
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-5 gap-2">
-                    {/* Category Name & Image - Left Side */}
+                    {/* Category Name - Left Side */}
                     <div className="col-span-1">
                       <div className="text-center">
                         <h2 className="text-xl font-bold text-gray-900 mb-4">Beds</h2>
-                        <div className="w-full h-48 mx-auto bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center mb-2 overflow-hidden">
-                          <img src="/bedcollect.jpeg" alt="Beds" className="w-full h-full object-cover rounded" />
+                        {/* 3rd Product Card */}
+                        {(dropdownProducts['beds'] || []).slice(2, 3).map((p: any) => (
+                          <Link key={p.id} href={`/products/beds/${p.id}`} className="group">
+                            <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
+                              <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
+                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         </div>
-                        <p className="text-xs text-gray-600">Stylish bed frames and bases for every bedroom</p>
+                              <div className="p-3">
+                                <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">{p.name}</h4>
+                                {p.current_price != null && (
+                                  <p className="text-xs text-gray-700">£{Number(p.current_price).toFixed(2)}</p>
+                                )}
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
                           </div>
                     </div>
 
@@ -1085,59 +1093,24 @@ export default function Header() {
                     </div>
                     </div>
 
-                    {/* Product Cards - Right Side */}
+                    {/* Dynamic Products (2 for beds) */}
                     <div className="col-span-2">
-
                       <div className="grid grid-cols-2 gap-4">
-                        {/* Product Card 1 */}
-                        <Link href="/beds/luxury-bed" className="group">
+                        {(dropdownProducts['beds'] || []).slice(0,2).map((p: any) => (
+                          <Link key={p.id} href={`/products/beds/${p.id}`} className="group">
                           <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                             <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                              <img src="/placeholder.jpg" alt="Luxury Bed" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                              {/* Badge */}
-                              <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                                25% Off
-                              </div>
-                              {/* Rating Badge */}
-                              <div className="absolute top-2 right-2 bg-white text-gray-800 text-xs font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                                ⭐ 4.7
-                              </div>
+                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                             </div>
                             <div className="p-3">
-                              <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors">Luxury Bed Frame</h4>
-                              <p className="text-xs text-gray-600 mb-2">Elegant design with premium materials</p>
-                              <div className="flex flex-col gap-1">
-                                <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full font-medium">Free Delivery</span>
-                                <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full font-medium">5 Year Warranty</span>
-                              </div>
+                                <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors">{p.name}</h4>
+                                {p.current_price != null && (
+                                  <p className="text-xs text-gray-700 mb-2">£{Number(p.current_price).toFixed(2)}</p>
+                                )}
                             </div>
                           </div>
                         </Link>
-
-                        {/* Product Card 2 */}
-                        <Link href="/beds/storage-bed" className="group">
-                          <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                            <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                              <img src="/placeholder.jpg" alt="Storage Bed" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                              {/* Badge */}
-                              <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                                New
-                              </div>
-                              {/* Rating Badge */}
-                              <div className="absolute top-2 right-2 bg-white text-gray-800 text-xs font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                                ⭐ 4.8
-                              </div>
-                            </div>
-                            <div className="p-3">
-                              <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors">Storage Bed</h4>
-                              <p className="text-xs text-gray-600 mb-2">Space-saving with built-in storage</p>
-                              <div className="flex flex-col gap-1">
-                                <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full font-medium">Free Delivery</span>
-                                <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full font-medium">Built-in Drawers</span>
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -1162,16 +1135,26 @@ export default function Header() {
               >
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-5 gap-2">
-                    {/* Category Name & Image - Left Side */}
+                    {/* Category Name - Left Side */}
                     <div className="col-span-1">
                       <div className="text-center">
                         <h2 className="text-xl font-bold text-gray-900 mb-4">Sofas</h2>
-                        <div className="w-full h-48 mx-auto bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center mb-2 overflow-hidden">
-                          <img src="/sofa.jpeg" alt="Sofas" className="w-full h-full object-cover rounded" />
+                        {/* 3rd Product Card */}
+                        {(dropdownProducts['sofas'] || []).slice(2, 3).map((p: any) => (
+                          <Link key={p.id} href={`/products/sofas/${p.id}`} className="group">
+                            <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
+                              <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
+                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         </div>
-                        <p className="text-xs text-gray-600">Comfortable seating for your living space</p>
-                        
-                        {/* Additional Categories Under Image - Removed to move to right column */}
+                              <div className="p-3">
+                                <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">{p.name}</h4>
+                                {p.current_price != null && (
+                                  <p className="text-xs text-gray-700">£{Number(p.current_price).toFixed(2)}</p>
+                                )}
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
                       </div>
                     </div>
 
@@ -1374,59 +1357,24 @@ export default function Header() {
                       </div>
                     </div>
 
-                    {/* Featured Sofas - Right Side */}
+                    {/* Dynamic Products (2 for sofas) */}
                     <div className="col-span-2">
-
                       <div className="grid grid-cols-2 gap-4">
-                        {/* Product Card 1 */}
-                        <Link href="/sofas/l-shape-sofa" className="group">
+                        {(dropdownProducts['sofas'] || []).slice(0,2).map((p: any) => (
+                          <Link key={p.id} href={`/products/sofas/${p.id}`} className="group">
                           <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                             <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                              <img src="/placeholder.jpg" alt="L Shape Sofa" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                              {/* Badge */}
-                              <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                                20% Off
-                              </div>
-                              {/* Rating Badge */}
-                              <div className="absolute top-2 right-2 bg-white text-gray-800 text-xs font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                                ⭐ 4.7
-                              </div>
+                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                             </div>
                             <div className="p-3">
-                              <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors">L Shape Sofa</h4>
-                              <p className="text-xs text-gray-600 mb-2">Perfect for corner spaces</p>
-                              <div className="flex flex-col gap-1">
-                                <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full font-medium">Free Delivery</span>
-                                <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full font-medium">3 Year Warranty</span>
-                              </div>
+                                <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors">{p.name}</h4>
+                                {p.current_price != null && (
+                                  <p className="text-xs text-gray-700 mb-2">£{Number(p.current_price).toFixed(2)}</p>
+                                )}
                             </div>
                           </div>
                         </Link>
-
-                        {/* Product Card 2 */}
-                        <Link href="/sofas/fabric-sofa" className="group">
-                          <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                            <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                              <img src="/placeholder.jpg" alt="Fabric Sofa" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                              {/* Badge */}
-                              <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                                New
-                              </div>
-                              {/* Rating Badge */}
-                              <div className="absolute top-2 right-2 bg-white text-gray-800 text-xs font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                                ⭐ 4.9
-                              </div>
-                            </div>
-                            <div className="p-3">
-                              <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors">Fabric Sofa</h4>
-                              <p className="text-xs text-gray-600 mb-2">Soft and comfortable seating</p>
-                              <div className="flex flex-col gap-1">
-                                <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full font-medium">Free Delivery</span>
-                                <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full font-medium">Stain Resistant</span>
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -1451,105 +1399,21 @@ export default function Header() {
               >
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-4 gap-4">
-                      {/* Product Card 1 */}
-                    <Link href="/pillows/memory-foam-premium" className="group">
+                    {(dropdownProducts['pillows'] || []).slice(0,4).map((p: any) => (
+                      <Link key={p.id} href={`/products/pillows/${p.id}`} className="group">
                       <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                         <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Memory Foam Pillow" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-red-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            25% Off
-                          </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.8
-                          </div>
+                            <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         </div>
                         <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Memory Foam Premium</h4>
-                          <p className="text-sm text-gray-600 mb-3">Adaptive comfort and support</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Free Delivery</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">30 Night Trial</span>
-                          </div>
+                            <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">{p.name}</h4>
+                            {p.current_price != null && (
+                              <p className="text-sm text-gray-700 mb-2">£{Number(p.current_price).toFixed(2)}</p>
+                            )}
                           </div>
                         </div>
                       </Link>
-
-                      {/* Product Card 2 */}
-                    <Link href="/pillows/down-feather-luxury" className="group">
-                      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                        <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Down Feather Pillow" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-red-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            15% Off
-                          </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.6
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Down Feather Luxury</h4>
-                          <p className="text-sm text-gray-600 mb-3">Plush comfort and softness</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Free Delivery</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Hypoallergenic</span>
-                          </div>
-                          </div>
-                        </div>
-                      </Link>
-
-                      {/* Product Card 3 */}
-                    <Link href="/pillows/cooling-gel-pillow" className="group">
-                      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                        <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Cooling Gel Pillow" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-blue-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            New
-                          </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.9
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Cooling Gel Pillow</h4>
-                          <p className="text-sm text-gray-600 mb-3">Stay cool all night long</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Free Delivery</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Temperature Control</span>
-                          </div>
-                          </div>
-                        </div>
-                      </Link>
-
-                      {/* Product Card 4 */}
-                    <Link href="/pillows/orthopedic-support" className="group">
-                      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                        <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Orthopedic Support Pillow" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-purple-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            Best Seller
-                          </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.8
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Orthopedic Support</h4>
-                          <p className="text-sm text-gray-600 mb-3">Perfect neck alignment</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Free Delivery</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Medical Grade</span>
-                          </div>
-                          </div>
-                        </div>
-                      </Link>
+                    ))}
                   </div>
                   
                   {/* View More Button */}
@@ -1572,105 +1436,21 @@ export default function Header() {
               >
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-4 gap-4">
-                      {/* Product Card 1 */}
-                    <Link href="/toppers/memory-foam-premium" className="group">
+                    {(dropdownProducts['toppers'] || []).slice(0,4).map((p: any) => (
+                      <Link key={p.id} href={`/products/toppers/${p.id}`} className="group">
                       <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                         <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Memory Foam Topper" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-red-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            30% Off
-                          </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.8
-                          </div>
+                            <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         </div>
                         <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Memory Foam Premium</h4>
-                          <p className="text-sm text-gray-600 mb-3">Ultra-soft comfort</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Free Delivery</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">100 Night Trial</span>
-                          </div>
+                            <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">{p.name}</h4>
+                            {p.current_price != null && (
+                              <p className="text-sm text-gray-700 mb-2">£{Number(p.current_price).toFixed(2)}</p>
+                            )}
                           </div>
                         </div>
                       </Link>
-
-                      {/* Product Card 2 */}
-                    <Link href="/toppers/cooling-gel" className="group">
-                      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                        <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Cooling Gel Topper" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-blue-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            New
-                          </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.9
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Cooling Gel</h4>
-                          <p className="text-sm text-gray-600 mb-3">Temperature regulating comfort</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Free Delivery</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Cooling Technology</span>
-                          </div>
-                          </div>
-                        </div>
-                      </Link>
-
-                      {/* Product Card 3 */}
-                    <Link href="/toppers/latex-premium" className="group">
-                      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                        <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Latex Premium Topper" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-green-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            20% Off
-                          </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.7
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Latex Premium</h4>
-                          <p className="text-sm text-gray-600 mb-3">Natural comfort & support</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Free Delivery</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Eco-Friendly</span>
-                          </div>
-                          </div>
-                        </div>
-                      </Link>
-
-                      {/* Product Card 4 */}
-                    <Link href="/toppers/orthopedic-support" className="group">
-                      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                        <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Orthopedic Support Topper" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-purple-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            Best Seller
-                          </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.9
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Orthopedic Support</h4>
-                          <p className="text-sm text-gray-600 mb-3">Perfect spinal alignment</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Free Delivery</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Medical Grade</span>
-                          </div>
-                          </div>
-                        </div>
-                      </Link>
+                    ))}
                   </div>
                   
                   {/* View More Button */}
@@ -1693,105 +1473,21 @@ export default function Header() {
               >
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-4 gap-4">
-                      {/* Product Card 1 */}
-                    <Link href="/bunkbeds/twin-over-twin" className="group">
+                    {(dropdownProducts['bunkbeds'] || []).slice(0,4).map((p: any) => (
+                      <Link key={p.id} href={`/products/bunkbeds/${p.id}`} className="group">
                       <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                         <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Twin Over Twin Bunkbed" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-red-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            20% Off
-                          </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.7
-                          </div>
+                            <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         </div>
                         <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Twin Over Twin</h4>
-                          <p className="text-sm text-gray-600 mb-3">Classic bunkbed design</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Free Delivery</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Safety Rails</span>
-                          </div>
+                            <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">{p.name}</h4>
+                            {p.current_price != null && (
+                              <p className="text-sm text-gray-700 mb-2">£{Number(p.current_price).toFixed(2)}</p>
+                            )}
                           </div>
                         </div>
                       </Link>
-
-                      {/* Product Card 2 */}
-                    <Link href="/bunkbeds/full-over-full" className="group">
-                      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                        <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Full Over Full Bunkbed" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-blue-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            New
-                          </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.8
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Full Over Full</h4>
-                          <p className="text-sm text-gray-600 mb-3">Spacious sleeping solution</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Free Delivery</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Built-in Ladder</span>
-                          </div>
-                          </div>
-                        </div>
-                      </Link>
-
-                      {/* Product Card 3 */}
-                    <Link href="/bunkbeds/storage-bunkbed" className="group">
-                      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                        <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Storage Bunkbed" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-green-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            15% Off
-                          </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.6
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Storage Bunkbed</h4>
-                          <p className="text-sm text-gray-600 mb-3">Space-saving with storage</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Free Delivery</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Built-in Drawers</span>
-                          </div>
-                          </div>
-                        </div>
-                      </Link>
-
-                      {/* Product Card 4 */}
-                    <Link href="/bunkbeds/convertible-bunkbed" className="group">
-                      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                        <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Convertible Bunkbed" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-purple-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            Best Seller
-                          </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.9
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Convertible Bunkbed</h4>
-                          <p className="text-sm text-gray-600 mb-3">Flexible sleeping arrangement</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Free Delivery</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">3-in-1 Design</span>
-                          </div>
-                          </div>
-                        </div>
-                      </Link>
+                    ))}
                   </div>
                   
                   {/* View More Button */}
@@ -1814,14 +1510,26 @@ export default function Header() {
               >
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-5 gap-2">
-                    {/* Category Name & Image - Left Side */}
+                    {/* Category Name - Left Side */}
                     <div className="col-span-1">
                       <div className="text-center">
                         <h2 className="text-xl font-bold text-gray-900 mb-4">Kids</h2>
-                        <div className="w-full h-48 mx-auto bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center mb-2 overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Kids" className="w-full h-full object-cover rounded" />
+                        {/* 3rd Product Card */}
+                        {(dropdownProducts['kids'] || []).slice(2, 3).map((p: any) => (
+                          <Link key={p.id} href={`/products/kids/${p.id}`} className="group">
+                            <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
+                              <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
+                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         </div>
-                        <p className="text-xs text-gray-600">Fun and comfortable furniture for children</p>
+                              <div className="p-3">
+                                <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors line-clamp-2">{p.name}</h4>
+                                {p.current_price != null && (
+                                  <p className="text-xs text-gray-700">£{Number(p.current_price).toFixed(2)}</p>
+                                )}
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
                           </div>
                     </div>
 
@@ -1925,39 +1633,24 @@ export default function Header() {
                       </div>
                     </div>
 
-                    {/* Featured Kids - Right Side */}
+                    {/* Dynamic Products (2 for kids) */}
                     <div className="col-span-2">
-
                       <div className="grid grid-cols-2 gap-4">
-                        <Link href="/kids/bed" className="group">
+                        {(dropdownProducts['kids'] || []).slice(0,2).map((p: any) => (
+                          <Link key={p.id} href={`/products/kids/${p.id}`} className="group">
                           <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                             <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                              <img src="/placeholder.jpg" alt="Kids Bed" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                              <div className="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
-                                25% Off
-                              </div>
+                                <img src={p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         </div>
                         <div className="p-4">
-                              <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors">Kids Bed</h4>
-                              <p className="text-xs text-gray-600 mb-3">Safe and comfortable</p>
+                                <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors">{p.name}</h4>
+                                {p.current_price != null && (
+                                  <p className="text-xs text-gray-700 mb-2">£{Number(p.current_price).toFixed(2)}</p>
+                                )}
                           </div>
                         </div>
                       </Link>
-
-                        <Link href="/kids/desk" className="group">
-                          <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                            <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                              <img src="/placeholder.jpg" alt="Kids Desk" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                              <div className="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
-                                30% Off
-                              </div>
-                        </div>
-                        <div className="p-4">
-                              <h4 className="font-semibold text-gray-900 text-xs mb-2 group-hover:text-orange-500 transition-colors">Kids Desk</h4>
-                              <p className="text-xs text-gray-600 mb-3">Perfect for homework</p>
-                          </div>
-                        </div>
-                      </Link>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -1982,105 +1675,36 @@ export default function Header() {
               >
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-4 gap-4">
-                      {/* Product Card 1 */}
-                    <Link href="/guides" className="group">
+                    {guideItems.map((guide: any) => (
+                      <Link key={guide.id} href={guide.link_url} className="group">
                       <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                         <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Mattress Buying Guide" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            <img src={guide.image_url || '/placeholder.jpg'} alt={guide.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                           {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-red-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            NEW
+                            {guide.badge_text && (
+                              <div className={`absolute top-3 left-3 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg bg-${guide.badge_color}-500`}>
+                                {guide.badge_text}
                           </div>
+                            )}
                           {/* Rating Badge */}
+                            {guide.rating && (
                           <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.9
+                                ⭐ {guide.rating}
                           </div>
+                            )}
                         </div>
                         <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Mattress Buying Guide</h4>
-                          <p className="text-sm text-gray-600 mb-3">Complete guide to choosing the right mattress</p>
+                            <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">{guide.title}</h4>
+                            <p className="text-sm text-gray-600 mb-3">{guide.description}</p>
                           <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Expert Tips</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Step-by-Step</span>
+                              {guide.tags && guide.tags.map((tag: string, index: number) => (
+                                <span key={index} className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">{tag}</span>
+                              ))}
                           </div>
                           </div>
                         </div>
                       </Link>
-
-                      {/* Product Card 2 */}
-                    <Link href="/guides" className="group">
-                      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                        <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Sleep Tips Guide" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-blue-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            POPULAR
-                          </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.8
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Sleep Tips Guide</h4>
-                          <p className="text-sm text-gray-600 mb-3">Expert tips for better sleep quality</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Sleep Science</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Proven Methods</span>
-                          </div>
-                          </div>
-                        </div>
-                      </Link>
-
-                      {/* Product Card 3 */}
-                    <Link href="/guides" className="group">
-                      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                        <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Bedroom Design Guide" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-green-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            TRENDING
-                          </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.7
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Bedroom Design Guide</h4>
-                          <p className="text-sm text-gray-600 mb-3">Create your perfect sleep sanctuary</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Interior Tips</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Color Schemes</span>
-                          </div>
-                          </div>
-                        </div>
-                      </Link>
-
-                      {/* Product Card 4 */}
-                    <Link href="/guides" className="group">
-                      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                        <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                          <img src="/placeholder.jpg" alt="Furniture Care Guide" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                          <div className="absolute top-3 left-3 bg-purple-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                            ESSENTIAL
-                        </div>
-                          {/* Rating Badge */}
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                            ⭐ 4.9
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">Furniture Care Guide</h4>
-                          <p className="text-sm text-gray-600 mb-3">Maintain your furniture for years</p>
-                          <div className="flex flex-col gap-2">
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Maintenance</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">Longevity Tips</span>
-                    </div>
-                </div>
-              </div>
-                    </Link>
+                    ))}
                 </div>
                   
                   {/* View More Button */}
@@ -2097,58 +1721,8 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Second Navigation Bar - Light Grey with Promotional Information - Hidden on mobile */}
-      <div className="hidden lg:block text-gray-800" style={{ backgroundColor: '#F5F5F5' }}>
-        <div className="px-4 sm:px-6 lg:px-8 xl:px-12">
-          <div className="flex items-center justify-center py-1">
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 xl:gap-8 w-full max-w-6xl">
-              {/* Click + Collect */}
-              <div className="flex items-center space-x-2">
-                <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Package className="w-2.5 h-2.5 text-white" />
-                </div>
-                <div className="text-xs min-w-0">
-                  <div className="font-medium leading-tight">Click + Collect now in as little as 15 minutes*</div>
-                  <div className="text-xs text-gray-600 leading-tight">*Restrictions apply</div>
-                </div>
-              </div>
-
-              {/* Free Delivery */}
-              <div className="flex items-center space-x-2">
-                <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Car className="w-2.5 h-2.5 text-white" />
-                </div>
-                <div className="text-xs min-w-0">
-                  <div className="font-medium leading-tight">Free delivery on 1000s of products</div>
-                  <div className="text-xs text-gray-600 leading-tight">Selected products/locations</div>
-                </div>
-              </div>
-
-              {/* 90 Day Returns */}
-              <div className="flex items-center space-x-2">
-                <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <RotateCcw className="w-2.5 h-2.5 text-white" />
-                </div>
-                <div className="text-xs min-w-0">
-                  <div className="font-medium leading-tight">90 day returns policy</div>
-                </div>
-              </div>
-
-              {/* Join B&Q Club */}
-              <div className="flex items-center space-x-2">
-                <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <CreditCard className="w-2.5 h-2.5 text-white" />
-                </div>
-                <div className="text-xs min-w-0">
-                  <div className="font-medium leading-tight">Join B&Q Club</div>
-                  <div className="text-xs text-gray-600 leading-tight">Save up to £100 a year ▲</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </header>
   )
 }
+
 

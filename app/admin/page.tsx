@@ -1634,12 +1634,36 @@ export default function AdminPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Admin Panel</h1>
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+            <Link href="/admin/add-product">
+              <Button variant="outline" className="bg-white hover:bg-gray-50">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add Product
+              </Button>
+            </Link>
             <Link href="/admin/products">
               <Button variant="outline" className="bg-white hover:bg-gray-50">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
                 Manage Products
+              </Button>
+            </Link>
+            <Link href="/admin/orders">
+              <Button variant="outline" className="bg-white hover:bg-gray-50">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+                Orders
+              </Button>
+            </Link>
+            <Link href="/admin/header-dropdown">
+              <Button variant="outline" className="bg-white hover:bg-gray-50">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                Header Dropdowns
               </Button>
             </Link>
             <Link href="/admin/homepage">

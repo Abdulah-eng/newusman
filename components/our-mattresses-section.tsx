@@ -91,7 +91,7 @@ export function OurMattressesSection() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1">
           {mattressProducts.map((mattress) => (
             <Card key={mattress.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <div className="relative">

@@ -49,7 +49,8 @@ export function DealOfTheDay() {
                   return {
                     ...product,
                     customDescription: description,
-                    customPercentageOff: percentageOff
+                    customPercentageOff: percentageOff,
+                    customImage: productCard.customImage
                   }
                 }
               }
@@ -288,7 +289,7 @@ export function DealOfTheDay() {
             <div className="relative h-80 lg:h-full bg-gradient-to-br from-orange-50 to-red-100">
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent z-10" />
               <Image
-                src={mainDealProduct.images?.[0] || mainDealProduct.image || "/placeholder.jpg"}
+                src={mainDealProduct.customImage || mainDealProduct.images?.[0] || mainDealProduct.image || "/placeholder.jpg"}
                 alt={mainDealProduct.name || "Premium Product Deal"}
                 fill
                 className="object-cover"
@@ -394,7 +395,7 @@ export function DealOfTheDay() {
         </div>
 
         {/* Additional Deals Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1">
           {dealProducts.slice(1, 5).map((product, index) => {
             const discount = product.originalPrice && product.currentPrice ? 
               calculateDiscount(product.currentPrice, product.originalPrice) : 
@@ -404,7 +405,7 @@ export function DealOfTheDay() {
               <div key={product.id || index} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
                 <div className="relative mb-4">
                   <Image
-                    src={product.images?.[0] || product.image || "/placeholder.jpg"}
+                    src={product.customImage || product.images?.[0] || product.image || "/placeholder.jpg"}
                     alt={product.name || `Product ${index + 1}`}
                     width={300}
                     height={200}

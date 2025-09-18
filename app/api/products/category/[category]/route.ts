@@ -11,6 +11,10 @@ export async function GET(
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '8')
     const offset = (page - 1) * limit
+    
+    // Get filter parameters
+    const firmness = searchParams.getAll('firmness')
+    const features = searchParams.getAll('features')
 
     // OPTIMIZATION: Add caching headers for better performance
     // No caching - always fetch fresh data
@@ -376,8 +380,8 @@ export async function GET(
       )
     }
 
-    // Get products with all related data
-    const { data: products, error: productsError, count: totalCount } = await supabase
+    // Build the base query
+    let query = supabase
       .from('products')
       .select(`
         *,
@@ -396,6 +400,20 @@ export async function GET(
       `, { count: 'exact' })
       .eq('category_id', categoryData.id)
       .eq('categories.slug', category)
+
+    // Apply firmness filter
+    if (firmness.length > 0) {
+      query = query.in('firmness_scale', firmness)
+    }
+
+    // Apply features filter
+    if (features.length > 0) {
+      // For features, we need to check the product_features table
+      query = query.or(features.map(feature => `product_features.feature_name.ilike.%${feature}%`).join(','))
+    }
+
+    // Execute the query with pagination
+    const { data: products, error: productsError, count: totalCount } = await query
       .range(offset, offset + limit - 1)
 
     if (productsError) {

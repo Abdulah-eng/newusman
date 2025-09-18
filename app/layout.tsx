@@ -5,6 +5,7 @@ import { CartProvider } from "@/lib/cart-context"
 import { WishlistProvider } from "@/lib/wishlist-context"
 import { AuthProvider } from "@/lib/auth-context"
 import Header from "@/components/header"
+import { TrustBadgesSection } from "@/components/trust-badges-section"
 import { Footer } from "@/components/footer"
 import { CartNotificationWrapper } from "@/components/cart-notification-wrapper"
 import { AuthPopupWrapper } from "@/components/auth-popup-wrapper"
@@ -65,6 +66,7 @@ html {
           <CartProvider>
             <WishlistProvider>
               <Header />
+              <TrustBadgesSection />
               {children}
               <Footer />
               <CartNotificationWrapper />
