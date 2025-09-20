@@ -670,7 +670,7 @@ export default function Header() {
                         {(dropdownProducts['mattresses'] || []).slice(2, 3).map((p: any) => {
                           const price = getDisplayPrice(p)
                           return (
-                            <Link key={p.id} href={`/products/mattresses/${p.id}`} className="group">
+                            <Link key={p.id} href={`/products/mattresses/${p.id}`} target="_blank" rel="noopener noreferrer" className="group">
                               <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                                 <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                                   <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -905,7 +905,7 @@ export default function Header() {
                         {(dropdownProducts['mattresses'] || []).slice(0,2).map((p: any) => {
                           const price = getDisplayPrice(p)
                           return (
-                            <Link key={p.id} href={`/products/mattresses/${p.id}`} className="group">
+                            <Link key={p.id} href={`/products/mattresses/${p.id}`} target="_blank" rel="noopener noreferrer" className="group">
                               <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                                 <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                                   <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -962,7 +962,7 @@ export default function Header() {
                         {(dropdownProducts['beds'] || []).slice(2, 3).map((p: any) => {
                           const price = getDisplayPrice(p)
                           return (
-                            <Link key={p.id} href={`/products/beds/${p.id}`} className="group">
+                            <Link key={p.id} href={`/products/beds/${p.id}`} target="_blank" rel="noopener noreferrer" className="group">
                               <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                                 <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                                   <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -1160,7 +1160,7 @@ export default function Header() {
                     <div className="col-span-2">
                       <div className="grid grid-cols-2 gap-4">
                         {(dropdownProducts['beds'] || []).slice(0,2).map((p: any) => (
-                          <Link key={p.id} href={`/products/beds/${p.id}`} className="group">
+                          <Link key={p.id} href={`/products/beds/${p.id}`} target="_blank" rel="noopener noreferrer" className="group">
                           <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                             <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                                 <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -1220,7 +1220,7 @@ export default function Header() {
                         <h2 className="text-xl font-bold text-gray-900 mb-4">Sofas</h2>
                         {/* 3rd Product Card */}
                         {(dropdownProducts['sofas'] || []).slice(2, 3).map((p: any) => (
-                          <Link key={p.id} href={`/products/sofas/${p.id}`} className="group">
+                          <Link key={p.id} href={`/products/sofas/${p.id}`} target="_blank" rel="noopener noreferrer" className="group">
                             <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                               <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                                 <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -1440,7 +1440,7 @@ export default function Header() {
                     <div className="col-span-2">
                       <div className="grid grid-cols-2 gap-4">
                         {(dropdownProducts['sofas'] || []).slice(0,2).map((p: any) => (
-                          <Link key={p.id} href={`/products/sofas/${p.id}`} className="group">
+                          <Link key={p.id} href={`/products/sofas/${p.id}`} target="_blank" rel="noopener noreferrer" className="group">
                           <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                             <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                                 <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -1495,7 +1495,7 @@ export default function Header() {
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-4 gap-4">
                     {(dropdownProducts['pillows'] || []).slice(0,4).map((p: any) => (
-                      <Link key={p.id} href={`/products/pillows/${p.id}`} className="group">
+                      <Link key={p.id} href={`/products/pillows/${p.id}`} target="_blank" rel="noopener noreferrer" className="group">
                       <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                         <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                             <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -1540,7 +1540,7 @@ export default function Header() {
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-4 gap-4">
                     {(dropdownProducts['toppers'] || []).slice(0,4).map((p: any) => (
-                      <Link key={p.id} href={`/products/toppers/${p.id}`} className="group">
+                      <Link key={p.id} href={`/products/toppers/${p.id}`} target="_blank" rel="noopener noreferrer" className="group">
                       <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                         <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                             <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -1585,7 +1585,7 @@ export default function Header() {
                 <div className="w-full px-4 py-6">
                   <div className="grid grid-cols-4 gap-4">
                     {(dropdownProducts['bunkbeds'] || []).slice(0,4).map((p: any) => (
-                      <Link key={p.id} href={`/products/bunkbeds/${p.id}`} className="group">
+                      <Link key={p.id} href={`/products/bunkbeds/${p.id}`} target="_blank" rel="noopener noreferrer" className="group">
                       <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                         <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                             <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -1635,7 +1635,7 @@ export default function Header() {
                         <h2 className="text-xl font-bold text-gray-900 mb-4">Kids</h2>
                         {/* 3rd Product Card */}
                         {(dropdownProducts['kids'] || []).slice(2, 3).map((p: any) => (
-                          <Link key={p.id} href={`/products/kids/${p.id}`} className="group">
+                          <Link key={p.id} href={`/products/kids/${p.id}`} target="_blank" rel="noopener noreferrer" className="group">
                             <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                               <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                                 <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -1756,7 +1756,7 @@ export default function Header() {
                     <div className="col-span-2">
                       <div className="grid grid-cols-2 gap-4">
                         {(dropdownProducts['kids'] || []).slice(0,2).map((p: any) => (
-                          <Link key={p.id} href={`/products/kids/${p.id}`} className="group">
+                          <Link key={p.id} href={`/products/kids/${p.id}`} target="_blank" rel="noopener noreferrer" className="group">
                           <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
                             <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
                                 <img src={p.custom_image || p.product_images?.[0]?.image_url || '/placeholder.jpg'} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />

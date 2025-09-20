@@ -38,9 +38,19 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'Usman Mattresses - Premium Mattresses & Bedding',
+  description: 'Discover premium mattresses, bedding, and bedroom furniture at Usman Mattresses. Quality sleep solutions for every home.',
+  generator: 'Next.js',
+  icons: {
+    icon: [
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  manifest: '/site.webmanifest',
 }
 
 export default function RootLayout({
@@ -51,6 +61,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="icon" href="/favicon-32x32.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
         <style>{`
 html {
   font-family: ${outfit.style.fontFamily};

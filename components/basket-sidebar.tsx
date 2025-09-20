@@ -331,6 +331,8 @@ export function BasketSidebar({ isOpen, onClose, product }: BasketSidebarProps) 
                            <Link 
                              href={`/products/${recProduct.category || 'mattresses'}/${recProduct.id}`}
                              className="block hover:text-orange-600 transition-colors"
+                             target="_blank" 
+                             rel="noopener noreferrer"
                            >
                              <h4 className="font-semibold text-gray-900 text-base mb-1 cursor-pointer hover:text-orange-600">
                                {recProduct.name}

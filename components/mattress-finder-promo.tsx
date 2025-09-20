@@ -40,9 +40,11 @@ export function MattressFinderPromo() {
             <p className="text-base md:text-lg text-gray-700 leading-relaxed mb-6 font-modern">
               {content.quiz?.paragraph || "Our smart Mattress Finder makes shopping simple — answer a few quick questions and instantly discover the best mattress for your comfort, support, and sleep style. Whether you need an orthopaedic mattress, memory foam, or luxury hybrid, we'll match you with the ideal choice — tailored just for you."}
             </p>
-            <Button asChild className="bg-gradient-to-r from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600 text-white px-8 md:px-10 py-5 md:py-6 text-base md:text-lg font-semibold rounded-2xl shadow-lg text-center">
-              <Link href="/mattress-finder">Take the quiz</Link>
-            </Button>
+            <div className="flex justify-center">
+              <Button asChild className="bg-gradient-to-r from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600 text-white px-8 md:px-10 py-5 md:py-6 text-base md:text-lg font-semibold rounded-2xl shadow-lg text-center">
+                <Link href="/mattress-finder">Take the quiz</Link>
+              </Button>
+            </div>
           </div>
         </div>
         </div>

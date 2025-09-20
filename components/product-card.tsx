@@ -435,7 +435,7 @@ export function ProductCard({ product }: ProductCardProps) {
   }
 
   return (
-    <Link href={`/products/${categoryForLink}/${safeProduct.id}`} className="block">
+    <Link href={`/products/${categoryForLink}/${safeProduct.id}`} className="block" target="_blank" rel="noopener noreferrer">
       <Card className="group product-card bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl overflow-hidden cursor-pointer">
         <CardContent className="p-6 pr-0">
           {/* Product Image - Moved Up and Made Larger */}

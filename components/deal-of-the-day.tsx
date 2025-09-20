@@ -256,7 +256,7 @@ export function DealOfTheDay() {
               </div>
             )}
             {/* Countdown Timer for empty state too */}
-            <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl p-6 shadow-lg border border-red-100 mb-6 max-w-md mx-auto">
+            <div className="mb-6 max-w-md mx-auto">
               <div className="text-center">
                 <div className="flex items-center justify-center gap-2 mb-4">
                   <Clock className="w-5 h-5 text-red-500" />
@@ -320,7 +320,7 @@ export function DealOfTheDay() {
           )}
           
           {/* Countdown Timer - Moved below description */}
-          <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl p-6 shadow-lg border border-red-100 mb-6 max-w-md mx-auto">
+          <div className="mb-6 max-w-md mx-auto">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-4">
                 <Clock className="w-5 h-5 text-red-500" />
@@ -446,7 +446,7 @@ export function DealOfTheDay() {
 
               {/* CTA Buttons */}
               <div className="flex gap-4">
-                <Link href={`/products/${mainDealProduct.category || 'mattresses'}/${mainDealProduct.id}`}>
+                <Link href={`/products/${mainDealProduct.category || 'mattresses'}/${mainDealProduct.id}`} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline" className="border-orange-400 text-orange-600 hover:bg-orange-50 px-6 py-3 text-lg font-semibold rounded-xl">
                     View Deal
                   </Button>
@@ -509,7 +509,7 @@ export function DealOfTheDay() {
                       </span>
                     )}
                   </div>
-                  <Link href={`/products/${product.category || 'mattresses'}/${product.id}`}>
+                  <Link href={`/products/${product.category || 'mattresses'}/${product.id}`} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="sm" className="border-orange-300 text-orange-600 hover:bg-orange-50">
                       View Deal
                     </Button>

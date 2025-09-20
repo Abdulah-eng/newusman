@@ -209,7 +209,7 @@ export function MattressTypesSection() {
                 return (
                   <div key={type.id} className="text-center flex-shrink-0 w-full md:w-1/3 px-4">
                     {isDatabaseProduct ? (
-                      <Link href={`/products/${categoryForLink}/${type.id}`} className="block group">
+                      <Link href={`/products/${categoryForLink}/${type.id}`} className="block group" target="_blank" rel="noopener noreferrer">
                         <div className="relative mb-6">
                           <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden group-hover:shadow-lg transition-shadow duration-300">
                             <Image

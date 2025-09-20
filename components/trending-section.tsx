@@ -3,6 +3,7 @@ import Link from "next/link"
 import { useEffect, useState } from 'react'
 import { ArrowRight, TrendingUp, Sparkles, Clock, Star, Circle, Layers, Zap, Ruler, Truck, Leaf, Recycle, Feather, Snowflake, Sprout, Brain, PackageOpen, Mountain, Droplet, Umbrella, Scroll, ArrowLeftRight, SlidersHorizontal, Grid, Gem, Waves } from 'lucide-react'
 import { Badge } from "@/components/ui/badge"
+import { ProductCard } from "@/components/product-card"
 
 type TrendingItem = {
   id: string
@@ -240,84 +241,30 @@ export function TrendingSection() {
         </div>
 
         {/* Trending Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1">
-          {displayItems.map((item, index) => (
-            <Link key={item.id || index} href={item.href} className="group block">
-              <div className="bg-white overflow-hidden hover:shadow-md transition-all duration-300 h-full">
-                {/* Product Image */}
-                <div className="relative mb-6">
-                  <div className="relative w-full h-56 bg-gray-100 overflow-hidden">
-                    <Image 
-                      src={item.image} 
-                      alt={item.title} 
-                      fill 
-                      className="object-cover group-hover:scale-105 transition-transform duration-300" 
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement
-                        target.src = '/placeholder.jpg'
-                      }}
-                    />
-                  </div>
-                  
-                  {/* Free Gift Badge - Top Left */}
-                  <div className="absolute top-3 left-3 z-10">
-                    <Badge className="bg-blue-900 text-white border-0 px-3 py-1 text-sm font-medium">
-                      Free Gift
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-6 flex flex-col h-full">
-                  {/* Header - Product Title with Fixed Height */}
-                  <div className="mb-4 h-16 flex flex-col justify-center">
-                    <h3 className="text-xl font-bold text-gray-900 leading-tight">{item.title}</h3>
-                  </div>
-
-                  {/* Rating and Reviews */}
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="flex">{renderStars(item.rating || 4.5)}</div>
-                    <span className="font-bold text-gray-900">{item.rating}</span>
-                    <span className="text-sm text-gray-600">Based on {item.reviewCount || 100} reviews</span>
-                  </div>
-
-                  {/* Features with Icons */}
-                  <div className="space-y-2 mb-6">
-                    {(item.features || ['Premium Quality', 'Comfort', 'Durability']).slice(0, 4).map((feature, index) => (
-                      <div key={index} className="flex items-center gap-3">
-                        <div className="text-gray-700">
-                          {getFeatureIcon(feature)}
-                        </div>
-                        <span className="text-sm text-gray-700 font-medium">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Pricing Section */}
-                  <div className="mb-4">
-                    <div className="text-sm text-gray-600 mb-1">from</div>
-                    <div className="flex items-baseline gap-3 mb-2">
-                      <span className="text-2xl font-bold text-gray-900">£{item.price}</span>
-                      {item.original_price && item.original_price > item.price && (
-                        <span className="text-lg text-gray-500 line-through">£{item.original_price}</span>
-                      )}
-                    </div>
-                    {item.original_price && item.original_price > item.price && (
-                      <span className="text-orange-500 font-semibold">
-                        save £{(item.original_price - item.price).toFixed(2)}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Delivery Information */}
-                  <div className="flex items-center gap-2">
-                    <Truck className="h-4 w-4 text-gray-600" />
-                    <span className="text-sm text-gray-700">Free delivery {item.freeDelivery || 'Tomorrow'}</span>
-                  </div>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1">
+          {displayItems.map((item, index) => {
+            // Transform trending item to product format for ProductCard
+            const product = {
+              id: item.id || `trending-${index}`,
+              name: item.title,
+              image: item.image,
+              images: [item.image],
+              currentPrice: item.price,
+              originalPrice: item.original_price || item.originalPrice,
+              rating: item.rating || 4.5,
+              reviewCount: item.reviewCount || 100,
+              features: item.features || ['Premium Quality', 'Comfort', 'Durability'],
+              badges: item.badges || [],
+              href: item.href,
+              category: 'trending'
+            }
+            
+            return (
+              <div key={product.id} className="h-full">
+                <ProductCard product={product} />
               </div>
-            </Link>
-          ))}
+            )
+          })}
         </div>
       </div>
     </section>
