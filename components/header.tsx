@@ -88,7 +88,6 @@ export default function Header() {
 
   // Fetch dropdown products for category when active
   const [dropdownProducts, setDropdownProducts] = useState<Record<string, any[]>>({})
-  const [guideItems, setGuideItems] = useState<any[]>([])
 
   // Helper function to calculate display price with discount
   const getDisplayPrice = (product: any) => {
@@ -118,30 +117,6 @@ export default function Header() {
     const cat = activeDropdown
     if (!cat || isOnCategoryPage) return
     
-    // Handle guides separately
-    if (cat === 'guides') {
-      if (guideItems.length > 0) return
-      fetch('/api/homepage-content')
-        .then(res => res.ok ? res.json() : { ideas_guides: [] })
-        .then(data => {
-          const ideasGuides = data.ideas_guides || []
-          // Transform to match the expected format for the dropdown
-          const transformedGuides = ideasGuides.slice(0, 4).map((guide: any) => ({
-            id: guide.id || `guide-${Math.random()}`,
-            title: guide.heading || guide.title || 'Untitled Guide',
-            description: guide.description || 'Guide description',
-            image_url: guide.image || '/placeholder.jpg',
-            link_url: '/guides',
-            badge_text: 'GUIDE',
-            badge_color: 'blue',
-            rating: 4.5,
-            tags: ['Guide']
-          }))
-          setGuideItems(transformedGuides)
-        })
-        .catch(() => {})
-      return
-    }
     
     // Handle other categories
     const already = dropdownProducts[cat]
@@ -153,7 +128,7 @@ export default function Header() {
         setDropdownProducts(prev => ({ ...prev, [cat]: data.products || [] }))
       })
       .catch(() => {})
-  }, [activeDropdown, isOnCategoryPage, guideItems.length])
+  }, [activeDropdown, isOnCategoryPage])
 
   return (
     <header className="relative z-50">
@@ -413,7 +388,6 @@ export default function Header() {
               Bunkbeds
             </Link>
             <Link href="/guides" className="flex items-center gap-2 hover:text-orange-400 transition-colors p-2 rounded">
-              <ChevronDown className="w-4 h-4 text-gray-300" />
               Guide
             </Link>
           </div>
@@ -524,18 +498,10 @@ export default function Header() {
                 <div className="absolute top-full left-0 right-0 h-4 bg-transparent"></div>
               </div>
 
-              {/* Guides Dropdown */}
-              <div 
-                className={`group relative ${isOnCategoryPage && pathname.startsWith('/guides') ? 'opacity-50 cursor-not-allowed' : ''}`}
-                onMouseEnter={() => handleCategoryHover('guides')}
-                onMouseLeave={handleCategoryLeave}
-              >
-                <Link href="/guides" className={`flex items-center gap-1 transition-colors ${isOnCategoryPage && pathname.startsWith('/guides') ? 'text-gray-400' : 'hover:text-orange-400'}`}>
-                  Guide <ChevronDown className={`w-4 h-4 transition-transform ${isOnCategoryPage && pathname.startsWith('/guides') ? 'text-gray-400' : 'text-gray-300 group-hover:text-orange-400 group-hover:rotate-180'}`} />
-                </Link>
-                {/* Transparent bridge to prevent gap */}
-                <div className="absolute top-full left-0 right-0 h-4 bg-transparent"></div>
-              </div>
+              {/* Guide Link */}
+              <Link href="/guides" className="flex items-center gap-1 transition-colors hover:text-orange-400">
+                Guide
+              </Link>
 
               {/* Divider */}
               <div className="w-px h-6 bg-gray-600"></div>
@@ -1793,57 +1759,6 @@ export default function Header() {
                     </div>
                   )}
 
-                  {/* Guide Content */}
-                  {activeDropdown === 'guides' && !isOnCategoryPage && (
-              <div 
-                className="w-full bg-white shadow-2xl border-t border-gray-100 animate-in fade-in duration-200"
-                onMouseEnter={() => handleCategoryHover('guides')}
-                onMouseLeave={handleCategoryLeave}
-              >
-                <div className="w-full px-4 py-6">
-                  <div className="grid grid-cols-4 gap-4">
-                    {guideItems.map((guide: any) => (
-                      <Link key={guide.id} href={guide.link_url} className="group">
-                      <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 border border-white">
-                        <div className="relative h-64 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden">
-                            <img src={guide.image_url || '/placeholder.jpg'} alt={guide.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                          {/* Badge */}
-                            {guide.badge_text && (
-                              <div className={`absolute top-3 left-3 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg bg-${guide.badge_color}-500`}>
-                                {guide.badge_text}
-                          </div>
-                            )}
-                          {/* Rating Badge */}
-                            {guide.rating && (
-                          <div className="absolute top-3 right-3 bg-white text-gray-800 text-sm font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1 border-2 border-orange-200">
-                                ⭐ {guide.rating}
-                          </div>
-                            )}
-                        </div>
-                        <div className="p-4">
-                            <h4 className="font-semibold text-gray-900 text-sm mb-2 group-hover:text-orange-500 transition-colors">{guide.title}</h4>
-                            <p className="text-sm text-gray-600 mb-3">{guide.description}</p>
-                          <div className="flex flex-col gap-2">
-                              {guide.tags && guide.tags.map((tag: string, index: number) => (
-                                <span key={index} className="text-sm bg-gray-100 text-gray-800 px-3 py-1.5 rounded-full font-medium">{tag}</span>
-                              ))}
-                          </div>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                </div>
-                  
-                  {/* View More Button */}
-                  <div className="text-center mt-6">
-                    <Link href="/guides" className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200">
-                      View All Guides
-                      <ArrowRight className="w-4 h-4" />
-              </Link>
-                </div>
-                </div>
-            </div>
-            )}
           </div>
         </div>
       </div>
