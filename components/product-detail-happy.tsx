@@ -152,8 +152,6 @@ export interface ProductDetailHappyProps {
 
 export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) => {
   const { dispatch } = useCart()
-  console.log('ProductDetailHappy - dispatch function:', dispatch)
-  console.log('ProductDetailHappy - dispatch type:', typeof dispatch)
   
   // Helper function to convert string characteristics to numeric values for sliders
   const getCharacteristicValue = (value: string | number | undefined, type: 'support' | 'pressure' | 'air' | 'durability' | 'firmness'): number => {
@@ -633,6 +631,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   const hasValidPrices = originalPrice > 0 && currentPrice > 0
 
   const [selectedSize, setSelectedSize] = useState<string>("")
+
   // Smart variant selection logic
   const getAvailableVariantOptions = useCallback(() => {
     const variants = (product as any).variants || []
@@ -660,11 +659,6 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     const hasDepths = depthSet.length > 1
     const hasFirmness = firmnessSet.length > 1
 
-    // Debug: concise log to aid diagnosing unexpected detections in production
-    console.log('getAvailableVariantOptions:', { 
-      sizes: sizeSet, colors: colorSet, depths: depthSet, firmnesses: firmnessSet,
-      hasSizes, hasColors, hasDepths, hasFirmness
-    })
 
     return { hasSizes, hasColors, hasDepths, hasFirmness }
   }, [(product as any).variants])
@@ -707,7 +701,6 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
   // useEffect to automatically add to cart when all variants are selected in sequential flow
   useEffect(() => {
-    console.log('useEffect triggered - isSequentialFlow:', isSequentialFlow, 'selectedSize:', selectedSize, 'selectedColor:', selectedColor)
     if (!isSequentialFlow) return // Only run when in sequential flow mode
     
     // Add a small delay to ensure state updates are complete

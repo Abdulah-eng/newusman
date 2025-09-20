@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { useHomePageContent } from '@/hooks/use-homepage-content'
+import { useCategory } from '@/lib/category-context'
 
 interface HeroSectionProps {
   onCategoryChange?: (category: string) => void
@@ -10,7 +11,7 @@ interface HeroSectionProps {
 
 export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [selectedCategory, setSelectedCategory] = useState('mattresses')
+  const { selectedCategory, setSelectedCategory } = useCategory()
   const { content, loading, error, bannerImages } = useHomePageContent()
 
   // Use cached banner images for instant access
@@ -65,6 +66,7 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
 
 
   const handleCategoryClick = (category: string) => {
+    console.log('HeroSection - Category clicked:', category)
     setSelectedCategory(category)
     onCategoryChange?.(category)
   }

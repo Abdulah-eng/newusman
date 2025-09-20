@@ -283,7 +283,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const savedCart = localStorage.getItem('cart')
       if (savedCart) {
         const parsedCart = JSON.parse(savedCart)
-        console.log('Loading cart from localStorage:', parsedCart)
         // Ensure the parsed cart has the correct structure
         if (parsedCart.items && Array.isArray(parsedCart.items)) {
           // Recompute totals to avoid stale/zero values
@@ -305,7 +304,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
             showFreeGiftNotification: parsedCart.showFreeGiftNotification || false,
             freeGiftInfo: parsedCart.freeGiftInfo || null
           }
-          console.log('Cart loaded with state:', result)
           return result
         }
       }
@@ -328,7 +326,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        console.log('Saving cart to localStorage:', state)
         localStorage.setItem('cart', JSON.stringify(state))
       } catch (error) {
         console.error('Error saving cart to localStorage:', error)

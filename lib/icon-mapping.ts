@@ -169,10 +169,10 @@ export const getIconComponent = (iconName: string, size: 'sm' | 'md' | 'lg' = 'm
       strokeWidth: "2",
       className: sizeClasses[size]
     }, [
-      React.createElement('rect', { x: "2", y: "8", width: "20", height: "8", rx: "1", ry: "1" }),
-      React.createElement('path', { d: "M4 10h2M8 10h2M12 10h2M16 10h2M20 10h2" }),
-      React.createElement('rect', { x: "2", y: "12", width: "20", height: "4", rx: "1", ry: "1" }),
-      React.createElement('path', { d: "M4 14h2M8 14h2M12 14h2M16 14h2M20 14h2" })
+      React.createElement('rect', { key: 'rect1', x: "2", y: "8", width: "20", height: "8", rx: "1", ry: "1" }),
+      React.createElement('path', { key: 'path1', d: "M4 10h2M8 10h2M12 10h2M16 10h2M20 10h2" }),
+      React.createElement('rect', { key: 'rect2', x: "2", y: "12", width: "20", height: "4", rx: "1", ry: "1" }),
+      React.createElement('path', { key: 'path2', d: "M4 14h2M8 14h2M12 14h2M16 14h2M20 14h2" })
     ]),
     'cooling': () => React.createElement(Snowflake, { className: sizeClasses[size] }),
     'edge-support': () => React.createElement(Shield, { className: sizeClasses[size] }),
@@ -204,9 +204,9 @@ export const getIconComponent = (iconName: string, size: 'sm' | 'md' | 'lg' = 'm
       strokeWidth: "2",
       className: sizeClasses[size]
     }, [
-      React.createElement('path', { d: "M3 14h18" }),
-      React.createElement('path', { d: "M5 10h8l2 2" }),
-      React.createElement('rect', { x: "3", y: "14", width: "18", height: "4", rx: "1" })
+      React.createElement('path', { key: 'path1', d: "M3 14h18" }),
+      React.createElement('path', { key: 'path2', d: "M5 10h8l2 2" }),
+      React.createElement('rect', { key: 'rect1', x: "3", y: "14", width: "18", height: "4", rx: "1" })
     ]),
     'easy-assembly': () => React.createElement(Wrench, { className: sizeClasses[size] }),
     'headboard': () => React.createElement(Package, { className: sizeClasses[size] }),

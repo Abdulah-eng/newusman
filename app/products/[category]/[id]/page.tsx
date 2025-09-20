@@ -294,17 +294,34 @@ export default async function ProductDetailPage({ params }: PageProps) {
     customReasonsDescriptions: (product.custom_reasons || product.customReasons || []).map((r: any) => r?.description).filter(Boolean),
     promotionalOffers: product.promotionalOffers || [],
     // Map the database fields correctly for FAQs, warranty, and description
-    productQuestions: product.faqs || [],
-    warrantyInfo: product.warrantySections || {},
+    productQuestions: product.faqs?.map((faq: any) => ({
+      question: faq.question,
+      answer: faq.answer
+    })) || [],
+    warrantyInfo: product.warrantySections?.map((warranty: any) => ({
+      heading: warranty.heading,
+      content: warranty.content
+    })) || {},
     careInstructions: product.careInstructions || product.care_instructions || '',
     stockQuantity: product.stockQuantity || product.stock_quantity,
     inStock: Boolean(product.inStock !== undefined ? product.inStock : product.in_stock !== false),
     shortDescription: product.shortDescription || product.short_description,
     longDescription: product.longDescription || product.long_description,
     // Add the description paragraphs from database
-    descriptionParagraphs: product.descriptionParagraphs || [],
+    descriptionParagraphs: product.descriptionParagraphs?.map((para: any) => ({
+      heading: para.heading,
+      content: para.content,
+      image: para.image
+    })) || [],
     // Add dimension images for the dimensions section
-    dimensionImages: product.dimensionImages || [],
+    dimensionImages: product.dimensionImages?.map((img: any) => ({
+      id: img.id,
+      imageUrl: img.imageUrl,
+      fileName: img.fileName,
+      fileSize: img.fileSize,
+      fileType: img.fileType,
+      sortOrder: img.sortOrder
+    })) || [],
     // Add free gift fields
     badges: product.badges || [],
     free_gift_product_id: product.free_gift_product_id || null,
@@ -317,93 +334,20 @@ export default async function ProductDetailPage({ params }: PageProps) {
     trialInformation: product.trialInformation || null,
     trialInformationHeading: (product as any).trialInformationHeading || null,
     // Add important notices
-    importantNotices: product.importantNotices || []
+    importantNotices: product.importantNotices?.map((notice: any) => ({
+      noticeText: notice.noticeText,
+      sortOrder: notice.sortOrder
+    })) || []
   }
 
-  // Debug care instructions
-  console.log('[Product Detail Page] Care Instructions Debug:', {
-    rawProduct: {
-      careInstructions: product.careInstructions,
-      care_instructions: product.care_instructions
-    },
-    transformedProductDetail: {
-      careInstructions: productDetail.careInstructions
-    }
+  // Debug logging to check what data we're getting
+  console.log('Product Detail Debug:', {
+    descriptionParagraphs: productDetail.descriptionParagraphs,
+    productQuestions: productDetail.productQuestions,
+    warrantyInfo: productDetail.warrantyInfo,
+    dimensions: productDetail.dimensions,
+    dimensionImages: productDetail.dimensionImages
   })
-
-  // Log reasons so you can verify from the terminal during SSR
-  console.log('[Product Detail Page] reasonsToLove:', productDetail.reasonsToLove)
-  console.log('[Product Detail Page] reasonsToLoveDescriptions:', productDetail.reasonsToLoveDescriptions)
-  console.log('[Product Detail Page] product_reasons_to_love raw:', product.product_reasons_to_love)
-  console.log('[Product Detail Page] customReasons:', productDetail.customReasons)
-  
-  // Debug free gift data
-  console.log('[Product Detail Page] Free gift debug:', {
-    rawProduct: {
-      free_gift_product_id: product.free_gift_product_id,
-      free_gift_enabled: product.free_gift_enabled,
-      free_gift_product_name: product.free_gift_product_name,
-      free_gift_product_image: product.free_gift_product_image,
-      badges: product.badges
-    },
-    transformedProductDetail: {
-      free_gift_product_id: productDetail.free_gift_product_id,
-      free_gift_enabled: productDetail.free_gift_enabled,
-      free_gift_product_name: productDetail.free_gift_product_name,
-      free_gift_product_image: productDetail.free_gift_product_image,
-      badges: productDetail.badges
-    }
-  })
-  
-  // Debug the mapping of descriptions
-  if (product.product_reasons_to_love && product.product_reasons_to_love.length > 0) {
-    console.log('[Product Detail Page] Debug - First reason object:', product.product_reasons_to_love[0])
-    console.log('[Product Detail Page] Debug - All reasons with descriptions:', product.product_reasons_to_love.map((r: any) => ({
-      reason_text: r.reason_text,
-      description: r.description,
-      hasDescription: !!r.description
-    })))
-  }
-  console.log('[Product Detail Page] characteristics:', {
-    firmnessScale: (productDetail as any).firmnessScale,
-    supportLevel: (productDetail as any).supportLevel,
-    pressureReliefLevel: (productDetail as any).pressureReliefLevel,
-    airCirculationLevel: (productDetail as any).airCirculationLevel,
-    durabilityLevel: (productDetail as any).durabilityLevel,
-  })
-  
-  // Debug dimension images
-  console.log('[Product Detail Page] dimensionImages from API:', product.dimensionImages)
-  console.log('[Product Detail Page] dimensionImages in productDetail:', productDetail.dimensionImages)
-  
-  // Debug important notices
-  console.log('[Product Detail Page] importantNotices from API:', product.importantNotices)
-  console.log('[Product Detail Page] importantNotices in productDetail:', productDetail.importantNotices)
-  // Debug: log variants clearly for troubleshooting
-  try {
-    const variants = (productDetail as any).variants || []
-    const compact = variants.map((v: any) => ({
-      size: v.size,
-      color: v.color,
-      depth: v.depth,
-      firmness: v.firmness,
-      currentPrice: v.currentPrice ?? v.current_price,
-      originalPrice: v.originalPrice ?? v.original_price,
-      sku: v.sku
-    }))
-    const uniqueSizes = Array.from(new Set(compact.map((v: any) => v.size).filter(Boolean)))
-    const uniqueColors = Array.from(new Set(compact.map((v: any) => v.color).filter(Boolean)))
-    const uniqueDepths = Array.from(new Set(compact.map((v: any) => v.depth).filter(Boolean)))
-    const uniqueFirmness = Array.from(new Set(compact.map((v: any) => v.firmness).filter(Boolean)))
-    console.log('[Product Detail Page] variants count:', variants.length)
-    console.log('[Product Detail Page] variants (first 10):', compact.slice(0, 10))
-    console.log('[Product Detail Page] unique sizes:', uniqueSizes)
-    console.log('[Product Detail Page] unique colors:', uniqueColors)
-    console.log('[Product Detail Page] unique depths:', uniqueDepths)
-    console.log('[Product Detail Page] unique firmness:', uniqueFirmness)
-  } catch (e) {
-    console.log('[Product Detail Page] variants debug error:', e)
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -413,11 +357,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
 
         {/* Reasons to buy */}
-        {(product.reasons_to_buy)?.length > 0 && (
+        {(product.reasonsToBuy || product.reasons_to_buy)?.length > 0 && (
           <section className="mt-10 bg-white rounded-xl border border-gray-200 p-6">
             <h3 className="text-2xl font-bold text-blue-900 mb-4">Reasons to buy</h3>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {(product.reasons_to_buy || []).map((reason: string, idx: number) => (
+              {(product.reasonsToBuy || product.reasons_to_buy || []).map((reason: string, idx: number) => (
                 <li key={`reason-${idx}`} className="flex items-start gap-2 text-blue-900/80">
                   <Check className="h-4 w-4 text-green-600 mt-0.5" />
                   <span className="font-medium">{reason}</span>

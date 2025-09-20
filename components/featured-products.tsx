@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { ProductCard } from "@/components/product-card"
+import { useCategory } from "@/lib/category-context"
 
 interface FeaturedProductsProps {
   selectedCategory?: string
@@ -40,11 +41,23 @@ interface Product {
   price: number
 }
 
-export function FeaturedProducts({ selectedCategory = 'Silentnight mattresses' }: FeaturedProductsProps) {
+export function FeaturedProducts({ selectedCategory: propSelectedCategory }: FeaturedProductsProps) {
+  const { selectedCategory: contextSelectedCategory } = useCategory()
+  const selectedCategory = propSelectedCategory || contextSelectedCategory || 'mattresses'
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const getCategoryFromSelection = (selection: string): string => {
+    // Handle direct category names
+    if (selection === 'mattresses') return 'mattresses'
+    if (selection === 'beds') return 'beds'
+    if (selection === 'sofas') return 'sofas'
+    if (selection === 'pillows') return 'pillows'
+    if (selection === 'toppers') return 'toppers'
+    if (selection === 'bunkbeds') return 'bunkbeds'
+    if (selection === 'kids') return 'kids'
+    
+    // Handle legacy selections that might include additional text
     if (selection.includes('mattresses')) return 'mattresses'
     if (selection.includes('beds')) return 'beds'
     if (selection.includes('sofas')) return 'sofas'
@@ -66,6 +79,7 @@ export function FeaturedProducts({ selectedCategory = 'Silentnight mattresses' }
       setError(null)
       try {
         const category = getCategoryFromSelection(selectedCategory)
+        console.log('FeaturedProducts - Selected category:', selectedCategory, 'Mapped to:', category)
         const response = await fetch(`/api/products/category/${category}?limit=4`)
         if (!response.ok) {
           throw new Error('Failed to fetch featured products')

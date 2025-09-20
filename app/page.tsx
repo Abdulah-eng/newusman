@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import dynamic from "next/dynamic"
 import { HomepageSkeleton } from "@/components/homepage-skeleton"
+import { CategoryProvider } from "@/lib/category-context"
 
 // Lazy load components for better performance
 const HeroSection = dynamic(() => import("@/components/hero-section"), {
@@ -53,28 +54,30 @@ const ReviewSection = dynamic(() => import("@/components/review-section").then(m
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50">
-      <Suspense fallback={<HomepageSkeleton />}>
-        {/* Hero Section with database content */}
-        <HeroSection />
-        
-        <FeaturedProducts selectedCategory="Silentnight mattresses" />
-        <CategoryFilterCards />
-        
-        <MattressFinderPromo />
-        <MattressTypesSection />
-        <DealOfTheDay />
-        
-        <IdeasGuides />
-        
-        {/* Database-driven sections */}
-        <BedroomInspirationSection />
-        <OurSofaTypesSection />
-        
-        <TrendingSection />
-        <CategoryGrid />
-        <ReviewSection />
-      </Suspense>
-    </div>
+    <CategoryProvider>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50">
+        <Suspense fallback={<HomepageSkeleton />}>
+          {/* Hero Section with database content */}
+          <HeroSection />
+          
+          <FeaturedProducts />
+          <CategoryFilterCards />
+          
+          <MattressFinderPromo />
+          <MattressTypesSection />
+          <DealOfTheDay />
+          
+          <IdeasGuides />
+          
+          {/* Database-driven sections */}
+          <BedroomInspirationSection />
+          <OurSofaTypesSection />
+          
+          <TrendingSection />
+          <CategoryGrid />
+          <ReviewSection />
+        </Suspense>
+      </div>
+    </CategoryProvider>
   )
 }
