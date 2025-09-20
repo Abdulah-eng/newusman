@@ -8,7 +8,7 @@ export async function GET(
   try {
     const { id } = await params
 
-    // No caching - always fetch fresh data
+    // Add caching for better performance
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -19,7 +19,8 @@ export async function GET(
       )
     }
 
-    // Get product with all related data
+    // OPTIMIZATION: Split into essential and optional data queries
+    // First, get essential product data only
     const { data: product, error } = await supabase
       .from('products')
       .select(`
@@ -27,16 +28,7 @@ export async function GET(
         categories(name, slug),
         product_images(*),
         product_variants(*),
-        product_features(*),
-        product_reasons_to_love(*),
-        product_custom_reasons(*),
-        product_description_paragraphs(*),
-        product_faqs(*),
-        product_warranty_sections(*),
-        product_dimensions(*),
-        product_popular_categories(*),
-        product_dimension_images(*),
-        product_important_notices(*)
+        product_features(*)
       `)
       .eq('id', id)
       .single()
@@ -99,20 +91,8 @@ export async function GET(
       return null
     }
 
-    // Always fetch variants directly from related table for consistency
-    let variantList: any[] = []
-    {
-      const { data: directVariants, error: directError } = await supabase
-        .from('product_variants')
-        .select('*')
-        .eq('product_id', id)
-      if (directError) {
-        console.warn('[API /products/:id] direct variant fetch error:', directError)
-        variantList = Array.isArray((product as any).product_variants) ? (product as any).product_variants : []
-      } else {
-        variantList = directVariants || []
-      }
-    }
+    // OPTIMIZATION: Use variants from the main query instead of separate fetch
+    let variantList: any[] = Array.isArray((product as any).product_variants) ? (product as any).product_variants : []
 
     // Compute variant-derived aggregates
     const minCurrentPrice = variantList.length
@@ -341,7 +321,9 @@ export async function GET(
       product: transformedProduct
     }, {
       headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'public, s-maxage=300',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=300'
       }
     })
 

@@ -8,6 +8,7 @@ import { Clock, Zap, Star, ArrowRight } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useHomePageContent } from "@/hooks/use-homepage-content"
 import { useCart } from "@/lib/cart-context"
+import { ClientOnly } from "@/components/client-only"
 
 export function DealOfTheDay() {
   const { content } = useHomePageContent()
@@ -36,13 +37,14 @@ export function DealOfTheDay() {
       }
     }
 
-    // Calculate immediately
-    calculateTimeLeft()
+    // Set initial time after hydration to prevent mismatch
+    const timer = setTimeout(() => {
+      calculateTimeLeft()
+      const interval = setInterval(calculateTimeLeft, 1000)
+      return () => clearInterval(interval)
+    }, 100)
 
-    // Update every second
-    const timer = setInterval(calculateTimeLeft, 1000)
-
-    return () => clearInterval(timer)
+    return () => clearTimeout(timer)
   }, [])
 
   // Fetch deal products when content changes
@@ -54,59 +56,56 @@ export function DealOfTheDay() {
           setLoading(true)
           console.log('🔍 DealOfTheDay - Fetching products for product cards:', content.deal_of_day.productCards)
           
-          // Fetch product details for each product card
-          const productPromises = content.deal_of_day.productCards.map(async (productCard: any) => {
-            const { productId, description, percentageOff } = productCard
-            
-            if (!productId) return null
-            
-            try {
-              const response = await fetch(`/api/products/${productId}`)
-              if (response.ok) {
-                const data = await response.json()
-                const product = data.product
-                
-                // Debug: Log the product data to see if variants are loaded
-                console.log('DealOfTheDay - Fetched product:', {
-                  id: product?.id,
-                  name: product?.name,
-                  variants: product?.variants,
-                  variantsCount: product?.variants?.length
-                })
-                
-                if (product && product.id) {
-                  return {
-                    ...product,
-                    customDescription: description,
-                    customPercentageOff: percentageOff,
-                    customImage: productCard.customImage
-                  }
-                }
-              }
-            } catch (error) {
-              console.error('Error fetching product:', productId, error)
-            }
-            return null
+          // OPTIMIZATION: Use bulk API instead of individual calls
+          const productIds = content.deal_of_day.productCards
+            .map((card: any) => card.productId)
+            .filter(Boolean)
+          
+          if (productIds.length === 0) {
+            setLoading(false)
+            return
+          }
+
+          const response = await fetch('/api/products/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productIds })
           })
 
-          const products = await Promise.all(productPromises)
-          const validProducts = products.filter(Boolean)
-          console.log('🔍 DealOfTheDay - Final valid products:', validProducts.map(p => ({
-            id: p.id,
-            name: p.name,
-            currentPrice: p.currentPrice,
-            originalPrice: p.originalPrice,
-            customDescription: p.customDescription,
-            customPercentageOff: p.customPercentageOff
-          })))
-          
-          // Set the first product as the main deal
-          if (validProducts.length > 0) {
-            setMainDealProduct(validProducts[0])
+          if (response.ok) {
+            const data = await response.json()
+            const products = data.products || []
+            
+            // Map products with custom data from product cards
+            const validProducts = products.map((product: any) => {
+              const productCard = content.deal_of_day.productCards.find((card: any) => card.productId === product.id)
+              return {
+                ...product,
+                customDescription: productCard?.description,
+                customPercentageOff: productCard?.percentageOff,
+                customImage: productCard?.customImage
+              }
+            }).filter(Boolean)
+            
+            console.log('🔍 DealOfTheDay - Final valid products:', validProducts.map(p => ({
+              id: p.id,
+              name: p.name,
+              currentPrice: p.currentPrice,
+              originalPrice: p.originalPrice,
+              customDescription: p.customDescription,
+              customPercentageOff: p.customPercentageOff
+            })))
+            
+            // Set the first product as the main deal
+            if (validProducts.length > 0) {
+              setMainDealProduct(validProducts[0])
+            }
+            
+            // Set all products for the grid
+            setDealProducts(validProducts)
+          } else {
+            console.error('Failed to fetch bulk products')
           }
-          
-          // Set all products for the grid
-          setDealProducts(validProducts)
         } catch (error) {
           console.error('Error fetching deal products:', error)
         } finally {
@@ -262,28 +261,47 @@ export function DealOfTheDay() {
                   <Clock className="w-5 h-5 text-red-500" />
                   <p className="text-gray-700 font-semibold text-sm font-modern">Next deal starts in:</p>
                 </div>
-                <div className="flex justify-center items-center gap-3">
-                  <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
-                    <div className="text-3xl font-bold text-red-600 font-display leading-none">
-                      {timeLeft.hours.toString().padStart(2, '0')}
+                <ClientOnly fallback={
+                  <div className="flex justify-center items-center gap-3">
+                    <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                      <div className="text-3xl font-bold text-red-600 font-display leading-none">00</div>
+                      <div className="text-xs text-gray-500 font-modern mt-1">Hours</div>
                     </div>
-                    <div className="text-xs text-gray-500 font-modern mt-1">Hours</div>
-                  </div>
-                  <div className="text-2xl text-red-400 font-bold">:</div>
-                  <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
-                    <div className="text-3xl font-bold text-red-600 font-display leading-none">
-                      {timeLeft.minutes.toString().padStart(2, '0')}
+                    <div className="text-2xl text-red-400 font-bold">:</div>
+                    <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                      <div className="text-3xl font-bold text-red-600 font-display leading-none">00</div>
+                      <div className="text-xs text-gray-500 font-modern mt-1">Minutes</div>
                     </div>
-                    <div className="text-xs text-gray-500 font-modern mt-1">Minutes</div>
-                  </div>
-                  <div className="text-2xl text-red-400 font-bold">:</div>
-                  <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
-                    <div className="text-3xl font-bold text-red-600 font-display leading-none">
-                      {timeLeft.seconds.toString().padStart(2, '0')}
+                    <div className="text-2xl text-red-400 font-bold">:</div>
+                    <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                      <div className="text-3xl font-bold text-red-600 font-display leading-none">00</div>
+                      <div className="text-xs text-gray-500 font-modern mt-1">Seconds</div>
                     </div>
-                    <div className="text-xs text-gray-500 font-modern mt-1">Seconds</div>
                   </div>
-                </div>
+                }>
+                  <div className="flex justify-center items-center gap-3">
+                    <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                      <div className="text-3xl font-bold text-red-600 font-display leading-none">
+                        {timeLeft.hours.toString().padStart(2, '0')}
+                      </div>
+                      <div className="text-xs text-gray-500 font-modern mt-1">Hours</div>
+                    </div>
+                    <div className="text-2xl text-red-400 font-bold">:</div>
+                    <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                      <div className="text-3xl font-bold text-red-600 font-display leading-none">
+                        {timeLeft.minutes.toString().padStart(2, '0')}
+                      </div>
+                      <div className="text-xs text-gray-500 font-modern mt-1">Minutes</div>
+                    </div>
+                    <div className="text-2xl text-red-400 font-bold">:</div>
+                    <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                      <div className="text-3xl font-bold text-red-600 font-display leading-none">
+                        {timeLeft.seconds.toString().padStart(2, '0')}
+                      </div>
+                      <div className="text-xs text-gray-500 font-modern mt-1">Seconds</div>
+                    </div>
+                  </div>
+                </ClientOnly>
               </div>
             </div>
             
@@ -326,28 +344,47 @@ export function DealOfTheDay() {
                 <Clock className="w-5 h-5 text-red-500" />
                 <p className="text-gray-700 font-semibold text-sm font-modern">Offer ends in:</p>
               </div>
-              <div className="flex justify-center items-center gap-3">
-                <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
-                  <div className="text-3xl font-bold text-red-600 font-display leading-none">
-                    {timeLeft.hours.toString().padStart(2, '0')}
+              <ClientOnly fallback={
+                <div className="flex justify-center items-center gap-3">
+                  <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                    <div className="text-3xl font-bold text-red-600 font-display leading-none">00</div>
+                    <div className="text-xs text-gray-500 font-modern mt-1">Hours</div>
                   </div>
-                  <div className="text-xs text-gray-500 font-modern mt-1">Hours</div>
-                </div>
-                <div className="text-2xl text-red-400 font-bold">:</div>
-                <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
-                  <div className="text-3xl font-bold text-red-600 font-display leading-none">
-                    {timeLeft.minutes.toString().padStart(2, '0')}
+                  <div className="text-2xl text-red-400 font-bold">:</div>
+                  <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                    <div className="text-3xl font-bold text-red-600 font-display leading-none">00</div>
+                    <div className="text-xs text-gray-500 font-modern mt-1">Minutes</div>
                   </div>
-                  <div className="text-xs text-gray-500 font-modern mt-1">Minutes</div>
-                </div>
-                <div className="text-2xl text-red-400 font-bold">:</div>
-                <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
-                  <div className="text-3xl font-bold text-red-600 font-display leading-none">
-                    {timeLeft.seconds.toString().padStart(2, '0')}
+                  <div className="text-2xl text-red-400 font-bold">:</div>
+                  <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                    <div className="text-3xl font-bold text-red-600 font-display leading-none">00</div>
+                    <div className="text-xs text-gray-500 font-modern mt-1">Seconds</div>
                   </div>
-                  <div className="text-xs text-gray-500 font-modern mt-1">Seconds</div>
                 </div>
-              </div>
+              }>
+                <div className="flex justify-center items-center gap-3">
+                  <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                    <div className="text-3xl font-bold text-red-600 font-display leading-none">
+                      {timeLeft.hours.toString().padStart(2, '0')}
+                    </div>
+                    <div className="text-xs text-gray-500 font-modern mt-1">Hours</div>
+                  </div>
+                  <div className="text-2xl text-red-400 font-bold">:</div>
+                  <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                    <div className="text-3xl font-bold text-red-600 font-display leading-none">
+                      {timeLeft.minutes.toString().padStart(2, '0')}
+                    </div>
+                    <div className="text-xs text-gray-500 font-modern mt-1">Minutes</div>
+                  </div>
+                  <div className="text-2xl text-red-400 font-bold">:</div>
+                  <div className="text-center bg-white rounded-xl p-3 shadow-md min-w-[60px]">
+                    <div className="text-3xl font-bold text-red-600 font-display leading-none">
+                      {timeLeft.seconds.toString().padStart(2, '0')}
+                    </div>
+                    <div className="text-xs text-gray-500 font-modern mt-1">Seconds</div>
+                  </div>
+                </div>
+              </ClientOnly>
             </div>
           </div>
         </div>
@@ -469,7 +506,7 @@ export function DealOfTheDay() {
           {dealProducts.slice(1, 5).map((product, index) => {
             const discount = product.originalPrice && product.currentPrice ? 
               calculateDiscount(product.currentPrice, product.originalPrice) : 
-              Math.floor(Math.random() * 40) + 20 // Fallback random discount
+              25 // Fixed discount to prevent hydration mismatch
             
             return (
               <div key={product.id || index} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">

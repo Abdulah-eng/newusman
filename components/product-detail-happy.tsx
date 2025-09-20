@@ -1851,6 +1851,10 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                 fill 
                 className="object-contain"
                 priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                quality={85}
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                 onError={(e) => {
                   console.error('Image failed to load:', e)
                   const target = e.target as HTMLImageElement
@@ -2635,7 +2639,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                     return (
                       <div key={`fallback-${feature.label}-${idx}`} className="text-center min-w-0">
                         <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 text-orange-500 flex items-center justify-center">
-                          {feature.Icon({})}
+                          <feature.Icon />
                   </div>
                         {/* Small text below icon for fallback features */}
                         {(product as any).reasonsToLoveSmalltext?.[idx] && (

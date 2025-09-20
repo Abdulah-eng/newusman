@@ -32,7 +32,9 @@ export async function GET() {
 
     return NextResponse.json(transformedData, {
       headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'public, s-maxage=300',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=300'
       }
     })
   } catch (error) {

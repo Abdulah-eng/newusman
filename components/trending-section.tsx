@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState } from 'react'
@@ -32,8 +34,10 @@ export function TrendingSection() {
       try {
         setIsLoading(true)
         
-        // Fetch 4 random products from the database
-        const response = await fetch('/api/products?limit=4&random=true')
+        // Fetch 4 random products from the database with caching
+        const response = await fetch('/api/products?limit=4&random=true', {
+          next: { revalidate: 300 } // Cache for 5 minutes
+        })
         if (response.ok) {
           const data = await response.json()
           const products = data.products || []
@@ -55,7 +59,7 @@ export function TrendingSection() {
               `${Math.round(((product.originalPrice - product.currentPrice) / product.originalPrice) * 100)}% OFF` : 
               '25% OFF',
             features: product.features || ['Premium Quality', 'Comfort', 'Durability', 'Innovation'],
-            reviewCount: Math.floor(Math.random() * 200) + 50, // Random review count
+            reviewCount: 150, // Fixed review count to prevent hydration mismatch
             freeDelivery: 'Tomorrow'
           }))
           

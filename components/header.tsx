@@ -501,7 +501,7 @@ export default function Header() {
               {/* Guide Link */}
               <Link href="/guides" className="flex items-center gap-1 transition-colors hover:text-orange-400">
                 Guide
-              </Link>
+                </Link>
 
               {/* Divider */}
               <div className="w-px h-6 bg-gray-600"></div>
@@ -1759,7 +1759,7 @@ export default function Header() {
                     </div>
                   )}
 
-          </div>
+                          </div>
         </div>
       </div>
 

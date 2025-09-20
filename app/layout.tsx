@@ -9,6 +9,8 @@ import { TrustBadgesSection } from "@/components/trust-badges-section"
 import { Footer } from "@/components/footer"
 import { CartNotificationWrapper } from "@/components/cart-notification-wrapper"
 import { AuthPopupWrapper } from "@/components/auth-popup-wrapper"
+import { PerformanceMonitor } from "@/components/performance-monitor"
+import { HydrationBoundary } from "@/components/hydration-boundary"
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -74,19 +76,22 @@ html {
 }
         `}</style>
       </head>
-      <body className={`${inter.variable} ${poppins.variable} ${outfit.variable} ${playfair.variable}`}>
-        <AuthProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <Header />
-              <TrustBadgesSection />
-              {children}
-              <Footer />
-              <CartNotificationWrapper />
-              <AuthPopupWrapper />
-            </WishlistProvider>
-          </CartProvider>
-        </AuthProvider>
+      <body className={`${inter.variable} ${poppins.variable} ${outfit.variable} ${playfair.variable}`} suppressHydrationWarning={true}>
+        <HydrationBoundary>
+          <AuthProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <Header />
+                <TrustBadgesSection />
+                {children}
+                <Footer />
+                <CartNotificationWrapper />
+                <AuthPopupWrapper />
+                <PerformanceMonitor />
+              </WishlistProvider>
+            </CartProvider>
+          </AuthProvider>
+        </HydrationBoundary>
       </body>
     </html>
   )

@@ -33,8 +33,20 @@ interface HomePageContent {
 
 interface HeroSection {
   smallImage1: string
+  smallImage1Link: string
   smallImage2: string
+  smallImage2Link: string
   slidingImages: string[]
+  slidingImagesData: Array<{
+    image: string
+    link: string
+    badge: string
+    heading: string
+    description: string
+    price: string
+    discount: string
+    buttonText: string
+  }>
 }
 
 interface ImageCard {
@@ -92,8 +104,15 @@ interface IdeasGuide {
 export default function HomePageAdmin() {
   const [heroSection, setHeroSection] = useState<HeroSection>({
     smallImage1: '',
+    smallImage1Link: '',
     smallImage2: '',
-    slidingImages: ['', '', '']
+    smallImage2Link: '',
+    slidingImages: ['', '', ''],
+    slidingImagesData: [
+      { image: '', link: '', badge: '', heading: '', description: '', price: '', discount: '', buttonText: '' },
+      { image: '', link: '', badge: '', heading: '', description: '', price: '', discount: '', buttonText: '' },
+      { image: '', link: '', badge: '', heading: '', description: '', price: '', discount: '', buttonText: '' }
+    ]
   })
   
   const [imageCards, setImageCards] = useState<ImageCard[]>([
@@ -183,7 +202,20 @@ export default function HomePageAdmin() {
         data.forEach(item => {
           switch (item.section) {
             case 'hero':
-              setHeroSection(item.content)
+              // Handle both old and new structure for backward compatibility
+              const heroContent = item.content || {}
+              setHeroSection({
+                smallImage1: heroContent.smallImage1 || '',
+                smallImage1Link: heroContent.smallImage1Link || '',
+                smallImage2: heroContent.smallImage2 || '',
+                smallImage2Link: heroContent.smallImage2Link || '',
+                slidingImages: heroContent.slidingImages || ['', '', ''],
+                slidingImagesData: heroContent.slidingImagesData || [
+                  { image: '', link: '', badge: '', heading: '', description: '', price: '', discount: '', buttonText: '' },
+                  { image: '', link: '', badge: '', heading: '', description: '', price: '', discount: '', buttonText: '' },
+                  { image: '', link: '', badge: '', heading: '', description: '', price: '', discount: '', buttonText: '' }
+                ]
+              })
               break
             case 'image_cards':
               setImageCards(item.content)
@@ -604,7 +636,7 @@ export default function HomePageAdmin() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setHeroSection(prev => ({ ...prev, smallImage1: '' }))}
+                        onClick={() => setHeroSection(prev => ({ ...prev, smallImage1: '', smallImage1Link: '' }))}
                         className="absolute top-2 right-2 bg-white/80 hover:bg-white"
                       >
                         <X className="w-4 h-4" />
@@ -626,6 +658,22 @@ export default function HomePageAdmin() {
                     </div>
                   )}
                 </div>
+                
+                {/* Link field for Small Image 1 */}
+                {heroSection.smallImage1 && (
+                  <div className="mt-4">
+                    <div>
+                      <Label className="block mb-1 text-sm font-medium">Link URL</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://example.com"
+                        value={heroSection.smallImage1Link}
+                        onChange={(e) => setHeroSection(prev => ({ ...prev, smallImage1Link: e.target.value }))}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -641,7 +689,7 @@ export default function HomePageAdmin() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setHeroSection(prev => ({ ...prev, smallImage2: '' }))}
+                        onClick={() => setHeroSection(prev => ({ ...prev, smallImage2: '', smallImage2Link: '' }))}
                         className="absolute top-2 right-2 bg-white/80 hover:bg-white"
                       >
                         <X className="w-4 h-4" />
@@ -663,18 +711,34 @@ export default function HomePageAdmin() {
                     </div>
                   )}
                 </div>
+                
+                {/* Link field for Small Image 2 */}
+                {heroSection.smallImage2 && (
+                  <div className="mt-4">
+                    <div>
+                      <Label className="block mb-1 text-sm font-medium">Link URL</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://example.com"
+                        value={heroSection.smallImage2Link}
+                        onChange={(e) => setHeroSection(prev => ({ ...prev, smallImage2Link: e.target.value }))}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="mt-6">
               <Label className="block mb-2">Sliding Images (3 images)</Label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {heroSection.slidingImages.map((image, index) => (
+                {heroSection.slidingImagesData.map((imageData, index) => (
                   <div key={index} className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    {image ? (
+                    {imageData.image ? (
                       <div className="relative">
                         <img 
-                          src={image} 
+                          src={imageData.image} 
                           alt={`Sliding Image ${index + 1}`} 
                           className="w-full h-40 object-cover rounded"
                         />
@@ -683,7 +747,8 @@ export default function HomePageAdmin() {
                           size="sm"
                           onClick={() => setHeroSection(prev => ({ 
                             ...prev, 
-                            slidingImages: prev.slidingImages.map((img, i) => i === index ? '' : img)
+                            slidingImages: prev.slidingImages.map((img, i) => i === index ? '' : img),
+                            slidingImagesData: prev.slidingImagesData.map((data, i) => i === index ? { image: '', link: '', badge: '', heading: '', description: '', price: '', discount: '', buttonText: '' } : data)
                           }))}
                           className="absolute top-2 right-2 bg-white/80 hover:bg-white"
                         >
@@ -698,7 +763,8 @@ export default function HomePageAdmin() {
                           accept="image/*"
                           onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], (url) => setHeroSection(prev => ({ 
                             ...prev, 
-                            slidingImages: prev.slidingImages.map((img, i) => i === index ? url : img)
+                            slidingImages: prev.slidingImages.map((img, i) => i === index ? url : img),
+                            slidingImagesData: prev.slidingImagesData.map((data, i) => i === index ? { ...data, image: url } : data)
                           })))}
                           className="hidden"
                           id={`slidingImage${index}`}
@@ -706,6 +772,103 @@ export default function HomePageAdmin() {
                         <label htmlFor={`slidingImage${index}`} className="cursor-pointer text-blue-600 hover:text-blue-700">
                           Upload Image
                         </label>
+                      </div>
+                    )}
+                    
+                    {/* Text Configuration for Sliding Images */}
+                    {imageData.image && (
+                      <div className="mt-4 space-y-3">
+                        <div>
+                          <Label className="block mb-1 text-sm font-medium">Link URL</Label>
+                          <Input
+                            type="url"
+                            placeholder="https://example.com"
+                            value={imageData.link}
+                            onChange={(e) => setHeroSection(prev => ({ 
+                              ...prev, 
+                              slidingImagesData: prev.slidingImagesData.map((data, i) => i === index ? { ...data, link: e.target.value } : data)
+                            }))}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <Label className="block mb-1 text-sm font-medium">Badge Text</Label>
+                          <Input
+                            type="text"
+                            placeholder="e.g., NEW ARRIVAL"
+                            value={imageData.badge}
+                            onChange={(e) => setHeroSection(prev => ({ 
+                              ...prev, 
+                              slidingImagesData: prev.slidingImagesData.map((data, i) => i === index ? { ...data, badge: e.target.value } : data)
+                            }))}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <Label className="block mb-1 text-sm font-medium">Heading</Label>
+                          <Input
+                            type="text"
+                            placeholder="e.g., PREMIUM"
+                            value={imageData.heading}
+                            onChange={(e) => setHeroSection(prev => ({ 
+                              ...prev, 
+                              slidingImagesData: prev.slidingImagesData.map((data, i) => i === index ? { ...data, heading: e.target.value } : data)
+                            }))}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <Label className="block mb-1 text-sm font-medium">Description</Label>
+                          <Input
+                            type="text"
+                            placeholder="e.g., COLLECTION"
+                            value={imageData.description}
+                            onChange={(e) => setHeroSection(prev => ({ 
+                              ...prev, 
+                              slidingImagesData: prev.slidingImagesData.map((data, i) => i === index ? { ...data, description: e.target.value } : data)
+                            }))}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <Label className="block mb-1 text-sm font-medium">Price</Label>
+                          <Input
+                            type="text"
+                            placeholder="e.g., $299.99"
+                            value={imageData.price}
+                            onChange={(e) => setHeroSection(prev => ({ 
+                              ...prev, 
+                              slidingImagesData: prev.slidingImagesData.map((data, i) => i === index ? { ...data, price: e.target.value } : data)
+                            }))}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <Label className="block mb-1 text-sm font-medium">Discount Text</Label>
+                          <Input
+                            type="text"
+                            placeholder="e.g., SALE UP TO 40% OFF"
+                            value={imageData.discount}
+                            onChange={(e) => setHeroSection(prev => ({ 
+                              ...prev, 
+                              slidingImagesData: prev.slidingImagesData.map((data, i) => i === index ? { ...data, discount: e.target.value } : data)
+                            }))}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <Label className="block mb-1 text-sm font-medium">Button Text</Label>
+                          <Input
+                            type="text"
+                            placeholder="e.g., Shop Now"
+                            value={imageData.buttonText}
+                            onChange={(e) => setHeroSection(prev => ({ 
+                              ...prev, 
+                              slidingImagesData: prev.slidingImagesData.map((data, i) => i === index ? { ...data, buttonText: e.target.value } : data)
+                            }))}
+                            className="w-full"
+                          />
+                        </div>
                       </div>
                     )}
                   </div>

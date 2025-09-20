@@ -66,7 +66,7 @@ export function FeaturedProducts({ selectedCategory = 'Silentnight mattresses' }
       setError(null)
       try {
         const category = getCategoryFromSelection(selectedCategory)
-        const response = await fetch(`/api/products/category/${category}`)
+        const response = await fetch(`/api/products/category/${category}?limit=4`)
         if (!response.ok) {
           throw new Error('Failed to fetch featured products')
         }

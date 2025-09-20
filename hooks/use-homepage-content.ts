@@ -3,8 +3,20 @@ import { useState, useEffect, useMemo } from 'react'
 interface HomePageContent {
   hero?: {
     smallImage1: string
+    smallImage1Link: string
     smallImage2: string
+    smallImage2Link: string
     slidingImages: string[]
+    slidingImagesData: Array<{
+      image: string
+      link: string
+      badge: string
+      heading: string
+      description: string
+      price: string
+      discount: string
+      buttonText: string
+    }>
   }
   image_cards?: Array<{
     id: string
@@ -80,10 +92,6 @@ export function useHomePageContent() {
         }
         
         const data = await response.json()
-        console.log('🔍 useHomePageContent - Fresh data from database:', data)
-        console.log('🔍 useHomePageContent - Mattresses section:', data.mattresses)
-        console.log('🔍 useHomePageContent - Bedroom inspiration section:', data.bedroom_inspiration)
-        
         setContent(data)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
@@ -99,9 +107,11 @@ export function useHomePageContent() {
   // Memoized banner images for instant access
   const bannerImages = useMemo(() => {
     return {
-      carousel: content.hero?.slidingImages?.filter(img => img) || [],
+      carousel: content.hero?.slidingImagesData?.map(data => data.image).filter(img => img) || content.hero?.slidingImages?.filter(img => img) || [],
       smallImage1: content.hero?.smallImage1 || '',
-      smallImage2: content.hero?.smallImage2 || ''
+      smallImage2: content.hero?.smallImage2 || '',
+      // Include the full data for text overlays and links
+      heroData: content.hero
     }
   }, [content.hero])
 

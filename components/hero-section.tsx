@@ -2,11 +2,10 @@
 
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useHomePageContent } from '@/hooks/use-homepage-content'
 
 interface HeroSectionProps {
-  onCategoryChange: (category: string) => void
+  onCategoryChange?: (category: string) => void
 }
 
 export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
@@ -15,27 +14,31 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
   const { content, loading, error, bannerImages } = useHomePageContent()
 
   // Use cached banner images for instant access
-  const hasDatabaseImages = bannerImages.carousel.length > 0
+  const hasDatabaseImages = bannerImages.heroData?.slidingImagesData?.some(data => data.image) || bannerImages.carousel.length > 0
   
   const carouselImages = hasDatabaseImages
-    ? bannerImages.carousel.map((src, index) => ({
-        src: src,
-        alt: `Hero Image ${index + 1}`,
-        title: "PREMIUM",
-        subtitle: "COLLECTION",
-        price: "$299.99",
-        discount: "SALE UP TO 40% OFF",
-        edition: "NEW ARRIVAL"
-      }))
+    ? (bannerImages.heroData?.slidingImagesData || []).map((imageData, index) => {
+        return {
+          src: imageData.image,
+          alt: `Hero Image ${index + 1}`,
+          title: imageData?.heading || "PREMIUM",
+          subtitle: imageData?.description || "COLLECTION",
+          price: imageData?.price || "$299.99",
+          discount: imageData?.discount || "SALE UP TO 40% OFF",
+          edition: imageData?.badge || "NEW ARRIVAL",
+          buttonText: imageData?.buttonText || "Shop Now",
+          link: imageData?.link || ''
+        }
+      }).filter(img => img.src) // Only include images that have a src
     : []
 
   // Immediate image preloading for instant display
   useEffect(() => {
-    if (bannerImages.carousel.length > 0) {
-      bannerImages.carousel.forEach(src => {
-        if (src) {
+    if (bannerImages.heroData?.slidingImagesData) {
+      bannerImages.heroData.slidingImagesData.forEach(data => {
+        if (data.image) {
           const img = new window.Image()
-          img.src = src
+          img.src = data.image
         }
       })
     }
@@ -60,17 +63,10 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
     return () => clearInterval(interval)
   }, [carouselImages.length])
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % carouselImages.length)
-  }
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + carouselImages.length) % carouselImages.length)
-  }
 
   const handleCategoryClick = (category: string) => {
     setSelectedCategory(category)
-    onCategoryChange(category)
+    onCategoryChange?.(category)
   }
 
   return (
@@ -80,49 +76,28 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
           {/* Left Banner - Carousel */}
           <div className="lg:col-span-2 relative h-96 lg:h-[500px] overflow-hidden rounded-lg group">
             {carouselImages.length > 0 ? (
-              <Image
-                src={carouselImages[currentSlide]?.src || ""}
-                alt={carouselImages[currentSlide]?.alt || "Hero Image"}
-                fill
-                className="object-cover transition-transform duration-500"
-              />
+              <div 
+                className="relative w-full h-full cursor-pointer"
+                onClick={() => {
+                  const currentImage = carouselImages[currentSlide]
+                  if (currentImage?.link) {
+                    window.open(currentImage.link, '_blank', 'noopener,noreferrer')
+                  }
+                }}
+              >
+                <Image
+                  src={carouselImages[currentSlide]?.src || ""}
+                  alt={carouselImages[currentSlide]?.alt || "Hero Image"}
+                  fill
+                  className="object-cover transition-transform duration-500"
+                />
+              </div>
             ) : (
               <div className="w-full h-full bg-gray-200 animate-pulse">
                 <div className="w-full h-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
               </div>
             )}
             
-            {/* Carousel Navigation */}
-            {carouselImages.length > 0 && (
-              <>
-                <button
-                  onClick={prevSlide}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors duration-300"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-                
-                <button
-                  onClick={nextSlide}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-colors duration-300"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-                
-                {/* Carousel Indicators */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
-                  {carouselImages.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentSlide(index)}
-                      className={`w-3 h-3 rounded-full transition-colors duration-300 ${
-                        index === currentSlide ? 'bg-white' : 'bg-white/50'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
             
             {/* Carousel Content Overlay */}
             {carouselImages.length > 0 && (
@@ -147,8 +122,16 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
                       {carouselImages[currentSlide]?.discount || "SALE UP TO 40% OFF"}
                     </span>
                   </div>
-                  <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold text-lg transition-colors duration-300">
-                    Shop Now
+                  <button 
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold text-lg transition-colors duration-300"
+                    onClick={() => {
+                      const currentImage = carouselImages[currentSlide]
+                      if (currentImage?.link) {
+                        window.open(currentImage.link, '_blank', 'noopener,noreferrer')
+                      }
+                    }}
+                  >
+                    {carouselImages[currentSlide]?.buttonText || "Shop Now"}
                   </button>
                 </div>
               </div>
@@ -158,15 +141,22 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
           {/* Right Banners */}
           <div className="flex flex-col gap-3 h-96 lg:h-[500px]">
             {/* Image 1 */}
-            <div className="relative w-full h-1/2 overflow-hidden rounded-lg group">
-                             {bannerImages.smallImage1 ? (
-                 <Image
-                   src={bannerImages.smallImage1}
-                   alt="Bedroom Collection"
-                   fill
-                   className="object-cover transition-transform duration-500"
-                 />
-               ) : (
+            <div 
+              className="relative w-full h-1/2 overflow-hidden rounded-lg group cursor-pointer"
+              onClick={() => {
+                if (bannerImages.heroData?.smallImage1Link) {
+                  window.open(bannerImages.heroData.smallImage1Link, '_blank', 'noopener,noreferrer')
+                }
+              }}
+            >
+              {bannerImages.smallImage1 ? (
+                <Image
+                  src={bannerImages.smallImage1}
+                  alt="Bedroom Collection"
+                  fill
+                  className="object-cover transition-transform duration-500"
+                />
+              ) : (
                 <div className="w-full h-full bg-gray-200 animate-pulse">
                   <div className="w-full h-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
                 </div>
@@ -174,15 +164,22 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
             </div>
 
             {/* Image 2 */}
-            <div className="relative w-full h-1/2 overflow-hidden rounded-lg group">
-                             {bannerImages.smallImage2 ? (
-                 <Image
-                   src={bannerImages.smallImage2}
-                   alt="Living Room"
-                   fill
-                   className="object-cover transition-transform duration-500"
-                 />
-               ) : (
+            <div 
+              className="relative w-full h-1/2 overflow-hidden rounded-lg group cursor-pointer"
+              onClick={() => {
+                if (bannerImages.heroData?.smallImage2Link) {
+                  window.open(bannerImages.heroData.smallImage2Link, '_blank', 'noopener,noreferrer')
+                }
+              }}
+            >
+              {bannerImages.smallImage2 ? (
+                <Image
+                  src={bannerImages.smallImage2}
+                  alt="Living Room"
+                  fill
+                  className="object-cover transition-transform duration-500"
+                />
+              ) : (
                 <div className="w-full h-full bg-gray-200 animate-pulse">
                   <div className="w-full h-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
                 </div>
@@ -195,12 +192,18 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
       {/* Four Parallel Images Section */}
       <section className="relative w-full bg-white py-6">
         <div className="w-full px-4 md:px-8 lg:px-12">
-
-          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             
             {/* Image 1 */}
-            <div className="relative w-full aspect-[4/3] overflow-hidden rounded-lg group">
+            <div 
+              className="relative w-full aspect-[4/3] overflow-hidden rounded-lg group cursor-pointer"
+              onClick={() => {
+                const link = content.image_cards?.[0]?.buttonLink
+                if (link) {
+                  window.open(link, '_blank', 'noopener,noreferrer')
+                }
+              }}
+            >
               {content.image_cards?.[0]?.image ? (
                 <Image
                   src={content.image_cards?.[0]?.image}
@@ -222,7 +225,16 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
                   <p className="text-sm text-gray-200 mb-3 font-modern">
                     {content.image_cards?.[0]?.text || "Premium comfort for your living space"}
                   </p>
-                  <button className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors duration-300">
+                  <button 
+                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors duration-300"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      const link = content.image_cards?.[0]?.buttonLink
+                      if (link) {
+                        window.open(link, '_blank', 'noopener,noreferrer')
+                      }
+                    }}
+                  >
                     {content.image_cards?.[0]?.buttonText || "Shop Now"}
                   </button>
                 </div>
@@ -230,7 +242,15 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
             </div>
 
             {/* Image 2 */}
-            <div className="relative w-full aspect-[4/3] overflow-hidden rounded-lg group">
+            <div 
+              className="relative w-full aspect-[4/3] overflow-hidden rounded-lg group cursor-pointer"
+              onClick={() => {
+                const link = content.image_cards?.[1]?.buttonLink
+                if (link) {
+                  window.open(link, '_blank', 'noopener,noreferrer')
+                }
+              }}
+            >
               {content.image_cards?.[1]?.image ? (
                 <Image
                   src={content.image_cards?.[1]?.image}
@@ -252,7 +272,16 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
                   <p className="text-sm text-gray-200 mb-3 font-modern">
                     {content.image_cards?.[1]?.text || "Elegant designs for peaceful sleep"}
                   </p>
-                  <button className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors duration-300">
+                  <button 
+                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors duration-300"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      const link = content.image_cards?.[1]?.buttonLink
+                      if (link) {
+                        window.open(link, '_blank', 'noopener,noreferrer')
+                      }
+                    }}
+                  >
                     {content.image_cards?.[1]?.buttonText || "Shop Now"}
                   </button>
                 </div>
@@ -260,7 +289,15 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
             </div>
 
             {/* Image 3 */}
-            <div className="relative w-full aspect-[4/3] overflow-hidden rounded-lg group">
+            <div 
+              className="relative w-full aspect-[4/3] overflow-hidden rounded-lg group cursor-pointer"
+              onClick={() => {
+                const link = content.image_cards?.[2]?.buttonLink
+                if (link) {
+                  window.open(link, '_blank', 'noopener,noreferrer')
+                }
+              }}
+            >
               {content.image_cards?.[2]?.image ? (
                 <Image
                   src={content.image_cards?.[2]?.image}
@@ -282,7 +319,16 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
                   <p className="text-sm text-gray-200 mb-3 font-modern">
                     {content.image_cards?.[2]?.text || "Ultimate comfort and support"}
                   </p>
-                  <button className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors duration-300">
+                  <button 
+                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors duration-300"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      const link = content.image_cards?.[2]?.buttonLink
+                      if (link) {
+                        window.open(link, '_blank', 'noopener,noreferrer')
+                      }
+                    }}
+                  >
                     {content.image_cards?.[2]?.buttonText || "Shop Now"}
                   </button>
                 </div>
@@ -290,7 +336,15 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
             </div>
 
             {/* Image 4 */}
-            <div className="relative w-full aspect-[4/3] overflow-hidden rounded-lg group">
+            <div 
+              className="relative w-full aspect-[4/3] overflow-hidden rounded-lg group cursor-pointer"
+              onClick={() => {
+                const link = content.image_cards?.[3]?.buttonLink
+                if (link) {
+                  window.open(link, '_blank', 'noopener,noreferrer')
+                }
+              }}
+            >
               {content.image_cards?.[3]?.image ? (
                 <Image
                   src={content.image_cards?.[3]?.image}
@@ -312,7 +366,16 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
                   <p className="text-sm text-gray-200 mb-3 font-modern">
                     {content.image_cards?.[3]?.text || "Complete your perfect setup"}
                   </p>
-                  <button className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors duration-300">
+                  <button 
+                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors duration-300"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      const link = content.image_cards?.[3]?.buttonLink
+                      if (link) {
+                        window.open(link, '_blank', 'noopener,noreferrer')
+                      }
+                    }}
+                  >
                     {content.image_cards?.[3]?.buttonText || "Shop Now"}
                   </button>
                 </div>

@@ -2,9 +2,18 @@ import { notFound } from "next/navigation"
 import { headers } from "next/headers"
 import Image from "next/image"
 import { Check, Star } from "lucide-react"
-import { ProductDetailHappy } from "@/components/product-detail-happy"
-import { ProductGridNew } from "@/components/product-grid-new"
 import { Suspense } from "react"
+import dynamic from "next/dynamic"
+import { ProductPageSkeleton } from "@/components/product-page-skeleton"
+
+// Lazy load heavy components
+const ProductDetailHappy = dynamic(() => import("@/components/product-detail-happy").then(mod => ({ default: mod.ProductDetailHappy })), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-96 rounded-lg" />
+})
+
+const ProductGridNew = dynamic(() => import("@/components/product-grid-new").then(mod => ({ default: mod.ProductGridNew })), {
+  loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-lg" />
+})
 
 // Lazy load components for better performance
 const LazyReviewsSection = ({ productDetail }: { productDetail: any }) => (
@@ -192,10 +201,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
     ? process.env.NEXT_PUBLIC_BASE_URL
     : `${protocol}://${host}`
 
-  // OPTIMIZATION: Make all API calls parallel instead of sequential
-  const [productResponse, variantsResponse, relatedProductsResponse] = await Promise.allSettled([
+  // OPTIMIZATION: Only fetch essential data initially
+  const [productResponse, relatedProductsResponse] = await Promise.allSettled([
     fetch(`${baseUrl}/api/products/${id}`),
-    fetch(`${baseUrl}/api/variants?productId=${id}`),
     fetch(`${baseUrl}/api/products/category/${category}`)
   ])
 
@@ -210,35 +218,15 @@ export default async function ProductDetailPage({ params }: PageProps) {
     }
   }
 
-  // Handle variants data
-  if (product?.id && variantsResponse.status === 'fulfilled' && variantsResponse.value.ok) {
-    try {
-      const vData = await variantsResponse.value.json()
-      const directVariants = Array.isArray(vData.variants) ? vData.variants : []
-      const normalized = directVariants.map((v: any) => ({
-        sku: v.sku,
-        originalPrice: v.original_price,
-        currentPrice: v.current_price,
-        color: v.color,
-        depth: v.depth,
-        firmness: v.firmness,
-        size: v.size,
-        // Add dimension fields
-        length: v.length,
-        width: v.width,
-        height: v.height,
-        availability: v.availability,
-        // Add variant image
-        variant_image: v.variant_image
-      }))
-      product = { ...product, variants: normalized }
-    } catch (e) {
-      console.warn('[Product Detail Page] variants parsing failed:', e)
-    }
-  }
+  // Variants are now included in the main product query
 
   if (!product) {
     notFound()
+  }
+
+  // Show skeleton while loading
+  if (!product.id) {
+    return <ProductPageSkeleton />
   }
 
   // Handle related products

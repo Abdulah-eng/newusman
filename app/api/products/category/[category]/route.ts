@@ -17,7 +17,6 @@ export async function GET(
     const features = searchParams.getAll('features')
 
     // OPTIMIZATION: Add caching headers for better performance
-    // No caching - always fetch fresh data
 
     // Handle special cases for kids and sales categories
     if (category === 'kids') {
@@ -183,7 +182,9 @@ export async function GET(
         totalPages: Math.ceil((totalCount || 0) / limit)
       }, {
         headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'public, s-maxage=300',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=300'
         }
       })
     }
@@ -360,7 +361,9 @@ export async function GET(
         totalPages: Math.ceil((totalCount || 0) / limit)
       }, {
         headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'public, s-maxage=300',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=300'
         }
       })
     }
@@ -565,7 +568,9 @@ export async function GET(
       totalPages: Math.ceil((totalCount || 0) / limit)
     }, {
       headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'public, s-maxage=300',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=300'
       }
     })
 
