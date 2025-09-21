@@ -1,5 +1,3 @@
-"use client"
-
 import { Suspense } from "react"
 import { ProductsLayout } from "@/components/products-layout"
 import type { Metadata } from 'next'
