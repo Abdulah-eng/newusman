@@ -421,21 +421,14 @@ export function ProductDetailCard({ product }: ProductDetailCardProps) {
               <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                 <ShieldCheck className="h-5 w-5 text-green-600" />
                 <div>
-                  <div className="font-semibold text-green-900">100-Day Trial</div>
+                  <div className="font-semibold text-green-900">14-Night Trial</div>
                   <div className="text-sm text-green-700">Try risk-free</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                <TruckIcon className="h-5 w-5 text-blue-600" />
-                <div>
-                  <div className="font-semibold text-blue-900">Free Delivery</div>
-                  <div className="text-sm text-blue-700">Oklahoma & surrounding areas</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
                 <Shield className="h-5 w-5 text-purple-600" />
                 <div>
-                  <div className="font-semibold text-purple-900">10-Year Warranty</div>
+                  <div className="font-semibold text-purple-900">1-Year Warranty</div>
                   <div className="text-sm text-purple-700">Full coverage included</div>
                 </div>
               </div>

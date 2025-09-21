@@ -308,13 +308,13 @@ export function CascadeMattressPage() {
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
                   <Clock className="h-6 w-6 text-green-600" />
                 </div>
-                <div className="text-sm font-medium text-gray-900">100-Night Trial</div>
+                <div className="text-sm font-medium text-gray-900">14-Night Trial</div>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
                   <Shield className="h-6 w-6 text-purple-600" />
                 </div>
-                <div className="text-sm font-medium text-gray-900">10-Year Warranty</div>
+                <div className="text-sm font-medium text-gray-900">1-Year Warranty</div>
               </div>
             </div>
 

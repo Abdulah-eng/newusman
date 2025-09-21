@@ -11,6 +11,7 @@ import { useCart } from "@/lib/cart-context"
 import { useWishlist } from "@/lib/wishlist-context"
 import { getFeatureIcon } from "@/lib/icon-mapping"
 import { useState } from "react"
+import { ImageLoadingText } from "@/components/loading-text"
 
 interface Product {
   id: string
@@ -107,6 +108,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const { dispatch } = useCart()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
   const [selectedImage, setSelectedImage] = useState(0)
+  const [imageLoading, setImageLoading] = useState(true)
   const categoryForLink = product.category || 'mattresses'
 
   const safeProduct = {
@@ -440,7 +442,8 @@ export function ProductCard({ product }: ProductCardProps) {
         <CardContent className="p-6 pr-0">
           {/* Product Image - Moved Up and Made Larger */}
           <div className="relative mb-2 -mx-6 -mt-6">
-            <div className="relative w-full h-64 bg-gray-100 overflow-hidden">
+            <div className="relative w-full h-64 bg-white overflow-hidden">
+              {imageLoading && <ImageLoadingText />}
               <Image
                 src={safeProduct.images?.[selectedImage] || safeProduct.image || '/mattress-image.svg'}
                 alt={safeProduct.name}
@@ -451,6 +454,8 @@ export function ProductCard({ product }: ProductCardProps) {
                 loading="lazy"
                 placeholder="blur"
                 blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                onLoad={() => setImageLoading(false)}
+                onError={() => setImageLoading(false)}
               />
             </div>
             

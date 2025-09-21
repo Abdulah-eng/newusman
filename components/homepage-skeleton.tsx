@@ -1,6 +1,9 @@
+import { PageLoadingText } from "@/components/loading-text"
+
 export function HomepageSkeleton() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50">
+      <PageLoadingText />
       {/* Hero Section Skeleton */}
       <div className="relative h-96 bg-gray-200 animate-pulse mb-8">
         <div className="absolute inset-0 bg-gradient-to-r from-gray-200 to-gray-300"></div>

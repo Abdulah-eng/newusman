@@ -1,18 +1,19 @@
 import { notFound } from "next/navigation"
 import { headers } from "next/headers"
 import Image from "next/image"
-import { Check, Star } from "lucide-react"
+import { Star } from "lucide-react"
 import { Suspense } from "react"
 import dynamic from "next/dynamic"
 import { ProductPageSkeleton } from "@/components/product-page-skeleton"
+import { CardLoadingText } from "@/components/loading-text"
 
 // Lazy load heavy components
 const ProductDetailHappy = dynamic(() => import("@/components/product-detail-happy").then(mod => ({ default: mod.ProductDetailHappy })), {
-  loading: () => <div className="animate-pulse bg-gray-200 h-96 rounded-lg" />
+  loading: () => <CardLoadingText className="h-96" />
 })
 
 const ProductGridNew = dynamic(() => import("@/components/product-grid-new").then(mod => ({ default: mod.ProductGridNew })), {
-  loading: () => <div className="animate-pulse bg-gray-200 h-64 rounded-lg" />
+  loading: () => <CardLoadingText className="h-64" />
 })
 
 // Lazy load components for better performance
@@ -356,20 +357,6 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
 
 
-        {/* Reasons to buy */}
-        {(product.reasonsToBuy || product.reasons_to_buy)?.length > 0 && (
-          <section className="mt-10 bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-2xl font-bold text-blue-900 mb-4">Reasons to buy</h3>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {(product.reasonsToBuy || product.reasons_to_buy || []).map((reason: string, idx: number) => (
-                <li key={`reason-${idx}`} className="flex items-start gap-2 text-blue-900/80">
-                  <Check className="h-4 w-4 text-green-600 mt-0.5" />
-                  <span className="font-medium">{reason}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
 
         {/* Four blocks below hero with image + content */}
         {(product.below_hero_sections)?.length > 0 && (

@@ -1666,6 +1666,14 @@ export default function AdminPage() {
                 Header Dropdowns
               </Button>
             </Link>
+            <Link href="/admin/promotional-banners">
+              <Button variant="outline" className="bg-white hover:bg-gray-50">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2M7 4h10M7 4l-1 16h12l-1-16M10 9v6M14 9v6" />
+                </svg>
+                Promotional Banners
+              </Button>
+            </Link>
             <Link href="/admin/homepage">
               <Button variant="outline" className="bg-white hover:bg-gray-50">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -21,6 +21,9 @@ export async function GET() {
 
     console.log('🔍 Homepage Content API - Raw data:', data)
     console.log('🔍 Homepage Content API - Transformed data:', transformedData)
+    console.log('🔍 Homepage Content API - Deal of day:', transformedData.deal_of_day)
+    console.log('🔍 Homepage Content API - Deal of day product cards:', transformedData.deal_of_day?.productCards)
+    console.log('🔍 Homepage Content API - Deal of day product IDs:', transformedData.deal_of_day?.productIds)
     console.log('🔍 Homepage Content API - Sofa types:', transformedData.sofa_types)
     console.log('🔍 Homepage Content API - Bedroom inspiration:', transformedData.bedroom_inspiration)
     

@@ -9,12 +9,13 @@ import { Check, Star, Heart, MessageCircle, Shield, ChevronDown, ChevronUp, Shop
 import Image from "next/image"
 
 import { useCart } from "@/lib/cart-context"
-import { getFeatureIcon } from "@/lib/icon-mapping"
+import { getFeatureIcon, getSmartIcon } from "@/lib/icon-mapping"
 
 import { BasketSidebar } from "@/components/basket-sidebar"
 import { SizeSelectionModal } from "@/components/size-selection-modal"
 import { ColorSelectionModal } from "@/components/color-selection-modal"
 import { ImageMagnifier } from "@/components/image-magnifier"
+import { ImageLoadingText } from "@/components/loading-text"
 
 
 
@@ -220,6 +221,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   const router = useRouter()
   const [selectedImage, setSelectedImage] = useState(product.images && product.images.length ? product.images[0] : product.image)
   const [modalImageIndex, setModalImageIndex] = useState(0)
+  const [mainImageLoading, setMainImageLoading] = useState(true)
   const [selectedColor, setSelectedColor] = useState("")
   const [quantity, setQuantity] = useState(1)
   const [imageModalOpen, setImageModalOpen] = useState(false)
@@ -1549,9 +1551,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {productFeatures.map(({ label, Icon }, index) => (
                         <div key={index} className="flex items-center gap-2 min-w-0">
-                        <div className="w-4 h-4 text-orange-500 flex-shrink-0">
-                          <Icon className="h-4 w-4" />
-                          </div>
+                        <div className="text-orange-500" style={{ color: '#f97316' }}>
+                          <Icon />
+                        </div>
                         <span className="text-sm text-gray-700 break-words">{label}</span>
                         </div>
                     ))}
@@ -1813,7 +1815,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
             {/* Main Large Image */}
 
             <div 
-              className="relative w-full h-96 lg:h-[28rem] xl:h-[32rem] rounded-xl overflow-hidden bg-gray-50 cursor-pointer mb-4 flex items-center justify-center group" 
+              className="relative w-full h-96 lg:h-[28rem] xl:h-[32rem] rounded-xl overflow-hidden bg-white cursor-pointer mb-4 flex items-center justify-center group" 
               onClick={() => {
               const currentIndex = gallery.findIndex(img => img === selectedImage);
               setModalImageIndex(currentIndex >= 0 ? currentIndex : 0);
@@ -1838,6 +1840,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
               role="button"
               aria-label={`View ${product.name} image gallery`}
             >
+              {mainImageLoading && <ImageLoadingText />}
               <Image 
                 src={selectedImage || product.image || "/placeholder.svg"} 
                 alt={product.name} 
@@ -1848,10 +1851,12 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                 quality={85}
                 placeholder="blur"
                 blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                onLoad={() => setMainImageLoading(false)}
                 onError={(e) => {
                   console.error('Image failed to load:', e)
                   const target = e.target as HTMLImageElement
                   target.src = "/placeholder.svg"
+                  setMainImageLoading(false)
                 }}
               />
 
@@ -2095,19 +2100,16 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                 {(product.customReasons && product.customReasons.length > 0) ? (
 
-                  product.customReasons.map((reason, index) => (
+                  product.customReasons.map((reason, index) => {
 
+                    const IconComponent = getSmartIcon(reason, 'sm')
+
+                    return (
                     <div key={index} className="flex items-start gap-3">
 
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-
-                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-
-                        </svg>
-
-                      </div>
+                        <div className="text-orange-500" style={{ color: '#f97316' }}>
+                          <IconComponent />
+                        </div>
 
                       <div className="min-w-0 flex-1">
 
@@ -2122,110 +2124,36 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                       </div>
 
                     </div>
-
-                  ))
+                    )
+                  })
 
                 ) : (
 
                   <>
 
                     {/* Fallback Reasons */}
+                    {[
+                      "Premium quality pocket spring construction",
+                      "Advanced memory foam comfort layers", 
+                      "Superior edge-to-edge support",
+                      "Temperature regulating technology",
+                      "1-year warranty for peace of mind",
+                      "Hypoallergenic materials"
+                    ].map((reason, index) => {
+                      const IconComponent = getSmartIcon(reason, 'sm')
+                      
+                      return (
+                        <div key={index} className="flex items-start gap-3">
 
-                    <div className="flex items-start gap-3">
+                          <div className="text-orange-500" style={{ color: '#f97316' }}>
+                            <IconComponent />
+                          </div>
 
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-
-                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-
-                        </svg>
-
-                      </div>
-
-                      <span className="text-sm sm:text-base text-gray-700 leading-relaxed">Premium quality pocket spring construction</span>
-
-                    </div>
-
-                    <div className="flex items-start gap-3">
-
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-
-                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-
-                        </svg>
-
-                      </div>
-
-                      <span className="text-sm sm:text-base text-gray-700 leading-relaxed">Advanced memory foam comfort layers</span>
+                          <span className="text-sm sm:text-base text-gray-700 leading-relaxed">{reason}</span>
 
                     </div>
-
-                    <div className="flex items-start gap-3">
-
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-
-                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-
-                        </svg>
-
-                      </div>
-
-                      <span className="text-sm sm:text-base text-gray-700 leading-relaxed">Superior edge-to-edge support</span>
-
-                    </div>
-
-                    <div className="flex items-start gap-3">
-
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-
-                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-
-                        </svg>
-
-                      </div>
-
-                      <span className="text-sm sm:text-base text-gray-700 leading-relaxed">Temperature regulating technology</span>
-
-                    </div>
-
-                    <div className="flex items-start gap-3">
-
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-
-                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-
-                        </svg>
-
-                      </div>
-
-                      <span className="text-sm sm:text-base text-gray-700 leading-relaxed">10-year warranty for peace of mind</span>
-
-                    </div>
-
-                    <div className="flex items-start gap-3">
-
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-
-                        <svg className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-
-                        </svg>
-
-                      </div>
-
-                      <span className="text-sm sm:text-base text-gray-700 leading-relaxed">100-night sleep trial guarantee</span>
-
-                    </div>
+                      )
+                    })}
 
                   </>
 
@@ -2241,17 +2169,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
             <div className="p-4 sm:p-6 lg:p-8 border-b border-gray-100">
 
-                              <div className="flex items-center gap-3 mb-4 sm:mb-6">
-
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-500 rounded-full flex items-center justify-center">
-
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
-
-                    </svg>
-
-                  </div>
+                              <div className="mb-4 sm:mb-6">
 
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Features you'll love</h2>
 
@@ -2527,8 +2445,10 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                       <div key={`${label}-${idx}`} className="text-center min-w-0">
 
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 text-orange-500 flex items-center justify-center">
-                          {IconComp()}
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 flex items-center justify-center">
+                          <div className="text-orange-500">
+                            {IconComp()}
+                          </div>
                         </div>
                         {/* Small text below icon */}
                         {(product as any).reasonsToLoveSmalltext?.[idx] && (
@@ -2631,9 +2551,11 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                     return (
                       <div key={`fallback-${feature.label}-${idx}`} className="text-center min-w-0">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 text-orange-500 flex items-center justify-center">
-                          <feature.Icon />
-                  </div>
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 flex items-center justify-center">
+                          <div className="text-orange-500">
+                            <feature.Icon />
+                          </div>
+                        </div>
                         {/* Small text below icon for fallback features */}
                         {(product as any).reasonsToLoveSmalltext?.[idx] && (
                           <p className="text-xs text-gray-500 mb-2 leading-relaxed">{(product as any).reasonsToLoveSmalltext[idx]}</p>
@@ -3114,7 +3036,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                                 {paragraph.image && (
 
-                                  <div className="relative h-80 lg:h-96 xl:h-[28rem] rounded-xl overflow-hidden bg-gray-100 mx-auto max-w-3xl lg:max-w-4xl">
+                                  <div className="relative h-80 lg:h-96 xl:h-[28rem] rounded-xl overflow-hidden bg-white mx-auto max-w-3xl lg:max-w-4xl">
 
                                     <img 
 
@@ -4324,9 +4246,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {productFeatures.map(({ label, Icon }, index) => (
                         <div key={index} className="flex items-center gap-2 min-w-0">
-                        <div className="w-4 h-4 text-orange-500 flex-shrink-0">
-                          <Icon className="h-4 w-4" />
-                          </div>
+                        <div className="text-orange-500" style={{ color: '#f97316' }}>
+                          <Icon />
+                        </div>
                         <span className="text-sm text-gray-700 break-words">{label}</span>
                         </div>
                     ))}

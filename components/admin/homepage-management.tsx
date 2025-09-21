@@ -1956,15 +1956,11 @@ export function HomepageManagement() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700 font-modern">Free Delivery</span>
+                    <span className="text-sm text-gray-700 font-modern">14-Night Trial</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700 font-modern">100-Night Trial</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-700 font-modern">10-Year Warranty</span>
+                    <span className="text-sm text-gray-700 font-modern">1-Year Warranty</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>

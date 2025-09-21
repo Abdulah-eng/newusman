@@ -8,9 +8,10 @@ import Header from "@/components/header"
 import { TrustBadgesSection } from "@/components/trust-badges-section"
 import { Footer } from "@/components/footer"
 import { CartNotificationWrapper } from "@/components/cart-notification-wrapper"
-import { AuthPopupWrapper } from "@/components/auth-popup-wrapper"
 import { PerformanceMonitor } from "@/components/performance-monitor"
 import { HydrationBoundary } from "@/components/hydration-boundary"
+import { PopupCoordinator } from "@/components/popup-coordinator"
+import Chatbot from "@/components/chatbot"
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -66,7 +67,8 @@ export default function RootLayout({
         <link rel="icon" href="/favicon-32x32.png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
-        <style>{`
+        <style dangerouslySetInnerHTML={{
+          __html: `
 html {
   font-family: ${outfit.style.fontFamily};
   --font-inter: ${inter.variable};
@@ -74,7 +76,8 @@ html {
   --font-outfit: ${outfit.variable};
   --font-playfair: ${playfair.variable};
 }
-        `}</style>
+          `
+        }} />
       </head>
       <body className={`${inter.variable} ${poppins.variable} ${outfit.variable} ${playfair.variable}`} suppressHydrationWarning={true}>
         <HydrationBoundary>
@@ -85,8 +88,9 @@ html {
                 <TrustBadgesSection />
                 {children}
                 <Footer />
-                <CartNotificationWrapper />
-                <AuthPopupWrapper />
+                    <CartNotificationWrapper />
+                    <PopupCoordinator />
+                    <Chatbot />
                 <PerformanceMonitor />
               </WishlistProvider>
             </CartProvider>

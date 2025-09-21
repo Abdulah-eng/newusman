@@ -673,15 +673,11 @@ export default function CheckoutPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-center">
                     <CheckCircle className="h-8 w-8 text-orange-600 mr-2" />
-                    <span className="font-semibold text-gray-900">100-Night Trial</span>
+                    <span className="font-semibold text-gray-900">14-Night Trial</span>
                   </div>
                   <div className="flex items-center justify-center">
                     <Shield className="h-8 w-8 text-orange-600 mr-2" />
-                    <span className="font-semibold text-gray-900">10-Year Warranty</span>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <Truck className="h-8 w-8 text-orange-600 mr-2" />
-                    <span className="font-semibold text-gray-900">Free Delivery</span>
+                    <span className="font-semibold text-gray-900">1-Year Warranty</span>
                   </div>
                 </div>
               </CardContent>

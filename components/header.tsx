@@ -9,6 +9,7 @@ import { Sora } from 'next/font/google'
 import { useCart } from "@/lib/cart-context"
 import { useWishlist } from "@/lib/wishlist-context"
 import { usePathname } from 'next/navigation'
+import PromotionalBanners from '@/components/promotional-banners'
 
 const sora = Sora({ subsets: ['latin'], weight: ['800'] })
 
@@ -544,67 +545,7 @@ export default function Header() {
               onMouseLeave={() => setSalesDropdownOpen(false)}
             >
               <div className="w-full px-4 py-6">
-                <div className="grid grid-cols-3 gap-8 max-w-7xl mx-auto">
-                  {/* Flash Sale Image */}
-                  <div className="relative group cursor-pointer">
-                    <div className="relative overflow-hidden rounded-xl shadow-lg">
-                      <img 
-                        src="/clearance.png" 
-                        alt="Flash Sale" 
-                        className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                      <div className="absolute bottom-4 left-4 text-white">
-                        <h3 className="text-xl font-bold mb-2">FLASH SALE</h3>
-                        <p className="text-base font-semibold">Up to 70% Off</p>
-                        <p className="text-xs opacity-90">Limited Time Only</p>
-                      </div>
-                      <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full font-bold text-xs">
-                        HOT DEAL
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Clearance Items Image */}
-                  <div className="relative group cursor-pointer">
-                    <div className="relative overflow-hidden rounded-xl shadow-lg">
-                      <img 
-                        src="/secondbanner.jpg" 
-                        alt="Clearance Items" 
-                        className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                      <div className="absolute bottom-4 left-4 text-white">
-                        <h3 className="text-xl font-bold mb-2">CLEARANCE</h3>
-                        <p className="text-base font-semibold">Up to 60% Off</p>
-                        <p className="text-xs opacity-90">While Stocks Last</p>
-                      </div>
-                      <div className="absolute top-4 right-4 bg-orange-500 text-white px-3 py-1 rounded-full font-bold text-xs">
-                        SAVE BIG
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* End of Season Image */}
-                  <div className="relative group cursor-pointer">
-                    <div className="relative overflow-hidden rounded-xl shadow-lg">
-                      <img 
-                        src="/banner.jpg" 
-                        alt="End of Season" 
-                        className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                      <div className="absolute bottom-4 left-4 text-white">
-                        <h3 className="text-xl font-bold mb-2">END OF SEASON</h3>
-                        <p className="text-base font-semibold">Up to 50% Off</p>
-                        <p className="text-xs opacity-90">Final Reductions</p>
-                      </div>
-                      <div className="absolute top-4 right-4 bg-blue-500 text-white px-3 py-1 rounded-full font-bold text-xs">
-                        LAST CHANCE
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <PromotionalBanners />
                 
                 {/* View More Button */}
                 <div className="text-center mt-6">

@@ -50,6 +50,11 @@ export function DealOfTheDay() {
   // Fetch deal products when content changes
   useEffect(() => {
     const fetchDealProducts = async () => {
+      console.log('🔍 DealOfTheDay - Content received:', content)
+      console.log('🔍 DealOfTheDay - Deal of day data:', content.deal_of_day)
+      console.log('🔍 DealOfTheDay - Product cards:', content.deal_of_day?.productCards)
+      console.log('🔍 DealOfTheDay - Product IDs:', content.deal_of_day?.productIds)
+      
       // Check if we have product cards with individual data
       if (content.deal_of_day?.productCards?.length > 0) {
         try {
@@ -104,7 +109,39 @@ export function DealOfTheDay() {
             // Set all products for the grid
             setDealProducts(validProducts)
           } else {
-            console.error('Failed to fetch bulk products')
+            console.error('Failed to fetch bulk products, trying fallback method')
+            // Fallback to individual product fetching
+            const productPromises = productIds.map(async (productId: string) => {
+              try {
+                const response = await fetch(`/api/products/${productId}`)
+                if (response.ok) {
+                  const data = await response.json()
+                  return data.product
+                }
+              } catch (error) {
+                console.error('Error fetching individual product:', productId, error)
+              }
+              return null
+            })
+
+            const products = await Promise.all(productPromises)
+            const validProducts = products.filter(Boolean)
+            
+            // Map products with custom data from product cards
+            const mappedProducts = validProducts.map((product: any) => {
+              const productCard = content.deal_of_day.productCards.find((card: any) => card.productId === product.id)
+              return {
+                ...product,
+                customDescription: productCard?.description,
+                customPercentageOff: productCard?.percentageOff,
+                customImage: productCard?.customImage
+              }
+            }).filter(Boolean)
+            
+            if (mappedProducts.length > 0) {
+              setMainDealProduct(mappedProducts[0])
+            }
+            setDealProducts(mappedProducts)
           }
         } catch (error) {
           console.error('Error fetching deal products:', error)
@@ -465,15 +502,11 @@ export function DealOfTheDay() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-700 font-modern">Free Delivery</span>
+                  <span className="text-sm text-gray-700 font-modern">14-Night Trial</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-700 font-modern">100-Night Trial</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-700 font-modern">10-Year Warranty</span>
+                  <span className="text-sm text-gray-700 font-modern">1-Year Warranty</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>

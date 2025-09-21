@@ -4,13 +4,17 @@ import { supabase } from '@/lib/supabaseClient'
 export async function POST(request: NextRequest) {
   try {
     const { productIds } = await request.json()
+    
+    console.log('🔍 Bulk API - Received product IDs:', productIds)
 
     if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
+      console.log('🔍 Bulk API - Invalid product IDs array')
       return NextResponse.json({ error: 'Product IDs array is required' }, { status: 400 })
     }
 
     // Limit to prevent abuse
     const limitedIds = productIds.slice(0, 20)
+    console.log('🔍 Bulk API - Limited IDs:', limitedIds)
 
     // Fetch all products in a single query with essential data only
     const { data: products, error } = await supabase
@@ -32,9 +36,11 @@ export async function POST(request: NextRequest) {
       .in('id', limitedIds)
 
     if (error) {
-      console.error('Error fetching bulk products:', error)
+      console.error('🔍 Bulk API - Error fetching bulk products:', error)
       return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 })
     }
+    
+    console.log('🔍 Bulk API - Fetched products count:', products?.length || 0)
 
     // Transform products to match frontend format
     const fileBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || ''
@@ -88,6 +94,8 @@ export async function POST(request: NextRequest) {
       }
     }) || []
 
+    console.log('🔍 Bulk API - Transformed products count:', transformedProducts?.length || 0)
+    
     return NextResponse.json({
       products: transformedProducts
     }, {
@@ -99,7 +107,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error in bulk products API:', error)
+    console.error('🔍 Bulk API - Error in bulk products API:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

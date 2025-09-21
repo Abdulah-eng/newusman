@@ -102,8 +102,8 @@ export function AuthPopup({ isOpen, onClose }: AuthPopupProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className="w-full max-w-md">
+    <div className="fixed inset-0 z-50 flex items-end justify-end p-4 bg-black bg-opacity-50">
+      <div className="w-full max-w-md mb-4 mr-4 sm:mb-6 sm:mr-6 animate-in slide-in-from-bottom-4 duration-300">
         <Card className="relative">
           <CardContent className="p-6">
             {/* Close Button */}
