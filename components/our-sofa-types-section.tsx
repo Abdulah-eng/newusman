@@ -245,6 +245,17 @@ export function OurSofaTypesSection() {
                 })}
               </div>
             </div>
+            
+            {/* View More Button */}
+            <div className="text-center mt-8">
+              <Link 
+                href="/sofas" 
+                className="inline-flex items-center px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200"
+              >
+                View More Sofas
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>

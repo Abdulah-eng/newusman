@@ -13,6 +13,7 @@ export function PopupCoordinator() {
   const pathname = usePathname()
 
   useEffect(() => {
+    // DISABLED: Popups are currently disabled per user request
     // Only show popups on the home page
     if (pathname !== '/') {
       // Reset popup states when not on home page
@@ -33,14 +34,15 @@ export function PopupCoordinator() {
       setPromotionalPopupShown(true)
     }
 
+    // DISABLED: Popups are currently disabled per user request
     // If neither popup has been shown, show auth popup first
-    if (!authShown && !promotionalShown) {
-      const timer = setTimeout(() => {
-        setShowAuthPopup(true)
-      }, 6000) // 6 seconds delay for auth popup
+    // if (!authShown && !promotionalShown) {
+    //   const timer = setTimeout(() => {
+    //     setShowAuthPopup(true)
+    //   }, 6000) // 6 seconds delay for auth popup
 
-      return () => clearTimeout(timer)
-    }
+    //   return () => clearTimeout(timer)
+    // }
   }, [pathname])
 
   const handleAuthPopupClose = () => {

@@ -46,6 +46,8 @@ export function FeaturedProducts({ selectedCategory: propSelectedCategory }: Fea
   const selectedCategory = propSelectedCategory || contextSelectedCategory || 'mattresses'
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [products, setProducts] = useState<Product[]>([])
+  const [fallbackProducts, setFallbackProducts] = useState<Product[]>([])
 
   const getCategoryFromSelection = (selection: string): string => {
     // Handle direct category names
@@ -69,10 +71,7 @@ export function FeaturedProducts({ selectedCategory: propSelectedCategory }: Fea
     return 'mattresses'
   }
 
-  const [products, setProducts] = useState<Product[]>([])
-  const [fallbackProducts, setFallbackProducts] = useState<Product[]>([])
-
-  // Fetch featured products from database
+  // Fetch featured products from Sleep Luxury API
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
       setLoading(true)
@@ -80,6 +79,52 @@ export function FeaturedProducts({ selectedCategory: propSelectedCategory }: Fea
       try {
         const category = getCategoryFromSelection(selectedCategory)
         console.log('FeaturedProducts - Selected category:', selectedCategory, 'Mapped to:', category)
+        
+        // First try to fetch from Sleep Luxury API
+        const sleepLuxuryResponse = await fetch('/api/sleep-luxury')
+        if (sleepLuxuryResponse.ok) {
+          const sleepLuxuryData = await sleepLuxuryResponse.json()
+          if (sleepLuxuryData.success && sleepLuxuryData.products[category]) {
+            // Transform Sleep Luxury products to match Product interface
+            const transformedProducts = sleepLuxuryData.products[category].map((dbProduct: any) => ({
+              id: dbProduct.id,
+              name: dbProduct.name,
+              brand: dbProduct.brand || 'Premium Brand',
+              brandColor: 'blue',
+              badge: 'Featured',
+              badgeColor: 'orange',
+              image: dbProduct.images?.[0] || '/mattress-image.svg',
+              rating: dbProduct.rating || 4.5,
+              reviewCount: dbProduct.review_count || 100,
+              firmness: dbProduct.firmnessScale || 'MEDIUM',
+              firmnessLevel: 6,
+              features: dbProduct.features?.slice(0, 3) || ['Premium Quality'],
+              originalPrice: dbProduct.original_price || dbProduct.current_price,
+              currentPrice: dbProduct.current_price,
+              savings: dbProduct.original_price ? dbProduct.original_price - dbProduct.current_price : 0,
+              freeDelivery: 'Tomorrow',
+              setupService: true,
+              setupCost: 49,
+              certifications: ['OEKO-TEX', 'Made in UK'],
+              sizes: ['Single', 'Double', 'King'],
+              selectedSize: 'King',
+              monthlyPrice: Math.floor(dbProduct.current_price / 12),
+              images: dbProduct.images || ['/mattress-image.svg'],
+              category: category,
+              type: 'Standard',
+              size: 'King Size',
+              comfortLevel: 'Medium',
+              inStore: true,
+              onSale: dbProduct.original_price > dbProduct.current_price,
+              price: dbProduct.current_price
+            }))
+            
+            setProducts(transformedProducts)
+            return
+          }
+        }
+        
+        // Fallback to original API if Sleep Luxury doesn't have products for this category
         const response = await fetch(`/api/products/category/${category}?limit=4`)
         if (!response.ok) {
           throw new Error('Failed to fetch featured products')

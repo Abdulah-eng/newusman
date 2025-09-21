@@ -10,7 +10,8 @@ import {
   BarChart3, 
   ShoppingCart,
   Users,
-  FileText
+  FileText,
+  Star
 } from 'lucide-react'
 
 const navItems = [
@@ -49,6 +50,12 @@ const navItems = [
     label: 'Homepage Content',
     icon: FileText,
     description: 'Manage homepage sections and content'
+  },
+  {
+    href: '/admin/sleep-luxury',
+    label: 'Sleep Luxury',
+    icon: Star,
+    description: 'Manage Sleep Luxury section products'
   },
   {
     href: '/admin/settings',
