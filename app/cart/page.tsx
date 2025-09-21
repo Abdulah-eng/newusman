@@ -6,6 +6,12 @@ import { Input } from "@/components/ui/input"
 import { Trash2, ShoppingCart, Shield, Truck, Clock, Star } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Shopping Cart - Your Items | Bedora Living',
+  description: 'Review your selected items in your shopping cart. Free delivery on orders over £50 at Bedora Living.',
+}
 
 export default function CartPage() {
   const { state, dispatch } = useCart()

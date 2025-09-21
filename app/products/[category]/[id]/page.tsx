@@ -6,6 +6,7 @@ import { Suspense } from "react"
 import dynamic from "next/dynamic"
 import { ProductPageSkeleton } from "@/components/product-page-skeleton"
 import { CardLoadingText } from "@/components/loading-text"
+import type { Metadata } from 'next'
 
 // Lazy load heavy components
 const ProductDetailHappy = dynamic(() => import("@/components/product-detail-happy").then(mod => ({ default: mod.ProductDetailHappy })), {
@@ -189,6 +190,60 @@ const LazyReviewsSection = ({ productDetail }: { productDetail: any }) => (
 
 interface PageProps {
   params: { category: string; id: string }
+}
+
+// Generate dynamic metadata for product pages
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { category, id } = await params
+  
+  try {
+    // Fetch product data for metadata
+    const hdrs = await headers()
+    const host = hdrs.get('host') || 'localhost:3000'
+    const protocol = host.includes('localhost') ? 'http' : 'https'
+    const baseUrl = `${protocol}://${host}`
+    
+    const response = await fetch(`${baseUrl}/api/products/${id}`, {
+      cache: 'no-store'
+    })
+    
+    if (!response.ok) {
+      console.log('Metadata generation - API call failed:', response.status, response.statusText)
+      return {
+        title: `${category.charAt(0).toUpperCase() + category.slice(1)} - Bedora Living`,
+        description: `Shop premium ${category} at Bedora Living. Quality furniture and bedding for your home.`
+      }
+    }
+    
+    const data = await response.json()
+    const product = data.product // The API returns { product: ... }
+    
+    console.log('Metadata generation - Product data:', {
+      hasProduct: !!product,
+      productName: product?.name,
+      productDescription: product?.description,
+      category
+    })
+    
+    // Ensure we have a valid product name
+    const productName = product?.name || 'Product'
+    
+    return {
+      title: `${productName} - Bedora Living`,
+      description: product?.description || `Shop ${productName} at Bedora Living. Premium quality ${category} with free delivery.`,
+      openGraph: {
+        title: `${productName} - Bedora Living`,
+        description: product?.description || `Shop ${productName} at Bedora Living. Premium quality ${category} with free delivery.`,
+        images: product?.images && product.images.length > 0 ? [product.images[0]] : [],
+      }
+    }
+  } catch (error) {
+    console.error('Error generating metadata:', error)
+    return {
+      title: `${category.charAt(0).toUpperCase() + category.slice(1)} - Bedora Living`,
+      description: `Shop premium ${category} at Bedora Living. Quality furniture and bedding for your home.`
+    }
+  }
 }
 
 export default async function ProductDetailPage({ params }: PageProps) {

@@ -3,6 +3,12 @@ import dynamic from "next/dynamic"
 import { HomepageSkeleton } from "@/components/homepage-skeleton"
 import { CategoryProvider } from "@/lib/category-context"
 import { CardLoadingText } from "@/components/loading-text"
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Bedora Living - Premium Mattresses & Bedroom Furniture',
+  description: 'Discover premium mattresses, beds, sofas, and bedroom furniture at Bedora Living. Free delivery, 14-night trial, and quality guaranteed.',
+}
 
 // Lazy load components for better performance
 const HeroSection = dynamic(() => import("@/components/hero-section"), {
