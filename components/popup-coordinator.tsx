@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { AuthPopup } from './auth-popup'
 import PromotionalPopup from './promotional-popup'
 
@@ -9,8 +10,17 @@ export function PopupCoordinator() {
   const [showPromotionalPopup, setShowPromotionalPopup] = useState(false)
   const [authPopupShown, setAuthPopupShown] = useState(false)
   const [promotionalPopupShown, setPromotionalPopupShown] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
+    // Only show popups on the home page
+    if (pathname !== '/') {
+      // Reset popup states when not on home page
+      setShowAuthPopup(false)
+      setShowPromotionalPopup(false)
+      return
+    }
+
     // Check if popups have been shown before in this session
     const authShown = sessionStorage.getItem('auth-popup-shown')
     const promotionalShown = sessionStorage.getItem('promotional-popup-shown')
@@ -31,7 +41,7 @@ export function PopupCoordinator() {
 
       return () => clearTimeout(timer)
     }
-  }, [])
+  }, [pathname])
 
   const handleAuthPopupClose = () => {
     setShowAuthPopup(false)
