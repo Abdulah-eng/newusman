@@ -1,6 +1,6 @@
 "use client"
 
-import { Bed, User, Grid, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Bed, User, Grid, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
@@ -236,8 +236,8 @@ export function BedroomInspirationSection() {
                   
                   return (
                     <div key={type.id} className="text-center flex-shrink-0 w-full md:w-1/3 px-4">
-                      {isDatabaseProduct ? (
-                        <Link href={`/products/${categoryForLink}/${type.id}`} className="block group" target="_blank" rel="noopener noreferrer">
+                       {isDatabaseProduct ? (
+                         <div className="block group">
                           <div className="relative mb-6">
                             <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden group-hover:shadow-lg transition-shadow duration-300">
                               <Image
@@ -264,10 +264,21 @@ export function BedroomInspirationSection() {
                             </h3>
                           </div>
                           
-                          <p className="text-gray-700 text-sm leading-relaxed font-modern">
-                            {type.description}
-                          </p>
-                        </Link>
+                           <p className="text-gray-700 text-sm leading-relaxed font-modern">
+                             {type.description}
+                           </p>
+                           <div className="mt-4 text-center">
+                             <Link 
+                               href={`/products/${categoryForLink}/${type.id}`}
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-2 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                             >
+                               Buy Now
+                               <ArrowRight className="w-4 h-4" />
+                             </Link>
+                           </div>
+                         </div>
                       ) : (
                         <div>
                           <div className="relative mb-6">
@@ -296,9 +307,20 @@ export function BedroomInspirationSection() {
                             </h3>
                           </div>
                           
-                          <p className="text-gray-700 text-sm leading-relaxed font-modern">
-                            {type.description}
-                          </p>
+                           <p className="text-gray-700 text-sm leading-relaxed font-modern">
+                             {type.description}
+                           </p>
+                           <div className="mt-4 text-center">
+                             <Link 
+                               href={`/products/beds/${type.id}`}
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-2 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                             >
+                               Buy Now
+                               <ArrowRight className="w-4 h-4" />
+                             </Link>
+                           </div>
                         </div>
                       )}
                     </div>
@@ -307,16 +329,7 @@ export function BedroomInspirationSection() {
               </div>
             </div>
             
-            {/* View More Button */}
-            <div className="text-center mt-8">
-              <Link 
-                href="/beds" 
-                className="inline-flex items-center px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors duration-200"
-              >
-                View More Beds
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Link>
-            </div>
+            {/* Removed single bottom Buy Now button as requested */}
           </div>
         </div>
       </section>

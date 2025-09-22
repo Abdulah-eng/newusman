@@ -96,9 +96,9 @@ export function FeaturedProducts({ selectedCategory: propSelectedCategory }: Fea
               image: dbProduct.images?.[0] || '/mattress-image.svg',
               rating: dbProduct.rating || 4.5,
               reviewCount: dbProduct.review_count || 100,
-              firmness: dbProduct.firmnessScale || 'MEDIUM',
+              firmness: dbProduct.firmness_scale || dbProduct.firmnessScale || 'MEDIUM',
               firmnessLevel: 6,
-              features: dbProduct.features?.slice(0, 3) || ['Premium Quality'],
+              features: (dbProduct.features || []).slice(0, 6),
               originalPrice: dbProduct.original_price || dbProduct.current_price,
               currentPrice: dbProduct.current_price,
               savings: dbProduct.original_price ? dbProduct.original_price - dbProduct.current_price : 0,
@@ -106,17 +106,25 @@ export function FeaturedProducts({ selectedCategory: propSelectedCategory }: Fea
               setupService: true,
               setupCost: 49,
               certifications: ['OEKO-TEX', 'Made in UK'],
-              sizes: ['Single', 'Double', 'King'],
-              selectedSize: 'King',
+              sizes: (dbProduct.variants || []).map((v: any) => v.size).filter(Boolean),
+              selectedSize: ((dbProduct.variants || [])[0]?.size) || 'King',
               monthlyPrice: Math.floor(dbProduct.current_price / 12),
               images: dbProduct.images || ['/mattress-image.svg'],
               category: category,
               type: 'Standard',
-              size: 'King Size',
+              size: ((dbProduct.variants || [])[0]?.size) || 'King Size',
               comfortLevel: 'Medium',
               inStore: true,
               onSale: dbProduct.original_price > dbProduct.current_price,
-              price: dbProduct.current_price
+              price: dbProduct.current_price,
+              variants: (dbProduct.variants || []).map((v: any) => ({
+                id: `${dbProduct.id}-${v.size}-${v.color || 'default'}`,
+                sku: '',
+                color: v.color,
+                size: v.size,
+                originalPrice: Number(v.original_price) || Number(v.current_price) || 0,
+                currentPrice: Number(v.current_price) || Number(v.original_price) || 0,
+              })),
             }))
             
             setProducts(transformedProducts)
@@ -144,7 +152,7 @@ export function FeaturedProducts({ selectedCategory: propSelectedCategory }: Fea
           reviewCount: dbProduct.reviewCount || 100,
           firmness: dbProduct.firmnessScale || 'MEDIUM',
           firmnessLevel: 6,
-          features: dbProduct.features?.slice(0, 3) || ['Premium Quality'],
+          features: dbProduct.features?.slice(0, 6) || ['Premium Quality'],
           originalPrice: dbProduct.variants?.[0]?.originalPrice || 500,
           currentPrice: dbProduct.variants?.[0]?.currentPrice || 450,
           savings: (dbProduct.variants?.[0]?.originalPrice || 500) - (dbProduct.variants?.[0]?.currentPrice || 450),
@@ -215,7 +223,16 @@ export function FeaturedProducts({ selectedCategory: propSelectedCategory }: Fea
   const displayProducts = products.length > 0 ? products : fallbackProducts
 
   return (
-    <section className="py-16 bg-gradient-to-br from-gray-50 via-white to-orange-50">
+    <section className="py-16 bg-gradient-to-br from-gray-50 via-white to-orange-50 relative">
+      {loading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-orange-500/90 backdrop-blur-sm"></div>
+          <div className="relative z-10 flex flex-col items-center">
+            <div className="w-20 h-20 border-8 border-white/40 border-t-white rounded-full animate-spin"></div>
+            <div className="mt-4 text-white text-lg font-semibold">Loading products...</div>
+          </div>
+        </div>
+      )}
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -239,6 +256,14 @@ export function FeaturedProducts({ selectedCategory: propSelectedCategory }: Fea
           {displayProducts.map((product) => (
             <div key={product.id} className="h-full">
               <ProductCard product={product} />
+              <a
+                href={`/products/${product.category || 'mattresses'}/${product.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center justify-center w-full px-4 py-2 rounded-2xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+              >
+                Buy Now
+              </a>
             </div>
           ))}
         </div>

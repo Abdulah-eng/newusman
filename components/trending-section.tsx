@@ -45,7 +45,7 @@ export function TrendingSection() {
           // Transform products to match TrendingItem interface
           const transformedItems = products.map((product: any) => ({
             id: product.id,
-            title: product.name || 'Premium Product',
+            title: product.name || product.headline || product.categories?.name || 'Premium Product',
             subtitle: product.long_description || product.headline || 'Discover amazing comfort and quality',
             image: product.images?.[0] || product.image || '/placeholder.jpg',
             href: `/products/${product.category || 'mattresses'}/${product.id}`,
@@ -59,6 +59,7 @@ export function TrendingSection() {
               `${Math.round(((product.originalPrice - product.currentPrice) / product.originalPrice) * 100)}% OFF` : 
               '25% OFF',
             features: product.features || ['Premium Quality', 'Comfort', 'Durability', 'Innovation'],
+            variants: product.variants || [],
             reviewCount: 150, // Fixed review count to prevent hydration mismatch
             freeDelivery: 'Tomorrow'
           }))
@@ -260,12 +261,21 @@ export function TrendingSection() {
               features: item.features || ['Premium Quality', 'Comfort', 'Durability'],
               badges: item.badges || [],
               href: item.href,
-              category: 'trending'
+              category: 'trending',
+              variants: item.variants || []
             }
             
             return (
               <div key={product.id} className="h-full">
                 <ProductCard product={product} />
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center justify-center w-full px-4 py-2 rounded-2xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+                >
+                  Buy Now
+                </a>
               </div>
             )
           })}

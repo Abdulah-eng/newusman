@@ -516,10 +516,8 @@ export function DealOfTheDay() {
 
               {/* CTA Buttons */}
               <div className="flex gap-4">
-                <Link href={`/products/${mainDealProduct.category || 'mattresses'}/${mainDealProduct.id}`} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" className="border-orange-400 text-orange-600 hover:bg-orange-50 px-6 py-3 text-lg font-semibold rounded-xl">
-                    View Deal
-                  </Button>
+                <Link href={`/products/${mainDealProduct.category || 'mattresses'}/${mainDealProduct.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-6 py-3 rounded-2xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300">
+                  Buy Now
                 </Link>
                 <Button 
                   onClick={() => addToCart(mainDealProduct)}
@@ -534,8 +532,8 @@ export function DealOfTheDay() {
           </div>
         </div>
 
-        {/* Additional Deals Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1">
+        {/* Additional Deals Grid - make 3 wider cards that fill width */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {dealProducts.slice(1, 5).map((product, index) => {
             const discount = product.originalPrice && product.currentPrice ? 
               calculateDiscount(product.currentPrice, product.originalPrice) : 
@@ -579,10 +577,8 @@ export function DealOfTheDay() {
                       </span>
                     )}
                   </div>
-                  <Link href={`/products/${product.category || 'mattresses'}/${product.id}`} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm" className="border-orange-300 text-orange-600 hover:bg-orange-50">
-                      View Deal
-                    </Button>
+                  <Link href={`/products/${product.category || 'mattresses'}/${product.id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-4 py-2 rounded-2xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5">
+                    Buy Now
                   </Link>
                 </div>
               </div>

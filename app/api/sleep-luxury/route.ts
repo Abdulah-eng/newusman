@@ -18,7 +18,8 @@ export async function GET() {
           firmness_scale,
           categories (name, slug),
           product_images (image_url),
-          product_variants (current_price, original_price, size, color)
+          product_variants (current_price, original_price, size, color),
+          product_features (feature_name)
         )
       `)
       .eq('is_active', true)
@@ -68,6 +69,7 @@ export async function GET() {
           original_price: Number.isFinite(minOriginalPrice) ? minOriginalPrice : 0,
           images: images.length > 0 ? images : ['/placeholder.jpg'],
           variants: variants,
+          features: (product.product_features || []).map((f: any) => f.feature_name).filter(Boolean),
           headline: product.headline || '',
           description: product.long_description || '',
           firmness_scale: product.firmness_scale || 'Medium'
