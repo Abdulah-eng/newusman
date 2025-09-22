@@ -393,7 +393,7 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             {/* Left Side - Title and Tagline */}
             <div className="space-y-2">
-              <h2 className="text-3xl md:text-4xl font-bold text-black font-display">Sleep Luxury, Every Night</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-black font-display">Handpicked Favourites</h2>
               <p className="text-lg text-gray-700 font-modern">Discover our most-loved collections</p>
             </div>
 

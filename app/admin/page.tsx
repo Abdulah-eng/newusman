@@ -1674,6 +1674,15 @@ export default function AdminPage() {
                 Promotional Banners
               </Button>
             </Link>
+            <Link href="/admin/promotional-popup">
+              <Button variant="outline" className="bg-white hover:bg-gray-50">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17a4 4 0 100-8 4 4 0 000 8z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Promotional Popup
+              </Button>
+            </Link>
             <Link href="/admin/homepage">
               <Button variant="outline" className="bg-white hover:bg-gray-50">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -38,12 +38,12 @@ export function Footer() {
               
               <div className="flex items-center text-gray-300">
                 <Mail className="h-4 w-4 mr-3 text-orange-400" />
-                <span className="text-sm">contact@davicishop.com</span>
+                <span className="text-sm">hello@bedoraliving.co.uk</span>
               </div>
               
               <div className="flex items-center text-gray-300">
                 <MapPin className="h-4 w-4 mr-3 text-orange-400" />
-                <span className="text-sm">Oklahoma City, OK</span>
+                <span className="text-sm">United Kingdom</span>
               </div>
             </div>
           </div>

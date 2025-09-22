@@ -11,9 +11,9 @@ export function PopupCoordinator() {
   const [authPopupShown, setAuthPopupShown] = useState(false)
   const [promotionalPopupShown, setPromotionalPopupShown] = useState(false)
   const pathname = usePathname()
+  const [popupSettings, setPopupSettings] = useState<{ enabled: boolean; title?: string; subtitle?: string; description?: string; button_text?: string; show_delay_ms?: number } | null>(null)
 
   useEffect(() => {
-    // DISABLED: Popups are currently disabled per user request
     // Only show popups on the home page
     if (pathname !== '/') {
       // Reset popup states when not on home page
@@ -21,6 +21,18 @@ export function PopupCoordinator() {
       setShowPromotionalPopup(false)
       return
     }
+
+    // Load settings
+    const load = async () => {
+      try {
+        const res = await fetch('/api/promotional-popup', { cache: 'no-store' })
+        const json = await res.json()
+        if (res.ok) setPopupSettings(json.settings)
+      } catch (e) {
+        console.error('PopupCoordinator: failed to load popup settings', e)
+      }
+    }
+    load()
 
     // Check if popups have been shown before in this session
     const authShown = sessionStorage.getItem('auth-popup-shown')
@@ -34,15 +46,15 @@ export function PopupCoordinator() {
       setPromotionalPopupShown(true)
     }
 
-    // DISABLED: Popups are currently disabled per user request
-    // If neither popup has been shown, show auth popup first
-    // if (!authShown && !promotionalShown) {
-    //   const timer = setTimeout(() => {
-    //     setShowAuthPopup(true)
-    //   }, 6000) // 6 seconds delay for auth popup
-
-    //   return () => clearTimeout(timer)
-    // }
+    // If enabled and neither popup has been shown, show auth popup first (optional) or directly promotional
+    if (!authShown && !promotionalShown) {
+      // Directly show promotional popup if enabled
+      const delay = popupSettings?.show_delay_ms ?? 3000
+      const timer = setTimeout(() => {
+        if (popupSettings?.enabled !== false) setShowPromotionalPopup(true)
+      }, delay)
+      return () => clearTimeout(timer)
+    }
   }, [pathname])
 
   const handleAuthPopupClose = () => {
@@ -73,7 +85,11 @@ export function PopupCoordinator() {
       <PromotionalPopup 
         isOpen={showPromotionalPopup}
         onClose={handlePromotionalPopupClose}
-        showDelay={0} // No delay since we control when to show it
+        showDelay={popupSettings?.show_delay_ms ?? 0}
+        title={popupSettings?.title}
+        subtitle={popupSettings?.subtitle}
+        description={popupSettings?.description}
+        buttonText={popupSettings?.button_text}
       />
     </>
   )

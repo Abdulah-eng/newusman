@@ -84,6 +84,7 @@ interface ProductSection {
 interface MattressCard {
   productId: string
   featureToShow: string
+  description?: string
 }
 
 interface SofaTypeCard {
@@ -238,7 +239,14 @@ export default function HomePageAdmin() {
               // Handle both old and new structure for backward compatibility
               if (item.content.mattressCards) {
                 console.log('🔍 Admin - Using new structure with mattress cards')
-                setMattressesSection(item.content)
+                setMattressesSection({
+                  ...item.content,
+                  mattressCards: (item.content.mattressCards || []).map((card: any) => ({
+                    productId: card.productId || '',
+                    featureToShow: card.featureToShow || '',
+                    description: card.description || ''
+                  }))
+                })
               } else {
                 console.log('🔍 Admin - Converting old structure to new structure')
                 // Convert old structure to new structure
@@ -247,7 +255,8 @@ export default function HomePageAdmin() {
                   description: item.content.description || '',
                   mattressCards: (item.content.productIds || []).map((id: string) => ({
                     productId: id,
-                    featureToShow: ''
+                    featureToShow: '',
+                    description: ''
                   }))
                 })
               }
@@ -1287,17 +1296,22 @@ export default function HomePageAdmin() {
                      </div>
                    </div>
                    
-                   <div className="mt-4">
-                     <div>
-                       <Label className="block mb-1">Description</Label>
-                       <Textarea
-                         value={mattressesSection.description}
-                         onChange={(e) => setMattressesSection(prev => ({ ...prev, description: e.target.value }))}
-                         placeholder="Enter mattress description"
-                         rows={3}
-                       />
-                     </div>
-                   </div>
+                  <div className="mt-4">
+                    <div>
+                      <Label className="block mb-1">Description</Label>
+                      <Textarea
+                        value={mattressCard.description || ''}
+                        onChange={(e) => setMattressesSection(prev => ({
+                          ...prev,
+                          mattressCards: prev.mattressCards.map((card, i) =>
+                            i === index ? { ...card, description: e.target.value } : card
+                          )
+                        }))}
+                        placeholder="Enter mattress description"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
                  </div>
                ))}
                
