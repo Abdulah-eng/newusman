@@ -12,6 +12,7 @@ import { PerformanceMonitor } from "@/components/performance-monitor"
 import { HydrationBoundary } from "@/components/hydration-boundary"
 import { PopupCoordinator } from "@/components/popup-coordinator"
 import Chatbot from "@/components/chatbot"
+import { SeoDefault } from '@/components/seo-default'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -84,6 +85,7 @@ html {
           <AuthProvider>
             <CartProvider>
               <WishlistProvider>
+                <SeoDefault />
                 <Header />
                 <TrustBadgesSection />
                 {children}
