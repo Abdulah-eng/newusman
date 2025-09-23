@@ -225,11 +225,9 @@ export function FeaturedProducts({ selectedCategory: propSelectedCategory }: Fea
   return (
     <section className="py-16 bg-gradient-to-br from-gray-50 via-white to-orange-50 relative">
       {loading && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-orange-500/90 backdrop-blur-sm"></div>
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-20 h-20 border-8 border-white/40 border-t-white rounded-full animate-spin"></div>
-            <div className="mt-4 text-white text-lg font-semibold">Loading products...</div>
+        <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+          <div className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-wide bg-gradient-to-r from-orange-400 via-red-500 to-orange-400 bg-clip-text text-transparent animate-pulse">
+            Loading...
           </div>
         </div>
       )}

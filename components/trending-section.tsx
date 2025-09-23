@@ -49,7 +49,7 @@ export function TrendingSection() {
             subtitle: product.long_description || product.headline || 'Discover amazing comfort and quality',
             image: product.images?.[0] || product.image || '/placeholder.jpg',
             href: `/products/${product.category || 'mattresses'}/${product.id}`,
-            category: product.categories?.name || 'Premium',
+            category: product.category || product.categories?.slug || 'mattresses',
             read_time: '5 min read',
             badge: 'Trending',
             rating: product.rating || 4.5,
@@ -59,7 +59,13 @@ export function TrendingSection() {
               `${Math.round(((product.originalPrice - product.currentPrice) / product.originalPrice) * 100)}% OFF` : 
               '25% OFF',
             features: product.features || ['Premium Quality', 'Comfort', 'Durability', 'Innovation'],
-            variants: product.variants || [],
+            variants: (product.variants || product.product_variants || []).map((v: any) => ({
+              sku: v.sku,
+              color: v.color,
+              size: v.size,
+              originalPrice: v.original_price ?? v.originalPrice ?? 0,
+              currentPrice: v.current_price ?? v.currentPrice ?? 0,
+            })),
             reviewCount: 150, // Fixed review count to prevent hydration mismatch
             freeDelivery: 'Tomorrow'
           }))
@@ -261,7 +267,7 @@ export function TrendingSection() {
               features: item.features || ['Premium Quality', 'Comfort', 'Durability'],
               badges: item.badges || [],
               href: item.href,
-              category: 'trending',
+              category: item.category || 'mattresses',
               variants: item.variants || []
             }
             

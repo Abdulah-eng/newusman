@@ -540,7 +540,7 @@ export function DealOfTheDay() {
               25 // Fixed discount to prevent hydration mismatch
             
             return (
-              <div key={product.id || index} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+              <div key={product.id || index} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border border-gray-100 h-full flex flex-col">
                 <div className="relative mb-4">
                   <Image
                     src={product.customImage || product.images?.[0] || product.image || "/placeholder.jpg"}
@@ -557,16 +557,16 @@ export function DealOfTheDay() {
                     {product.customPercentageOff || `${discount}% OFF`}
                   </Badge>
                 </div>
-                <h4 className="text-xl font-bold text-gray-900 mb-2 font-display">
+                <h4 className="text-xl font-bold text-gray-900 mb-2 font-display" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                   {product.name || `Product ${index + 1}`}
                 </h4>
-                <p className="text-gray-600 text-sm mb-3 font-modern">
+                <p className="text-gray-600 text-sm mb-3 font-modern min-h-[3.75rem]" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                   {product.customDescription || 
                    product.longDescription || 
                    product.long_description || 
                    "Premium quality product with exceptional features and comfort"}
                 </p>
-                <div className="flex items-center justify-between">
+                <div className="mt-auto flex items-center justify-between">
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-bold text-red-600 font-display">
                       {formatPrice(product.currentPrice || 0)}

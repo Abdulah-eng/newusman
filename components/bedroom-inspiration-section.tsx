@@ -259,12 +259,12 @@ export function BedroomInspirationSection() {
                             <div className="text-orange-500">
                               {type.icon}
                             </div>
-                            <h3 className="font-semibold text-black ml-2 text-lg font-display group-hover:text-orange-500 transition-colors duration-300">
+                            <h3 className="font-semibold text-black ml-2 text-lg font-display group-hover:text-orange-500 transition-colors duration-300" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                               {type.title}
                             </h3>
                           </div>
                           
-                           <p className="text-gray-700 text-sm leading-relaxed font-modern">
+                           <p className="text-gray-700 text-sm leading-relaxed font-modern" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                              {type.description}
                            </p>
                            <div className="mt-4 text-center">
@@ -302,12 +302,12 @@ export function BedroomInspirationSection() {
                             <div className="text-orange-500">
                               {type.icon}
                             </div>
-                            <h3 className="font-semibold text-black ml-2 text-lg font-display">
+                            <h3 className="font-semibold text-black ml-2 text-lg font-display" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                               {type.title}
                             </h3>
                           </div>
                           
-                           <p className="text-gray-700 text-sm leading-relaxed font-modern">
+                           <p className="text-gray-700 text-sm leading-relaxed font-modern" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                              {type.description}
                            </p>
                            <div className="mt-4 text-center">

@@ -26,14 +26,14 @@ export function Footer() {
             </p>
             
             <div className="space-y-4">
-              <Button variant="outline" className="w-full justify-start border-gray-600 text-white hover:bg-gray-700 hover:border-gray-500">
+              <Button className="w-full justify-center bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-md hover:shadow-lg">
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Live Chat Support
               </Button>
               
               <div className="flex items-center text-gray-300">
                 <Phone className="h-4 w-4 mr-3 text-orange-400" />
-                <span className="text-sm">(405) 564-0561</span>
+                <span className="text-sm">03301336323</span>
               </div>
               
               <div className="flex items-center text-gray-300">

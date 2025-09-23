@@ -209,7 +209,7 @@ export function MattressTypesSection() {
                 return (
                   <div key={type.id} className="text-center flex-shrink-0 w-full md:w-1/3 px-4">
                     {isDatabaseProduct ? (
-                      <div className="block group">
+                      <div className="block group h-full">
                         <div className="relative mb-6">
                           <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden group-hover:shadow-lg transition-shadow duration-300">
                             <Image
@@ -227,14 +227,14 @@ export function MattressTypesSection() {
                           </div>
                         </div>
                         
-                        <div className="flex items-center justify-center mb-3">
+                        <div className="flex items-center justify-center mb-3 min-h-[3.5rem]">
                           {type.icon}
-                          <h3 className="font-semibold text-black ml-2 text-lg font-display group-hover:text-orange-600 transition-colors">
+                          <h3 className="font-semibold text-black ml-2 text-lg font-display group-hover:text-orange-600 transition-colors" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                             {type.title}
                           </h3>
                         </div>
                         
-                        <p className="text-gray-700 text-sm leading-relaxed font-modern">
+                        <p className="text-gray-700 text-sm leading-relaxed font-modern min-h-[3.75rem]" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                           {type.description}
                         </p>
                         <div className="mt-4 text-center">
@@ -249,7 +249,7 @@ export function MattressTypesSection() {
                         </div>
                       </div>
                     ) : (
-                      <div>
+                      <div className="h-full flex flex-col">
                         <div className="relative mb-6">
                           <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden">
                             <Image
@@ -267,14 +267,14 @@ export function MattressTypesSection() {
                           </div>
                         </div>
                         
-                        <div className="flex items-center justify-center mb-3">
+                        <div className="flex items-center justify-center mb-3 min-h-[3.5rem]">
                           {type.icon}
-                          <h3 className="font-semibold text-black ml-2 text-lg font-display">
+                          <h3 className="font-semibold text-black ml-2 text-lg font-display" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                             {type.title}
                           </h3>
                         </div>
                         
-                        <p className="text-gray-700 text-sm leading-relaxed font-modern">
+                        <p className="text-gray-700 text-sm leading-relaxed font-modern min-h-[3.75rem]" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                           {type.description}
                         </p>
                         <div className="mt-4 text-center">
