@@ -10,7 +10,6 @@ module.exports = {
   priority: 0.7,
   exclude: ['/admin/*', '/api/*'],
   robotsTxtOptions: {
-    additionalSitemaps: [`${siteUrl}/sitemap.xml`],
     policies: [
       { userAgent: '*', allow: '/' },
       { userAgent: '*', disallow: ['/api', '/admin'] },
