@@ -1,5 +1,6 @@
 /** @type {import('next-sitemap').IConfig} */
-const siteUrl = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/$/, '') || 'http://localhost:3000'
+// Hardcode production domain to avoid accidental localhost in robots.txt
+const siteUrl = 'https://www.bedoraliving.co.uk'
 
 module.exports = {
   siteUrl,
@@ -9,9 +10,7 @@ module.exports = {
   priority: 0.7,
   exclude: ['/admin/*', '/api/*'],
   robotsTxtOptions: {
-    additionalSitemaps: [
-      `${siteUrl}/sitemap.xml`,
-    ],
+    additionalSitemaps: [`${siteUrl}/sitemap.xml`],
     policies: [
       { userAgent: '*', allow: '/' },
       { userAgent: '*', disallow: ['/api', '/admin'] },
