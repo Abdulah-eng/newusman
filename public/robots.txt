@@ -1,0 +1,14 @@
+# *
+User-agent: *
+Allow: /
+
+# *
+User-agent: *
+Disallow: /api
+Disallow: /admin
+
+# Host
+Host: https://www.bedoraliving.co.uk
+
+# Sitemaps
+Sitemap: https://www.bedoraliving.co.uk/sitemap.xml
