@@ -102,11 +102,11 @@ export default function CartPageClient() {
                         </p>
                         <div className="flex items-center mt-2">
                           <span className="text-lg font-semibold text-gray-900">
-                            £{item.price.toFixed(2)}
+                            £{Number((item as any).currentPrice ?? 0).toFixed(2)}
                           </span>
-                          {item.originalPrice && item.originalPrice > item.price && (
+                          {Number((item as any).originalPrice ?? 0) > Number((item as any).currentPrice ?? 0) && (
                             <span className="text-sm text-gray-500 line-through ml-2">
-                              £{item.originalPrice.toFixed(2)}
+                              £{Number((item as any).originalPrice ?? 0).toFixed(2)}
                             </span>
                           )}
                         </div>
@@ -140,7 +140,7 @@ export default function CartPageClient() {
 
                       <div className="flex items-center space-x-2">
                         <span className="text-lg font-semibold text-gray-900">
-                          £{(item.price * item.quantity).toFixed(2)}
+                          £{(Number((item as any).currentPrice ?? 0) * Number(item.quantity || 1)).toFixed(2)}
                         </span>
                         <Button
                           onClick={() => removeItem(item.id)}
@@ -181,9 +181,11 @@ export default function CartPageClient() {
                   </div>
                 </div>
 
-                <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 text-lg mb-4">
-                  Proceed to Checkout
-                </Button>
+                <Link href="/checkout">
+                  <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 text-lg mb-4">
+                    Proceed to Checkout
+                  </Button>
+                </Link>
 
                 <div className="space-y-4 text-sm text-gray-600">
                   <div className="flex items-center">

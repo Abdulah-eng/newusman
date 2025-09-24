@@ -119,7 +119,7 @@ export function FeaturedProducts({ selectedCategory: propSelectedCategory }: Fea
               price: dbProduct.current_price,
               variants: (dbProduct.variants || []).map((v: any) => ({
                 id: `${dbProduct.id}-${v.size}-${v.color || 'default'}`,
-                sku: '',
+                sku: v.sku || `${dbProduct.id}-${v.size}-${v.color || 'default'}`,
                 color: v.color,
                 size: v.size,
                 originalPrice: Number(v.original_price) || Number(v.current_price) || 0,
@@ -254,14 +254,6 @@ export function FeaturedProducts({ selectedCategory: propSelectedCategory }: Fea
           {displayProducts.map((product) => (
             <div key={product.id} className="h-full">
               <ProductCard product={product} />
-              <a
-                href={`/products/${product.category || 'mattresses'}/${product.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center justify-center w-full px-4 py-2 rounded-2xl bg-gradient-to-r from-orange-400 to-red-500 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
-              >
-                Buy Now
-              </a>
             </div>
           ))}
         </div>

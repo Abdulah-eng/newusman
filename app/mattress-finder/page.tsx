@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import Image from "next/image"
+import { useMemo } from "react"
 
 type Question = {
   id: string
@@ -51,28 +53,9 @@ export default function MattressFinderPage() {
     setAnswers(prev => ({ ...prev, [questionId]: value }))
   }
 
-  // Lightweight AI-styled illustration generator (SVG data URI)
-  const createIllustration = (label: string, tint: string) => {
-    const svg = encodeURIComponent(`
-      <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 160'>
-        <defs>
-          <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
-            <stop offset='0%' stop-color='${tint}' stop-opacity='0.25'/>
-            <stop offset='100%' stop-color='${tint}' stop-opacity='0.6'/>
-          </linearGradient>
-        </defs>
-        <rect x='0' y='0' width='200' height='160' rx='20' fill='url(#g)'/>
-        <g fill='white' opacity='0.35'>
-          <circle cx='50' cy='50' r='18'/>
-          <circle cx='95' cy='35' r='8'/>
-          <circle cx='150' cy='60' r='12'/>
-          <rect x='35' y='100' width='130' height='18' rx='9'/>
-        </g>
-        <text x='100' y='88' dominant-baseline='middle' text-anchor='middle' font-family='system-ui,Segoe UI,Arial' font-weight='700' font-size='18' fill='#0f172a'>${label}</text>
-      </svg>
-    `)
-    return `data:image/svg+xml;charset=UTF-8,${svg}`
-  }
+  // Curated lifestyle images (royalty-free sources like Unsplash/Pexels)
+  // Local images provided by user; will be cycled across all tiles
+  const localImages = ['/test1.webp','/test2.jpg','/test3.jpeg','/test4.jpg','/test5.jpg','/test6.jpeg','/test7.jpeg']
 
   useEffect(() => {
     containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
@@ -90,26 +73,51 @@ export default function MattressFinderPage() {
     return "Balanced Hybrid Medium"
   }
 
+  // Reusable image with robust fallbacks (tries list of URLs → finally local asset)
+  function OptionImage({ srcList, alt }: { srcList: string[]; alt: string }) {
+    const candidates = useMemo(() => [...srcList, '/secondbanner.jpg', '/bedcollect.jpeg', '/sofacollect.jpg'], [srcList])
+    const [index, setIndex] = useState(0)
+    const activeSrc = candidates[Math.min(index, candidates.length - 1)]
+    return (
+      <Image
+        src={activeSrc}
+        alt={alt}
+        fill
+        className="object-cover"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        onError={() => setIndex(i => Math.min(i + 1, candidates.length - 1))}
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-orange-50">
       {/* Hero */}
       <section className="container mx-auto px-4 py-10 sm:py-14">
-        <div className="rounded-3xl bg-gradient-to-br from-gray-100/70 via-white to-orange-100/60 p-6 sm:p-10 shadow-sm border border-white/60">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-            <div className="md:col-span-2 text-center md:text-left">
-              <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-gray-900">
-                Your best night's sleep starts here
+        <div className="relative overflow-hidden rounded-3xl shadow-sm border border-white/60">
+          <Image
+            src="/test1.webp"
+            alt="Young couple relaxing on a comfortable bed"
+            width={2000}
+            height={800}
+            className="h-[340px] w-full object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/20 to-transparent" />
+          <div className="absolute inset-0 flex items-center">
+            <div className="px-6 sm:px-10">
+              <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white drop-shadow">
+                Find your perfect mattress
               </h1>
-              <p className="mt-4 text-base sm:text-lg text-gray-700 max-w-2xl mx-auto md:mx-0">
-                Answer a few quick questions and our Mattress Match will browse our collection to find the perfect feel for you.
+              <p className="mt-4 text-base sm:text-lg text-white/90 max-w-2xl">
+                Answer a few quick questions and we’ll match you with the ideal comfort and support — for you or for two.
               </p>
               <div className="mt-6">
                 <a href="#quiz" className="inline-flex items-center justify-center rounded-full bg-orange-600 text-white px-6 py-3 font-semibold shadow hover:bg-orange-700 transition">
-                  Match me
+                  Start your quiz
                 </a>
               </div>
             </div>
-            <div className="hidden md:block" />
           </div>
         </div>
       </section>
@@ -144,25 +152,28 @@ export default function MattressFinderPage() {
               <CardContent className="p-6 sm:p-8">
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 text-center mb-6">{current.question}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  {current.options.map((opt) => {
+                  {current.options.map((opt, idx) => {
                     const selected = answers[current.id] === opt.value
+                    const imgSrc = localImages[(step * 10 + idx) % localImages.length]
                     return (
                       <button
                         key={opt.value}
                         onClick={() => handleAnswer(current.id, opt.value)}
-                        className={`text-left rounded-2xl border p-5 sm:p-6 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-300 ${
-                          selected ? "border-orange-600 ring-2 ring-orange-200 bg-orange-50" : "border-gray-200 bg-white"
+                        className={`relative overflow-hidden text-left rounded-2xl border p-0 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-orange-300 ${
+                          selected ? "border-orange-600 ring-2 ring-orange-200" : "border-gray-200"
                         }`}
                       >
-                        <div className="mb-3 h-28 flex items-center justify-center">
-                          <img
+                        <div className="relative h-40">
+                          <OptionImage
+                            srcList={[imgSrc]}
                             alt={opt.label}
-                            src={createIllustration(opt.label, '#ea580c')}
-                            className="h-24 w-auto rounded-xl shadow-sm"
                           />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                          <div className="absolute bottom-0 left-0 right-0 p-4">
+                            <div className="text-lg font-semibold text-white drop-shadow">{opt.label}</div>
+                            {opt.hint && <div className="text-sm text-white/90 mt-0.5">{opt.hint}</div>}
+                          </div>
                         </div>
-                        <div className="text-lg font-semibold text-gray-900">{opt.label}</div>
-                        {opt.hint && <div className="text-sm text-gray-600 mt-1">{opt.hint}</div>}
                       </button>
                     )
                   })}
@@ -178,15 +189,27 @@ export default function MattressFinderPage() {
             </Card>
           ) : (
             <Card className="border-gray-200 shadow-sm">
-              <CardContent className="p-6 sm:p-8 text-center space-y-6">
-                <h2 className="text-3xl font-extrabold text-gray-900">Your Mattress Match</h2>
-                <p className="text-gray-700 max-w-2xl mx-auto">Based on your preferences, we think you'll love:</p>
-                <div className="text-2xl font-bold text-orange-600">{getRecommendation()}</div>
-                <div className="flex items-center justify-center gap-3 pt-2">
-                  <Button asChild className="bg-orange-600 hover:bg-orange-700">
-                    <a href="/mattresses">Shop recommendations</a>
-                  </Button>
-                  <Button variant="outline" onClick={() => { setStep(1); setAnswers({}) }} className="border-gray-300 text-gray-700 hover:bg-gray-50">Retake quiz</Button>
+              <CardContent className="p-0 sm:p-0">
+                <div className="relative overflow-hidden rounded-t-xl">
+                  <OptionImage
+                    srcList={["/test2.jpg", "/test3.jpeg", "/test4.jpg"]}
+                    alt="Happy couple relaxing on a bed"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent" />
+                  <div className="absolute bottom-0 left-0 p-6">
+                    <h2 className="text-3xl font-extrabold text-white drop-shadow">Your Mattress Match</h2>
+                    <p className="text-white/90">Tailored from your answers</p>
+                  </div>
+                </div>
+                <div className="p-6 sm:p-8 text-center space-y-6">
+                  <p className="text-gray-700 max-w-2xl mx-auto">Based on your preferences, we think you'll love:</p>
+                  <div className="text-2xl font-bold text-orange-600">{getRecommendation()}</div>
+                  <div className="flex items-center justify-center gap-3 pt-2">
+                    <Button asChild className="bg-orange-600 hover:bg-orange-700">
+                      <a href="/mattresses">Shop recommendations</a>
+                    </Button>
+                    <Button variant="outline" onClick={() => { setStep(1); setAnswers({}) }} className="border-gray-300 text-gray-700 hover:bg-gray-50">Retake quiz</Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

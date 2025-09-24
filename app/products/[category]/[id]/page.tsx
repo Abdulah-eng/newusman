@@ -7,7 +7,7 @@ import dynamic from "next/dynamic"
 import { ProductPageSkeleton } from "@/components/product-page-skeleton"
 import { CardLoadingText } from "@/components/loading-text"
 import type { Metadata } from 'next'
-import { ProductJsonLd, BreadcrumbJsonLd } from 'next-seo'
+import { ProductStructuredData } from '@/components/product-structured-data'
 
 // Lazy load heavy components
 const ProductDetailHappy = dynamic(() => import("@/components/product-detail-happy").then(mod => ({ default: mod.ProductDetailHappy })), {
@@ -409,26 +409,21 @@ export default async function ProductDetailPage({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
-        {/* SEO JSON-LD */}
-        <BreadcrumbJsonLd
-          itemListElements={[
+        {/* SEO JSON-LD (client-wrapped to avoid React version mismatch) */}
+        <ProductStructuredData
+          breadcrumb={[
             { position: 1, name: 'Home', item: '/' },
             { position: 2, name: productDetail.category || 'Products', item: `/${productDetail.category || 'products'}` },
             { position: 3, name: productDetail.name, item: `/products/${productDetail.category}/${productDetail.id}` },
           ]}
-        />
-        <ProductJsonLd
-          productName={productDetail.name}
+          name={productDetail.name}
           images={productDetail.images && productDetail.images.length > 0 ? productDetail.images : [productDetail.image]}
           description={productDetail.longDescription || productDetail.shortDescription || 'Premium product from Bedora Living'}
-          brand={{ name: productDetail.brand || 'Bedora' }}
-          aggregateRating={{ ratingValue: productDetail.rating || 4.5, reviewCount: productDetail.reviewCount || 100 }}
-          offers={{
-            price: String(productDetail.currentPrice || 0),
-            priceCurrency: 'GBP',
-            availability: 'http://schema.org/InStock',
-            url: `/products/${productDetail.category}/${productDetail.id}`,
-          }}
+          brandName={productDetail.brand || 'Bedora'}
+          ratingValue={productDetail.rating || 4.5}
+          reviewCount={productDetail.reviewCount || 100}
+          price={String(productDetail.currentPrice || 0)}
+          url={`/products/${productDetail.category}/${productDetail.id}`}
         />
         <ProductDetailHappy product={productDetail} />
 
