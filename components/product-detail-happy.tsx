@@ -633,6 +633,8 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   const hasValidPrices = originalPrice > 0 && currentPrice > 0
 
   const [selectedSize, setSelectedSize] = useState<string>("")
+  const [selectedDepth, setSelectedDepth] = useState<string>("")
+  const [selectedFirmness, setSelectedFirmness] = useState<string>("")
 
   // Smart variant selection logic
   const getAvailableVariantOptions = useCallback(() => {
@@ -671,11 +673,11 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     // Check each selection in order, but be more explicit about what's already selected
     if (hasSizes && !selectedSize) return 'size'
     if (hasColors && !selectedColor) return 'color'
-    if (hasDepths && !(product as any).selectedDepth) return 'depth'
-    if (hasFirmness && !(product as any).selectedFirmness) return 'firmness'
+    if (hasDepths && !selectedDepth) return 'depth'
+    if (hasFirmness && !selectedFirmness) return 'firmness'
     
     return null
-  }, [getAvailableVariantOptions, selectedSize, selectedColor, (product as any).selectedDepth, (product as any).selectedFirmness])
+  }, [getAvailableVariantOptions, selectedSize, selectedColor, selectedDepth, selectedFirmness])
 
   const openNextRequiredModal = useCallback(() => {
     const nextSelection = getNextRequiredSelection()
@@ -714,8 +716,8 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     const allVariantsSelected = 
       (!hasSizes || selectedSize) &&
       (!hasColors || selectedColor) &&
-      (!hasDepths || (product as any).selectedDepth) &&
-      (!hasFirmness || (product as any).selectedFirmness)
+      (!hasDepths || selectedDepth) &&
+      (!hasFirmness || selectedFirmness)
     
     if (allVariantsSelected) {
       console.log('All variants selected, automatically adding to cart')
@@ -796,7 +798,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     }, 100) // Small delay to ensure state updates are complete
     
     return () => clearTimeout(timeoutId)
-  }, [isSequentialFlow, selectedSize, selectedColor, getAvailableVariantOptions, dispatch, selectedImage, sizeData, product])
+  }, [isSequentialFlow, selectedSize, selectedColor, selectedDepth, selectedFirmness, getAvailableVariantOptions, dispatch, selectedImage, sizeData, product])
 
   // Enhanced smart selection that can start with either size or color
   const startSmartSelectionWithPriority = useCallback((priorityType?: 'size' | 'color') => {
@@ -814,9 +816,11 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
         return
       }
     } else if (priorityType === 'color') {
-      // Start with color selection - allow reopening even if color is already selected
-      const { hasColors } = getAvailableVariantOptions()
-      if (hasColors) {
+      // Start with color/other options selection - check for any non-size options
+      const { hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
+      const hasNonSizeOptions = hasColors || hasDepths || hasFirmness
+      
+      if (hasNonSizeOptions) {
         setColorModalOpen(true)
         return
       }
@@ -952,30 +956,30 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     
     // For depth and firmness, use default values if not selected
     const variants = (product as any).variants || []
-    let selectedDepth = (product as any).selectedDepth
-    let selectedFirmness = (product as any).selectedFirmness
+    let currentSelectedDepth = selectedDepth
+    let currentSelectedFirmness = selectedFirmness
     
-    if (hasDepths && !selectedDepth) {
-      selectedDepth = variants.find((v: any) => v.depth && v.depth.trim() !== '')?.depth
-      if (selectedDepth) {
-        console.log('Using default depth for variant check:', selectedDepth)
-        ;(product as any).selectedDepth = selectedDepth
+    if (hasDepths && !currentSelectedDepth) {
+      currentSelectedDepth = variants.find((v: any) => v.depth && v.depth.trim() !== '')?.depth
+      if (currentSelectedDepth) {
+        console.log('Using default depth for variant check:', currentSelectedDepth)
+        setSelectedDepth(currentSelectedDepth)
       }
     }
     
-    if (hasFirmness && !selectedFirmness) {
-      selectedFirmness = variants.find((v: any) => v.firmness && v.firmness.trim() !== '')?.firmness
-      if (selectedFirmness) {
-        console.log('Using default firmness for variant check:', selectedFirmness)
-        ;(product as any).selectedFirmness = selectedFirmness
+    if (hasFirmness && !currentSelectedFirmness) {
+      currentSelectedFirmness = variants.find((v: any) => v.firmness && v.firmness.trim() !== '')?.firmness
+      if (currentSelectedFirmness) {
+        console.log('Using default firmness for variant check:', currentSelectedFirmness)
+        setSelectedFirmness(currentSelectedFirmness)
       }
     }
     
     const allVariantsSelected = 
       (!hasSizes || selectedSize) &&
       (!hasColors || selectedColor) &&
-      (!hasDepths || selectedDepth) &&
-      (!hasFirmness || selectedFirmness)
+      (!hasDepths || currentSelectedDepth) &&
+      (!hasFirmness || currentSelectedFirmness)
     
     console.log('Variant check:', {
       hasSizes,
@@ -984,8 +988,8 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       hasFirmness,
       selectedSize,
       selectedColor,
-      selectedDepth: (product as any).selectedDepth,
-      selectedFirmness: (product as any).selectedFirmness,
+      selectedDepth: currentSelectedDepth,
+      selectedFirmness: currentSelectedFirmness,
       allVariantsSelected
     })
     
@@ -4885,21 +4889,18 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           handleVariantSelection('color', color.name)
 
           if (depth) {
-
-            // Handle depth selection if needed
-
+            setSelectedDepth(depth.name)
+            console.log('Selected depth:', depth.name)
           }
 
           if (firmness) {
-
-            // Handle firmness selection if needed
-
+            setSelectedFirmness(firmness.name)
+            console.log('Selected firmness:', firmness.name)
           }
 
           if (mattress) {
-
             // Handle mattress selection if needed
-
+            console.log('Selected mattress:', mattress.name)
           }
 
         }}
@@ -4916,9 +4917,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
         selectedColor={selectedColor}
 
-        selectedDepth=""
+        selectedDepth={selectedDepth}
 
-        selectedFirmness=""
+        selectedFirmness={selectedFirmness}
 
         productPrice={(() => {
 

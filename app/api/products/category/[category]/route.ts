@@ -15,6 +15,9 @@ export async function GET(
     // Get filter parameters
     const firmness = searchParams.getAll('firmness')
     const features = searchParams.getAll('features')
+    const size = searchParams.getAll('size')
+    const minPrice = searchParams.get('min_price')
+    const maxPrice = searchParams.get('max_price')
 
     // OPTIMIZATION: Add caching headers for better performance
 
@@ -415,6 +418,12 @@ export async function GET(
       query = query.or(features.map(feature => `product_features.feature_name.ilike.%${feature}%`).join(','))
     }
 
+    // Apply size filter
+    if (size.length > 0) {
+      // For size, we need to check the product_variants table
+      query = query.or(size.map(s => `product_variants.size.ilike.%${s}%`).join(','))
+    }
+
     // Execute the query with pagination
     const { data: products, error: productsError, count: totalCount } = await query
       .range(offset, offset + limit - 1)
@@ -438,7 +447,25 @@ export async function GET(
       return null
     }
 
-    const transformedProducts = await Promise.all(products?.map(async (product) => {
+    // Filter by price range if specified
+    let filteredProducts = products || []
+    if (minPrice || maxPrice) {
+      filteredProducts = filteredProducts.filter(product => {
+        const variants = product.product_variants || []
+        if (variants.length === 0) return false
+        
+        const prices = variants.map((v: any) => parseFloat(v.current_price) || 0)
+        const minVariantPrice = Math.min(...prices)
+        const maxVariantPrice = Math.max(...prices)
+        
+        if (minPrice && minVariantPrice < parseFloat(minPrice)) return false
+        if (maxPrice && maxVariantPrice > parseFloat(maxPrice)) return false
+        
+        return true
+      })
+    }
+
+    const transformedProducts = await Promise.all(filteredProducts?.map(async (product) => {
       // Fetch gift product details if this product has a free gift
       let giftProductDetails = null
       if (product.free_gift_product_id && product.free_gift_enabled) {

@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { ProductCard } from '@/components/product-card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Search, Grid, List } from 'lucide-react'
+import { CategoryFilters } from '@/components/category-filters'
 
 interface Product {
   id: number
@@ -39,6 +40,7 @@ interface Product {
 
 export default function CategoryPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const slug = params.slug as string
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
@@ -46,20 +48,89 @@ export default function CategoryPage() {
   const [sortBy, setSortBy] = useState('popular')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [categoryName, setCategoryName] = useState('')
+  const [filters, setFilters] = useState<Record<string, any>>({})
+  const [priceRange, setPriceRange] = useState([0, 2000])
   
+  // Handle search parameter from URL
   useEffect(() => {
-    if (slug) {
-      setProducts([])
-      setCategoryName(slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()))
-      setLoading(false)
+    const searchParam = searchParams.get('search')
+    if (searchParam) {
+      setSearchTerm(searchParam)
+      handleSearch(searchParam)
     }
-  }, [slug])
+  }, [searchParams])
+
+  // Fetch products when category or filters change
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (!slug) return
+      
+      setLoading(true)
+      try {
+        const queryParams = new URLSearchParams()
+        
+        // Add filter parameters
+        if (filters.firmness?.length > 0) {
+          filters.firmness.forEach((f: string) => queryParams.append('firmness', f))
+        }
+        if (filters.features?.length > 0) {
+          filters.features.forEach((f: string) => queryParams.append('features', f))
+        }
+        if (filters.size?.length > 0) {
+          filters.size.forEach((s: string) => queryParams.append('size', s))
+        }
+        if (priceRange[0] > 0 || priceRange[1] < 2000) {
+          queryParams.append('min_price', priceRange[0].toString())
+          queryParams.append('max_price', priceRange[1].toString())
+        }
+        
+        const response = await fetch(`/api/products/category/${slug}?${queryParams.toString()}`)
+        if (response.ok) {
+          const data = await response.json()
+          setProducts(data.products || [])
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProducts()
+    setCategoryName(slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()))
+  }, [slug, filters, priceRange])
+
+  const handleFiltersChange = (newFilters: Record<string, any>) => {
+    setFilters(newFilters)
+  }
+
+  const handleSearch = async (term: string) => {
+    if (!term.trim()) {
+      // If search is empty, refetch all products
+      const response = await fetch(`/api/products/category/${slug}`)
+      if (response.ok) {
+        const data = await response.json()
+        setProducts(data.products || [])
+      }
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/products/search?q=${encodeURIComponent(term)}&category=${slug}`)
+      if (response.ok) {
+        const data = await response.json()
+        setProducts(data.products || [])
+      }
+    } catch (error) {
+      console.error('Search error:', error)
+    }
+  }
 
   const filteredProducts = products.filter(product => {
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase()
       if (!product.name.toLowerCase().includes(searchLower) &&
-          !product.brand.toLowerCase().includes(searchLower)) {
+          !(product.brand?.toLowerCase().includes(searchLower))) {
         return false
       }
     }
@@ -167,11 +238,7 @@ export default function CategoryPage() {
             {/* Price Filter */}
             <Button variant="outline" className="border-gray-300 text-gray-700 hover:border-blue-300 hover:text-blue-600 px-4 py-2 rounded-lg flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8s-1.5-2-4-2-4 2-4 2" />
-                <line x1="9" y1="9" x2="9.01" y2="9" />
-                <line x1="15" y1="9" x2="15.01" y2="9" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 21v-1a4 4 0 014-4h4a4 4 0 014 4v1" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
               </svg>
               Price
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -228,7 +295,17 @@ export default function CategoryPage() {
         </div>
 
         {/* Main Content */}
-        <div className="w-full">
+        <div className="flex gap-6">
+          {/* Filters Sidebar */}
+          <div className="w-64 flex-shrink-0">
+            <CategoryFilters 
+              category={slug} 
+              onFiltersChange={handleFiltersChange}
+            />
+          </div>
+          
+          {/* Products Content */}
+          <div className="flex-1">
           {/* Search and Sort Bar */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
             <div className="flex flex-col sm:flex-row gap-4">
@@ -239,7 +316,14 @@ export default function CategoryPage() {
                   <Input
                     placeholder="Search products..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value)
+                      // Debounce search
+                      clearTimeout(window.searchTimeout)
+                      window.searchTimeout = setTimeout(() => {
+                        handleSearch(e.target.value)
+                      }, 500)
+                    }}
                     className="pl-10"
                   />
                 </div>
@@ -300,6 +384,7 @@ export default function CategoryPage() {
               )}
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>

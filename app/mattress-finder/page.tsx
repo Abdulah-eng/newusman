@@ -15,6 +15,8 @@ type Question = {
 export default function MattressFinderPage() {
   const [step, setStep] = useState(1)
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [recommendation, setRecommendation] = useState<any>(null)
+  const [isLoadingRecommendation, setIsLoadingRecommendation] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const questions: Question[] = [
@@ -61,16 +63,53 @@ export default function MattressFinderPage() {
     containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
   }, [step])
 
-  const nextStep = () => setStep(prev => Math.min(prev + 1, total + 1))
+  const nextStep = () => {
+    if (step === total) {
+      // Get recommendation when moving to results
+      getRecommendation()
+    }
+    setStep(prev => Math.min(prev + 1, total + 1))
+  }
   const prevStep = () => setStep(prev => Math.max(prev - 1, 1))
 
-  const getRecommendation = () => {
-    const pos = answers["position"]
-    const firm = answers["firmness"]
-    if (pos === "side" && (firm === "soft" || firm === "medium")) return "Memory Foam / Hybrid Medium-Soft"
-    if (pos === "back" && firm === "firm") return "Hybrid / Pocket-Spring Firm"
-    if (pos === "stomach") return "Firm Supportive Mattress"
-    return "Balanced Hybrid Medium"
+  const getRecommendation = async () => {
+    setIsLoadingRecommendation(true)
+    try {
+      const response = await fetch('/api/quiz/recommendation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setRecommendation(data.recommendation)
+      } else {
+        // Fallback to hardcoded logic if API fails
+        const pos = answers["position"]
+        const firm = answers["firmness"]
+        let title = "Balanced Hybrid Medium"
+        if (pos === "side" && (firm === "soft" || firm === "medium")) title = "Memory Foam / Hybrid Medium-Soft"
+        else if (pos === "back" && firm === "firm") title = "Hybrid / Pocket-Spring Firm"
+        else if (pos === "stomach") title = "Firm Supportive Mattress"
+        
+        setRecommendation({
+          title,
+          description: "A versatile choice that works for most sleep preferences",
+          products: []
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching recommendation:', error)
+      // Fallback recommendation
+      setRecommendation({
+        title: "Balanced Hybrid Medium",
+        description: "A versatile choice that works for most sleep preferences",
+        products: []
+      })
+    } finally {
+      setIsLoadingRecommendation(false)
+    }
   }
 
   // Reusable image with robust fallbacks (tries list of URLs → finally local asset)
@@ -203,12 +242,48 @@ export default function MattressFinderPage() {
                 </div>
                 <div className="p-6 sm:p-8 text-center space-y-6">
                   <p className="text-gray-700 max-w-2xl mx-auto">Based on your preferences, we think you'll love:</p>
-                  <div className="text-2xl font-bold text-orange-600">{getRecommendation()}</div>
+                  
+                  {isLoadingRecommendation ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                      <span className="ml-2 text-gray-600">Finding your perfect match...</span>
+                    </div>
+                  ) : recommendation ? (
+                    <div className="space-y-4">
+                      <div className="text-2xl font-bold text-orange-600">{recommendation.title}</div>
+                      {recommendation.description && (
+                        <p className="text-gray-600 max-w-xl mx-auto">{recommendation.description}</p>
+                      )}
+                      
+                      {/* Show recommended products if available */}
+                      {recommendation.products && recommendation.products.length > 0 && (
+                        <div className="mt-6">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recommended Products:</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+                            {recommendation.products.slice(0, 4).map((product: any, index: number) => (
+                              <div key={product.product_id || index} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                <h4 className="font-semibold text-gray-900">{product.products?.name || 'Product'}</h4>
+                                {product.products?.headline && (
+                                  <p className="text-sm text-gray-600 mt-1">{product.products.headline}</p>
+                                )}
+                                {product.products?.current_price && (
+                                  <p className="text-orange-600 font-semibold mt-2">From £{product.products.current_price}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-2xl font-bold text-orange-600">Balanced Hybrid Medium</div>
+                  )}
+                  
                   <div className="flex items-center justify-center gap-3 pt-2">
                     <Button asChild className="bg-orange-600 hover:bg-orange-700">
                       <a href="/mattresses">Shop recommendations</a>
                     </Button>
-                    <Button variant="outline" onClick={() => { setStep(1); setAnswers({}) }} className="border-gray-300 text-gray-700 hover:bg-gray-50">Retake quiz</Button>
+                    <Button variant="outline" onClick={() => { setStep(1); setAnswers({}); setRecommendation(null) }} className="border-gray-300 text-gray-700 hover:bg-gray-50">Retake quiz</Button>
                   </div>
                 </div>
               </CardContent>

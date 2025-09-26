@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Star, Quote, ThumbsUp, Heart, Shield, Award, CheckCircle } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -19,7 +19,7 @@ interface Review {
   category: string
 }
 
-const reviews: Review[] = [
+const hardcodedReviews: Review[] = [
   {
     id: 1,
     customerName: "Sarah M.",
@@ -97,10 +97,38 @@ const reviews: Review[] = [
 export default function ReviewsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [sortBy, setSortBy] = useState<string>('recent')
+  const [dynamicReviews, setDynamicReviews] = useState<Review[]>([])
+
+  useEffect(() => {
+    const loadReviews = async () => {
+      try {
+        const res = await fetch('/api/reviews?limit=50')
+        if (!res.ok) return
+        const json = await res.json()
+        const apiReviews = (json.reviews || []).map((r: any, idx: number) => ({
+          id: 10000 + idx,
+          customerName: r.customer_name || 'Verified Buyer',
+          rating: r.rating || 5,
+          title: r.title || 'Customer Review',
+          review: r.review_text || '',
+          date: new Date(r.created_at).toLocaleDateString('en-GB'),
+          verified: !!r.verified,
+          helpful: r.helpful_count || 0,
+          product: r.product_name || 'Product',
+          category: (r.category || 'Mattresses')
+        })) as Review[]
+        setDynamicReviews(apiReviews)
+      } catch (e) {
+        console.error('Failed to load reviews', e)
+      }
+    }
+    loadReviews()
+  }, [])
 
   const categories = ['all', 'mattresses', 'beds', 'sofas', 'pillows', 'bedding']
   
-  const filteredReviews = reviews.filter(review => 
+  const allReviews = [...dynamicReviews, ...hardcodedReviews]
+  const filteredReviews = allReviews.filter(review => 
     selectedCategory === 'all' || review.category.toLowerCase() === selectedCategory
   )
 
@@ -111,8 +139,8 @@ export default function ReviewsPage() {
     return 0
   })
 
-  const averageRating = reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
-  const totalReviews = reviews.length
+  const averageRating = allReviews.length > 0 ? (allReviews.reduce((acc, review) => acc + review.rating, 0) / allReviews.length) : 5
+  const totalReviews = allReviews.length
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-orange-50">

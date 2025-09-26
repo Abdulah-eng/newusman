@@ -386,8 +386,7 @@ export async function POST(req: NextRequest) {
       sum + ((item.currentPrice || item.price || 0) * (item.quantity || 1)), 0
     )
     const deliveryCost = finalDeliveryOption === 'express' ? 15 : 0
-    const vat = subtotal * 0.2
-    const total = subtotal + deliveryCost + vat
+    const total = subtotal + deliveryCost
 
     // Create order
     const { data: order, error: orderError } = await supabase

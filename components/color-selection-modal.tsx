@@ -113,7 +113,7 @@ export function ColorSelectionModal({
 
   // Determine which sections to show
   const hasColorOptions = colorOptions.length > 0
-  const hasDepthOptions = false // Always hide depth options
+  const hasDepthOptions = depthOptions.length > 0
   const hasFirmnessOptions = firmnessOptions.length > 0
   const hasOtherOptions = hasDepthOptions || hasFirmnessOptions
 
@@ -311,6 +311,12 @@ export function ColorSelectionModal({
                       </div>
                     </div>
                   )}
+                  {!showOnlyColors && localSelectedDepth && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 font-medium">Depth:</span>
+                      <span className="font-semibold text-gray-900">{localSelectedDepth}</span>
+                    </div>
+                  )}
                   {!showOnlyColors && localSelectedFirmness && (
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600 font-medium">Firmness:</span>
@@ -375,12 +381,19 @@ export function ColorSelectionModal({
                 </div>
               ) : (
                 <div className={`grid gap-4 ${(() => {
-                  const optionCount = [hasColorOptions, hasFirmnessOptions].filter(Boolean).length
-                  return optionCount === 2 ? 'grid-cols-2' : 'grid-cols-1'
+                  const optionCount = [hasColorOptions, hasDepthOptions, hasFirmnessOptions].filter(Boolean).length
+                  if (optionCount === 3) return 'grid-cols-3'
+                  if (optionCount === 2) return 'grid-cols-2'
+                  return 'grid-cols-1'
                 })()}`}>
                   {hasColorOptions && (
                     <div className="text-center">
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">Colours</h3>
+                    </div>
+                  )}
+                  {hasDepthOptions && (
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Depth</h3>
                     </div>
                   )}
                   {hasFirmnessOptions && (
@@ -521,8 +534,10 @@ export function ColorSelectionModal({
               ) : (
                 /* Dynamic Layout for Other Products */
                 <div className={`grid items-start gap-6 ${(() => {
-                  const optionCount = [hasColorOptions, hasFirmnessOptions].filter(Boolean).length
-                  return optionCount === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'
+                  const optionCount = [hasColorOptions, hasDepthOptions, hasFirmnessOptions].filter(Boolean).length
+                  if (optionCount === 3) return 'grid-cols-1 md:grid-cols-3'
+                  if (optionCount === 2) return 'grid-cols-1 md:grid-cols-2'
+                  return 'grid-cols-1'
                 })()}`}>
                   {/* Colours Section */}
                   {hasColorOptions && (
@@ -582,6 +597,47 @@ export function ColorSelectionModal({
                   </div>
                   )}
 
+                  {/* Depth Options Section - Only show if variants have depth options */}
+                  {hasDepthOptions && (
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Depth Options</h3>
+                      {depthOptions.map((depth) => {
+                        const optionPrice = getOptionPrice('depth', depth.name)
+                        const isSelected = localSelectedDepth === depth.name
+                        
+                        return (
+                          <div
+                            key={depth.name}
+                            className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
+                              isSelected
+                                ? 'border-orange-500 bg-orange-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                            onClick={() => handleDepthSelect(depth)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="font-semibold text-gray-900">{depth.name}</h4>
+                                <p className="text-sm text-gray-600">{depth.description}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {optionPrice !== null && optionPrice !== 0 && (
+                                  <span className="text-sm font-medium text-gray-700">
+                                    {optionPrice > 0 ? `+£${optionPrice.toFixed(2)}` : `-£${Math.abs(optionPrice).toFixed(2)}`}
+                                  </span>
+                                )}
+                                {isSelected && (
+                                  <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+                                    <Check className="w-3 h-3 text-white" />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
 
                   {/* Firmness Options Section - Only show if variants have firmness options */}
                   {hasFirmnessOptions && (

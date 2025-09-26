@@ -11,7 +11,8 @@ import {
   ShoppingCart,
   Users,
   FileText,
-  Star
+  Star,
+  HelpCircle
 } from 'lucide-react'
 
 const navItems = [
@@ -56,6 +57,12 @@ const navItems = [
     label: 'Sleep Luxury',
     icon: Star,
     description: 'Manage Sleep Luxury section products'
+  },
+  {
+    href: '/admin/quiz-recommendations',
+    label: 'Quiz Recommendations',
+    icon: HelpCircle,
+    description: 'Manage mattress finder quiz recommendations'
   },
   {
     href: '/admin/settings',

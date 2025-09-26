@@ -42,19 +42,44 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
-  title: 'Usman Mattresses - Premium Mattresses & Bedding',
-  description: 'Discover premium mattresses, bedding, and bedroom furniture at Usman Mattresses. Quality sleep solutions for every home.',
+  title: 'Bedora Living - Premium Mattresses, Beds & Sofas',
+  description: 'Shop premium mattresses, beds, sofas, and bedding at Bedora Living. Free delivery, great prices, and trusted comfort.',
   generator: 'Next.js',
   icons: {
     icon: [
+      { url: '/favicon.ico', sizes: 'any' },
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-192x192.png', sizes: '192x192', type: 'image/png' },
     ],
     apple: [
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
+    shortcut: '/favicon.ico',
   },
   manifest: '/site.webmanifest',
+  openGraph: {
+    type: 'website',
+    locale: 'en_GB',
+    url: 'https://www.bedoraliving.co.uk',
+    siteName: 'Bedora Living',
+    title: 'Bedora Living - Premium Mattresses, Beds & Sofas',
+    description: 'Shop premium mattresses, beds, sofas, and bedding at Bedora Living. Free delivery, great prices, and trusted comfort.',
+    images: [
+      {
+        url: 'https://www.bedoraliving.co.uk/logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'Bedora Living Logo',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Bedora Living - Premium Mattresses, Beds & Sofas',
+    description: 'Shop premium mattresses, beds, sofas, and bedding at Bedora Living. Free delivery, great prices, and trusted comfort.',
+    images: ['https://www.bedoraliving.co.uk/logo.png'],
+  },
 }
 
 export default function RootLayout({
@@ -65,9 +90,25 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon-32x32.png" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png" />
+        <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
+        <link rel="icon" href="/favicon-192x192.png" sizes="192x192" type="image/png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
+        <meta name="theme-color" content="#f97316" />
+        <meta name="application-name" content="Bedora Living" />
+        <meta name="apple-mobile-web-app-title" content="Bedora Living" />
+        <meta name="msapplication-TileColor" content="#f97316" />
+        <meta name="msapplication-TileImage" content="/favicon-192x192.png" />
+        <meta property="og:image" content="https://www.bedoraliving.co.uk/logo.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="Bedora Living Logo" />
+        <meta property="og:site_name" content="Bedora Living" />
+        <meta property="og:locale" content="en_GB" />
+        <meta name="twitter:site" content="@bedoraliving" />
+        <meta name="twitter:creator" content="@bedoraliving" />
         <style dangerouslySetInnerHTML={{
           __html: `
 html {

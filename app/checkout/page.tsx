@@ -38,6 +38,13 @@ interface CustomerInfo {
   country: string
 }
 
+interface AddressSuggestion {
+  address: string
+  city: string
+  postcode: string
+  country: string
+}
+
 interface ValidationErrors {
   [key: string]: string
 }
@@ -62,7 +69,30 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'success' | 'canceled' | 'error'>('idle')
+  const [lastOrderNumber, setLastOrderNumber] = useState<string>('')
+  const [lastPurchasedProductName, setLastPurchasedProductName] = useState<string>('')
+  const [reviewForm, setReviewForm] = useState({ name: '', rating: 5, title: '', review: '' })
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
+  const [reviewSubmitted, setReviewSubmitted] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  
+  // Address auto-search state
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false)
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.address-suggestions-container')) {
+        setShowSuggestions(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Check for payment result from URL parameters
   useEffect(() => {
@@ -103,12 +133,45 @@ export default function CheckoutPage() {
       if (response.ok) {
         const result = await response.json()
         console.log('Order processed successfully:', result)
+        if (result?.orderNumber) {
+          setLastOrderNumber(result.orderNumber)
+        }
+        // Capture a display name of purchased product for review context
+        const firstItem = (state.items && state.items.length > 0) ? state.items[0] : null
+        setLastPurchasedProductName(firstItem?.name || '')
       } else {
         const errorData = await response.json()
         console.error('Failed to process order:', errorData.error)
       }
     } catch (error) {
       console.error('Error processing order:', error)
+    }
+  }
+
+  const submitReview = async () => {
+    try {
+      setIsSubmittingReview(true)
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: null,
+          customerName: reviewForm.name || `${customerInfo.firstName} ${customerInfo.lastName}`.trim() || 'Customer',
+          rating: reviewForm.rating,
+          title: reviewForm.title,
+          review: reviewForm.review,
+          orderNumber: lastOrderNumber
+        })
+      })
+      if (!res.ok) {
+        const e = await res.json()
+        throw new Error(e.error || 'Failed to submit review')
+      }
+      setReviewSubmitted(true)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSubmittingReview(false)
     }
   }
 
@@ -119,6 +182,71 @@ export default function CheckoutPage() {
     if (validationErrors[field]) {
       setValidationErrors(prev => ({ ...prev, [field]: '' }))
     }
+  }
+
+  // Address auto-search functionality
+  const searchAddress = async (postcode: string) => {
+    if (!postcode || postcode.length < 3) {
+      setAddressSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    setIsSearchingAddress(true)
+    try {
+      // Using UK Postcode API (free tier)
+      const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}/autocomplete`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.result && data.result.length > 0) {
+          // Get full address details for each suggestion
+          const suggestions = await Promise.all(
+            data.result.slice(0, 5).map(async (pc: string) => {
+              try {
+                const detailResponse = await fetch(`https://api.postcodes.io/postcodes/${pc}`)
+                if (detailResponse.ok) {
+                  const detailData = await detailResponse.json()
+                  return {
+                    address: `${detailData.result.primary_street || ''} ${detailData.result.secondary_street || ''}`.trim(),
+                    city: detailData.result.post_town || '',
+                    postcode: pc,
+                    country: 'GB'
+                  }
+                }
+              } catch (e) {
+                console.error('Error fetching address details:', e)
+              }
+              return null
+            })
+          )
+          
+          const validSuggestions = suggestions.filter(s => s !== null) as AddressSuggestion[]
+          setAddressSuggestions(validSuggestions)
+          setShowSuggestions(validSuggestions.length > 0)
+        } else {
+          setAddressSuggestions([])
+          setShowSuggestions(false)
+        }
+      }
+    } catch (error) {
+      console.error('Address search error:', error)
+      setAddressSuggestions([])
+      setShowSuggestions(false)
+    } finally {
+      setIsSearchingAddress(false)
+    }
+  }
+
+  const selectAddressSuggestion = (suggestion: AddressSuggestion) => {
+    setCustomerInfo(prev => ({
+      ...prev,
+      address: suggestion.address,
+      city: suggestion.city,
+      postcode: suggestion.postcode,
+      country: suggestion.country
+    }))
+    setShowSuggestions(false)
+    setAddressSuggestions([])
   }
 
   // Validate form
@@ -219,8 +347,7 @@ export default function CheckoutPage() {
   // Calculate totals
   const subtotal = state.total || 0
   const deliveryCost = deliveryOption === 'express' ? 15 : 0
-  const vat = subtotal * 0.2
-  const total = subtotal + deliveryCost + vat
+  const total = subtotal + deliveryCost
 
   // Success screen
   if (paymentStatus === 'success') {
@@ -240,6 +367,65 @@ export default function CheckoutPage() {
             >
               Continue Shopping
             </Button>
+          </div>
+
+          <div className="max-w-2xl mx-auto bg-white border border-orange-200 rounded-xl p-6 mt-4">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Share Your Experience</h2>
+            <p className="text-gray-600 mb-4">We'd love your feedback{lastPurchasedProductName ? ` on ${lastPurchasedProductName}` : ''}. Your review helps other customers.</p>
+            {reviewSubmitted ? (
+              <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-md p-3">
+                <CheckCircle className="h-5 w-5" />
+                <span>Thanks! Your review has been submitted.</span>
+              </div>
+            ) : (
+              <div className="space-y-3 text-left">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Your name</label>
+                  <input
+                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2"
+                    value={reviewForm.name}
+                    onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })}
+                    placeholder="e.g., Sarah M."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Rating</label>
+                  <select
+                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2"
+                    value={reviewForm.rating}
+                    onChange={(e) => setReviewForm({ ...reviewForm, rating: Number(e.target.value) })}
+                  >
+                    {[5,4,3,2,1].map(r => (
+                      <option key={r} value={r}>{r} Stars</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Title (optional)</label>
+                  <input
+                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2"
+                    value={reviewForm.title}
+                    onChange={(e) => setReviewForm({ ...reviewForm, title: e.target.value })}
+                    placeholder="e.g., Amazing sleep quality"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Your review</label>
+                  <textarea
+                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2"
+                    rows={4}
+                    value={reviewForm.review}
+                    onChange={(e) => setReviewForm({ ...reviewForm, review: e.target.value })}
+                    placeholder="Tell us about your experience..."
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={submitReview} disabled={isSubmittingReview} className="bg-orange-600 hover:bg-orange-700 text-white">
+                    {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -315,12 +501,8 @@ export default function CheckoutPage() {
               <span>Free Delivery</span>
             </div>
             <div className="flex items-center">
-              <Clock className="h-4 w-4 text-orange-500 mr-2" />
-              <span>100-Night Trial</span>
-            </div>
-            <div className="flex items-center">
               <Star className="h-4 w-4 text-orange-500 mr-2" />
-              <span>10-Year Warranty</span>
+              <span>1-Year Warranty</span>
             </div>
           </div>
         </div>
@@ -449,20 +631,49 @@ export default function CheckoutPage() {
                       <p className="text-red-500 text-sm mt-1">{validationErrors.city}</p>
                     )}
                   </div>
-                  <div>
+                  <div className="relative">
                     <Label htmlFor="postcode">Postcode *</Label>
                     <Input
                       id="postcode"
                       value={customerInfo.postcode}
-                      onChange={(e) => handleInputChange('postcode', e.target.value)}
+                      onChange={(e) => {
+                        handleInputChange('postcode', e.target.value)
+                        // Trigger address search when postcode changes (debounced)
+                        clearTimeout(window.postcodeSearchTimeout)
+                        window.postcodeSearchTimeout = setTimeout(() => {
+                          searchAddress(e.target.value)
+                        }, 500)
+                      }}
                       className={`border-gray-300 focus:border-orange-500 focus:ring-orange-500 ${
                         validationErrors.postcode ? 'border-red-500' : ''
                       }`}
                       placeholder="e.g., W1D 1BS"
                       required
                     />
+                    {isSearchingAddress && (
+                      <div className="absolute right-3 top-8">
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                      </div>
+                    )}
                     {validationErrors.postcode && (
                       <p className="text-red-500 text-sm mt-1">{validationErrors.postcode}</p>
+                    )}
+                    
+                    {/* Address Suggestions Dropdown */}
+                    {showSuggestions && addressSuggestions.length > 0 && (
+                      <div className="address-suggestions-container absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {addressSuggestions.map((suggestion, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                            onClick={() => selectAddressSuggestion(suggestion)}
+                          >
+                            <div className="font-medium text-gray-900">{suggestion.address}</div>
+                            <div className="text-sm text-gray-600">{suggestion.city}, {suggestion.postcode}</div>
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                   <div>
@@ -611,10 +822,6 @@ export default function CheckoutPage() {
                     <span>Delivery</span>
                     <span>{deliveryCost === 0 ? 'Free' : `£${deliveryCost.toFixed(2)}`}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span>VAT (20%)</span>
-                    <span>£{vat.toFixed(2)}</span>
-                  </div>
                   <div className="border-t border-gray-200 pt-3">
                     <div className="flex justify-between text-lg font-bold text-gray-900">
                       <span>Total</span>
@@ -661,7 +868,7 @@ export default function CheckoutPage() {
                     <span>•</span>
                     <span>American Express</span>
                     <span>•</span>
-                    <span>PayPal</span>
+                    <span className="font-semibold text-blue-600">PayPal</span>
                   </div>
                 </div>
               </CardContent>
@@ -671,10 +878,6 @@ export default function CheckoutPage() {
             <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
               <CardContent className="p-6 text-center">
                 <div className="space-y-4">
-                  <div className="flex items-center justify-center">
-                    <CheckCircle className="h-8 w-8 text-orange-600 mr-2" />
-                    <span className="font-semibold text-gray-900">14-Night Trial</span>
-                  </div>
                   <div className="flex items-center justify-center">
                     <Shield className="h-8 w-8 text-orange-600 mr-2" />
                     <span className="font-semibold text-gray-900">1-Year Warranty</span>

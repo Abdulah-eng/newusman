@@ -10,6 +10,7 @@ import { useCart } from "@/lib/cart-context"
 import { useWishlist } from "@/lib/wishlist-context"
 import { usePathname } from 'next/navigation'
 import PromotionalBanners from '@/components/promotional-banners'
+import { SearchBar } from '@/components/search-bar'
 
 const sora = Sora({ subsets: ['latin'], weight: ['800'] })
 
@@ -191,29 +192,7 @@ export default function Header() {
 
             {/* Center: Search Bar - With category dropdown */}
             <div className="hidden md:block flex-1 max-w-sm lg:max-w-md xl:max-w-lg mx-4 lg:mx-8">
-              <div className="flex items-center bg-white rounded-md overflow-hidden">
-                <Input
-                  type="search"
-                  placeholder="Search..."
-                  className="flex-1 border-0 focus:ring-0 text-gray-900 placeholder:text-gray-500 text-sm"
-                />
-                <div className="flex items-center border-l border-gray-200">
-                  <select className="px-2 lg:px-3 py-2 text-gray-700 bg-transparent border-0 focus:ring-0 focus:outline-none text-xs lg:text-sm">
-                    <option>All Category</option>
-                    <option>Mattresses</option>
-                    <option>Beds</option>
-                    <option>Sofas</option>
-                    <option>Pillows</option>
-                    <option>Toppers</option>
-                    <option>Bunkbeds</option>
-                    <option>Kids</option>
-                  </select>
-                  <div className="w-px h-6 bg-gray-200"></div>
-                  <div className="bg-orange-500 hover:bg-orange-600 transition-colors flex items-center justify-center rounded-sm" style={{ width: '64px', height: '36px', padding: '8px 12px', marginLeft: '12px', marginRight: '8px', marginTop: '4px', marginBottom: '4px' }}>
-                    <Search className="w-3 h-3 lg:w-4 lg:h-4 text-white" />
-                  </div>
-                </div>
-              </div>
+              <SearchBar />
             </div>
 
             {/* Right: Info Boxes and User Icons */}

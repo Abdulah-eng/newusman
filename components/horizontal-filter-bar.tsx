@@ -7,7 +7,7 @@ import { Slider } from "@/components/ui/slider"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { SlidersHorizontal, Bed, DollarSign, Waves, Store, Tag, ChevronDown, Filter } from 'lucide-react'
+import { SlidersHorizontal, Bed, PoundSterling, Waves, Store, Tag, ChevronDown, Filter } from 'lucide-react'
 
 interface HorizontalFilterBarProps {
   category: string
@@ -119,7 +119,7 @@ export function HorizontalFilterBar({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="px-6 py-2 rounded-lg flex items-center gap-2 border-gray-200 hover:border-gray-300 bg-white text-gray-700 hover:bg-gray-50">
-              <DollarSign className="h-4 w-4 text-orange-600" />
+              <PoundSterling className="h-4 w-4 text-orange-600" />
               Price
               <ChevronDown className="ml-1 h-4 w-4 text-gray-500" />
             </Button>

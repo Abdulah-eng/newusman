@@ -1,6 +1,7 @@
 {
-  "name": "Usman Mattresses",
-  "short_name": "Usman Mattresses",
+  "name": "Bedora Living",
+  "short_name": "Bedora Living",
+  "description": "Shop premium mattresses, beds, sofas, and bedding at Bedora Living. Free delivery, great prices, and trusted comfort.",
   "icons": [
     {
       "src": "/favicon-16x16.png",
@@ -13,12 +14,19 @@
       "type": "image/png"
     },
     {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
       "src": "/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png"
     }
   ],
-  "theme_color": "#ffffff",
+  "theme_color": "#f97316",
   "background_color": "#ffffff",
-  "display": "standalone"
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
 }
