@@ -167,7 +167,7 @@ export function ColorSelectionModal({
   const allRequiredSelected = (() => {
     const required: string[] = []
     if (hasColorOptions) required.push(localSelectedColor)
-    // Skip depth options - always hidden
+    if (hasDepthOptions) required.push(localSelectedDepth)
     if (hasFirmnessOptions) required.push(localSelectedFirmness)
     return required.every(option => !!option)
   })()

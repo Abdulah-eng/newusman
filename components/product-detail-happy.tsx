@@ -263,13 +263,15 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           }
           
           // Check other variants
-          if (hasDepths && !(product as any).selectedDepth) {
-            console.log('Depth selection required but not implemented yet')
+          if (hasDepths && !selectedDepth) {
+            console.log('Opening color modal for depth selection')
+            setColorModalOpen(true)
             return
           }
           
-          if (hasFirmness && !(product as any).selectedFirmness) {
-            console.log('Firmness selection required but not implemented yet')
+          if (hasFirmness && !selectedFirmness) {
+            console.log('Opening color modal for firmness selection')
+            setColorModalOpen(true)
             return
           }
           
@@ -340,12 +342,12 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           console.log('Available options after color selection:', { hasDepths, hasFirmness })
           
           // Check other variants
-          if (hasDepths && !(product as any).selectedDepth) {
+          if (hasDepths && !selectedDepth) {
             console.log('Depth selection required but not implemented yet')
             return
           }
           
-          if (hasFirmness && !(product as any).selectedFirmness) {
+          if (hasFirmness && !selectedFirmness) {
             console.log('Firmness selection required but not implemented yet')
             return
           }
@@ -855,6 +857,117 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
   const currentVariant = getCurrentVariant()
 
+  // Function to start sequential variant selection flow for Add to Basket
+  const startSequentialVariantSelection = useCallback(() => {
+    setIsSequentialFlow(true) // Mark that we're in sequential flow mode
+    
+    const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
+    
+    // Start with size check (if size variants exist)
+    if (hasSizes && !selectedSize) {
+      // Size is required but not selected, open size modal
+      setSizeModalOpen(true)
+      return
+    }
+    
+    // After size is selected (or if no size required), check color
+    if (hasColors && !selectedColor && !colorModalOpen) {
+      // Color is required but not selected, open color modal
+      setColorModalOpen(true)
+      return
+    }
+    
+    // Check for other variant types if they exist
+    if (hasDepths && !selectedDepth && !colorModalOpen) {
+      // Depth is required but not selected, open color modal which handles depth
+      setColorModalOpen(true)
+      return
+    }
+    
+    if (hasFirmness && !selectedFirmness && !colorModalOpen) {
+      // Firmness is required but not selected, open color modal which handles firmness
+      setColorModalOpen(true)
+      return
+    }
+    
+    // All required variants are selected, proceed to add to cart
+    console.log('All variants selected in startSequentialVariantSelection, adding to cart')
+    
+    // Calculate current variant price
+    const currentVariantPrice = (() => {
+      const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
+      if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
+        return product.currentPrice || 0
+      }
+
+      // Find variant that matches all selected options
+      const matchingVariant = (product as any).variants.find((variant: any) => {
+        const sizeMatch = hasSizes ? variant.size === selectedSize : true
+        const colorMatch = !selectedColor || variant.color === selectedColor
+        const depthMatch = !hasDepths || !selectedDepth || variant.depth === selectedDepth
+        const firmnessMatch = !hasFirmness || !selectedFirmness || variant.firmness === selectedFirmness
+        return sizeMatch && colorMatch && depthMatch && firmnessMatch
+      })
+
+      return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
+    })()
+
+    // Prepare payload with free gift details if available
+    const payload: any = {
+        id: String(product.id),
+        name: product.name,
+        brand: product.brand,
+        image: selectedImage || product.image,
+        currentPrice: currentVariantPrice,
+        originalPrice: product.originalPrice,
+        size: selectedSizeData?.name || 'Standard',
+        color: selectedColor,
+        depth: selectedDepth,
+        firmness: selectedFirmness
+    }
+
+    // Add free gift details if available
+    const hasFreeGift = (product as any).free_gift_product_id && (
+      (product as any).free_gift_enabled || 
+      (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+    )
+    
+    if (hasFreeGift) {
+      // Use the gift product name from the fields or default
+      const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
+      
+      Object.assign(payload, {
+        freeGiftProductId: (product as any).free_gift_product_id,
+        freeGiftProductName: giftProductName,
+        freeGiftProductImage: (product as any).free_gift_product_image || ''
+      })
+      console.log('Free gift will be added:', {
+        freeGiftProductId: (product as any).free_gift_product_id,
+        freeGiftProductName: giftProductName,
+        freeGiftProductImage: (product as any).free_gift_product_image || '',
+        source: 'product_detail_page'
+      })
+    } else {
+      console.log('No free gift details available - reasons:', {
+        hasFreeGiftProductId: !!(product as any).free_gift_product_id,
+        free_gift_enabled: (product as any).free_gift_enabled,
+        hasFreeGiftBadge: (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+      })
+    }
+
+    // Actually add the item to cart using cart context
+    console.log('Dispatching ADD_ITEM with payload:', payload)
+    dispatch({
+      type: 'ADD_ITEM',
+      payload
+    })
+    console.log('ADD_ITEM dispatched successfully')
+
+    // Open the basket sidebar
+    setBasketSidebarOpen(true)
+    setIsSequentialFlow(false) // Reset the flag
+  }, [getAvailableVariantOptions, selectedSize, selectedColor, product, dispatch, selectedImage, sizeData, selectedSizeData, colorModalOpen])
+
   const addToCart = useCallback(() => {
     console.log('addToCart function called')
     console.log('Product data:', product)
@@ -954,32 +1067,12 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     // Check if all required variants are already selected
     const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
     
-    // For depth and firmness, use default values if not selected
-    const variants = (product as any).variants || []
-    let currentSelectedDepth = selectedDepth
-    let currentSelectedFirmness = selectedFirmness
-    
-    if (hasDepths && !currentSelectedDepth) {
-      currentSelectedDepth = variants.find((v: any) => v.depth && v.depth.trim() !== '')?.depth
-      if (currentSelectedDepth) {
-        console.log('Using default depth for variant check:', currentSelectedDepth)
-        setSelectedDepth(currentSelectedDepth)
-      }
-    }
-    
-    if (hasFirmness && !currentSelectedFirmness) {
-      currentSelectedFirmness = variants.find((v: any) => v.firmness && v.firmness.trim() !== '')?.firmness
-      if (currentSelectedFirmness) {
-        console.log('Using default firmness for variant check:', currentSelectedFirmness)
-        setSelectedFirmness(currentSelectedFirmness)
-      }
-    }
-    
+    // Validate that all required variants are explicitly selected (no defaults)
     const allVariantsSelected = 
       (!hasSizes || selectedSize) &&
       (!hasColors || selectedColor) &&
-      (!hasDepths || currentSelectedDepth) &&
-      (!hasFirmness || currentSelectedFirmness)
+      (!hasDepths || selectedDepth) &&
+      (!hasFirmness || selectedFirmness)
     
     console.log('Variant check:', {
       hasSizes,
@@ -988,8 +1081,8 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       hasFirmness,
       selectedSize,
       selectedColor,
-      selectedDepth: currentSelectedDepth,
-      selectedFirmness: currentSelectedFirmness,
+      selectedDepth,
+      selectedFirmness,
       allVariantsSelected
     })
     
@@ -1053,228 +1146,13 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       setBasketSidebarOpen(true)
     } else {
       console.log('Not all variants selected, opening sequential selection')
-      // Inline the sequential variant selection logic
-      setIsSequentialFlow(true) // Mark that we're in sequential flow mode
-      
-    const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
-
-    // Start with size check (if size variants exist)
-    if (hasSizes && !selectedSize) {
-      // Size is required but not selected, open size modal
-      setSizeModalOpen(true)
-      return
-    }
-
-    // After size is selected (or if no size required), check color
-    if (hasColors && !selectedColor) {
-      // Color is required but not selected, open color modal
-      setColorModalOpen(true)
-      return
-    }
-
-    // Check for other variant types if they exist
-      const variants = (product as any).variants || []
-    if (hasDepths && !(product as any).selectedDepth) {
-        // For now, use the first available depth value as default
-        const firstDepth = variants.find((v: any) => v.depth && v.depth.trim() !== '')?.depth
-        if (firstDepth) {
-          console.log('Using default depth:', firstDepth)
-          // Set the depth in the product object for consistency
-          ;(product as any).selectedDepth = firstDepth
-        }
-    }
-
-    if (hasFirmness && !(product as any).selectedFirmness) {
-        // For now, use the first available firmness value as default
-        const firstFirmness = variants.find((v: any) => v.firmness && v.firmness.trim() !== '')?.firmness
-        if (firstFirmness) {
-          console.log('Using default firmness:', firstFirmness)
-          // Set the firmness in the product object for consistency
-          ;(product as any).selectedFirmness = firstFirmness
-        }
-    }
-
-    // All required variants are selected, proceed to add to cart
-      console.log('All variants selected in inline logic, adding to cart')
-      
-      // Calculate current variant price
-      const currentVariantPrice = (() => {
-        const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
-        if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
-          return product.currentPrice || 0
-        }
-
-        // Find variant that matches selected size and color
-        const matchingVariant = (product as any).variants.find((variant: any) => {
-          const sizeMatch = hasSizes ? variant.size === selectedSize : true
-          const colorMatch = !selectedColor || variant.color === selectedColor
-          return sizeMatch && colorMatch
-        })
-
-        return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
-      })()
-
-    // Prepare payload with free gift details if available
-    const payload: any = {
-        id: String(product.id),
-        name: product.name,
-        brand: product.brand,
-        image: selectedImage || product.image,
-        currentPrice: currentVariantPrice,
-        originalPrice: product.originalPrice,
-        size: selectedSizeData?.name || 'Standard',
-        color: selectedColor
-    }
-
-    // Add free gift details if available
-      const hasFreeGift = (product as any).free_gift_product_id && (
-        (product as any).free_gift_enabled || 
-        (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
-      )
-      
-    if (hasFreeGift) {
-      // Use the gift product name from the fields or default
-      const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
-      
-      Object.assign(payload, {
-        freeGiftProductId: (product as any).free_gift_product_id,
-        freeGiftProductName: giftProductName,
-        freeGiftProductImage: (product as any).free_gift_product_image || ''
-      })
-      console.log('Free gift will be added:', {
-        freeGiftProductId: (product as any).free_gift_product_id,
-        freeGiftProductName: giftProductName,
-        freeGiftProductImage: (product as any).free_gift_product_image || '',
-        source: 'product_detail_page'
-      })
-    } else {
-      console.log('No free gift details available - reasons:', {
-        hasFreeGiftProductId: !!(product as any).free_gift_product_id,
-        free_gift_enabled: (product as any).free_gift_enabled,
-        hasFreeGiftBadge: (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
-      })
-    }
-
-    // Actually add the item to cart using cart context
-      console.log('Dispatching ADD_ITEM with payload:', payload)
-    dispatch({
-      type: 'ADD_ITEM',
-      payload
-    })
-      console.log('ADD_ITEM dispatched successfully')
-
-      // Open the basket sidebar
-    setBasketSidebarOpen(true)
-      setIsSequentialFlow(false) // Reset the flag
-    }
-  }, [hasOnlyOneVariant, singleVariant, product, dispatch, selectedImage, selectedSize, selectedColor, sizeData, getAvailableVariantOptions])
-
-  // Function to start sequential variant selection flow for Add to Basket
-  const startSequentialVariantSelection = useCallback(() => {
-    setIsSequentialFlow(true) // Mark that we're in sequential flow mode
-    
-    const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
-    
-    // Start with size check (if size variants exist)
-    if (hasSizes && !selectedSize) {
-      // Size is required but not selected, open size modal
-      setSizeModalOpen(true)
-      return
-    }
-    
-    // After size is selected (or if no size required), check color
-    if (hasColors && !selectedColor) {
-      // Color is required but not selected, open color modal
-      setColorModalOpen(true)
-      return
-    }
-    
-    // Check for other variant types if they exist
-    if (hasDepths && !(product as any).selectedDepth) {
-      // Depth is required but not selected, would need to implement depth modal
-      console.log('Depth selection required but not implemented yet')
-      return
-    }
-    
-    if (hasFirmness && !(product as any).selectedFirmness) {
-      // Firmness is required but not selected, would need to implement depth modal
-      console.log('Firmness selection required but not implemented yet')
-      return
-    }
-    
-    // All required variants are selected, proceed to add to cart
-    console.log('All variants selected in startSequentialVariantSelection, adding to cart')
-    
-    // Calculate current variant price
-    const currentVariantPrice = (() => {
-      const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
-      if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
-        return product.currentPrice || 0
+      // Only start sequential flow if we're not already in one
+      if (!isSequentialFlow) {
+        startSequentialVariantSelection()
       }
-
-      // Find variant that matches selected size and color
-      const matchingVariant = (product as any).variants.find((variant: any) => {
-        const sizeMatch = hasSizes ? variant.size === selectedSize : true
-        const colorMatch = !selectedColor || variant.color === selectedColor
-        return sizeMatch && colorMatch
-      })
-
-      return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
-    })()
-
-    // Prepare payload with free gift details if available
-    const payload: any = {
-        id: String(product.id),
-        name: product.name,
-        brand: product.brand,
-        image: selectedImage || product.image,
-        currentPrice: currentVariantPrice,
-        originalPrice: product.originalPrice,
-        size: selectedSizeData?.name || 'Standard',
-        color: selectedColor
     }
+  }, [hasOnlyOneVariant, singleVariant, product, dispatch, selectedImage, selectedSize, selectedColor, sizeData, getAvailableVariantOptions, isSequentialFlow, startSequentialVariantSelection])
 
-    // Add free gift details if available
-    const hasFreeGift = (product as any).free_gift_product_id && (
-      (product as any).free_gift_enabled || 
-      (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
-    )
-    
-    if (hasFreeGift) {
-      // Use the gift product name from the fields or default
-      const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
-      
-      Object.assign(payload, {
-        freeGiftProductId: (product as any).free_gift_product_id,
-        freeGiftProductName: giftProductName,
-        freeGiftProductImage: (product as any).free_gift_product_image || ''
-      })
-      console.log('Free gift will be added:', {
-        freeGiftProductId: (product as any).free_gift_product_id,
-        freeGiftProductName: giftProductName,
-        freeGiftProductImage: (product as any).free_gift_product_image || '',
-        source: 'product_detail_page'
-      })
-    } else {
-      console.log('No free gift details available - reasons:', {
-        hasFreeGiftProductId: !!(product as any).free_gift_product_id,
-        free_gift_enabled: (product as any).free_gift_enabled,
-        hasFreeGiftBadge: (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
-      })
-    }
-
-    // Actually add the item to cart using cart context
-    console.log('Dispatching ADD_ITEM with payload:', payload)
-    dispatch({
-      type: 'ADD_ITEM',
-      payload
-    })
-    console.log('ADD_ITEM dispatched successfully')
-
-    // Open the basket sidebar
-    setBasketSidebarOpen(true)
-    setIsSequentialFlow(false) // Reset the flag
-  }, [getAvailableVariantOptions, selectedSize, selectedColor, product, dispatch, selectedImage, sizeData, selectedSizeData])
 
   // Safe monthly price calculation - use product prices when no size is selected
   const monthlyPrice = selectedSizeData?.currentPrice ? Math.floor(selectedSizeData.currentPrice / 12) : Math.floor((product.currentPrice || currentPrice) / 12)
@@ -4885,8 +4763,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
         }}
 
         onColorSelect={(color, depth, firmness, mattress) => {
-
-          handleVariantSelection('color', color.name)
+          // Update all selected variants
+          setSelectedColor(color.name)
+          console.log('Selected color:', color.name)
 
           if (depth) {
             setSelectedDepth(depth.name)
@@ -4903,6 +4782,87 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
             console.log('Selected mattress:', mattress.name)
           }
 
+          // Close the color modal
+          setColorModalOpen(false)
+
+          // If we're in sequential flow, check if all variants are now selected
+          if (isSequentialFlow) {
+            setTimeout(() => {
+              const { hasSizes, hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
+              
+              const allVariantsSelected = 
+                (!hasSizes || selectedSize) &&
+                (!hasColors || color.name) &&
+                (!hasDepths || (depth?.name || selectedDepth)) &&
+                (!hasFirmness || (firmness?.name || selectedFirmness))
+              
+              console.log('Sequential flow check after color modal:', {
+                hasSizes, hasColors, hasDepths, hasFirmness,
+                selectedSize, selectedColor: color.name, 
+                selectedDepth: depth?.name || selectedDepth, 
+                selectedFirmness: firmness?.name || selectedFirmness,
+                allVariantsSelected
+              })
+              
+              if (allVariantsSelected) {
+                console.log('All variants selected in sequential flow, adding to cart')
+                setIsSequentialFlow(false)
+                // Add to cart directly without going through addToCart function
+                const currentVariantPrice = (() => {
+                  const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
+                  if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
+                    return product.currentPrice || 0
+                  }
+
+                  const matchingVariant = (product as any).variants.find((variant: any) => {
+                    const sizeMatch = hasSizes ? variant.size === selectedSize : true
+                    const colorMatch = !color.name || variant.color === color.name
+                    const depthMatch = !depth?.name || variant.depth === depth.name
+                    const firmnessMatch = !firmness?.name || variant.firmness === firmness.name
+                    return sizeMatch && colorMatch && depthMatch && firmnessMatch
+                  })
+
+                  return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
+                })()
+
+                const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
+                
+                const hasFreeGift = (product as any).free_gift_product_id && (
+                  (product as any).free_gift_enabled || 
+                  (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
+                )
+
+                const payload: any = {
+                  id: String(product.id),
+                  name: product.name,
+                  brand: product.brand,
+                  image: selectedImage || product.image,
+                  currentPrice: currentVariantPrice,
+                  originalPrice: product.originalPrice,
+                  size: selectedSizeData?.name || 'Standard',
+                  color: color.name,
+                  depth: depth?.name,
+                  firmness: firmness?.name
+                }
+
+                if (hasFreeGift) {
+                  const giftProductName = (product as any).free_gift_product_name || 'Free Gift'
+                  Object.assign(payload, {
+                    freeGiftProductId: (product as any).free_gift_product_id,
+                    freeGiftProductName: giftProductName,
+                    freeGiftProductImage: (product as any).free_gift_product_image || ''
+                  })
+                }
+
+                dispatch({
+                  type: 'ADD_ITEM',
+                  payload
+                })
+                
+                setBasketSidebarOpen(true)
+              }
+            }, 100)
+          }
         }}
 
         colors={(() => {
