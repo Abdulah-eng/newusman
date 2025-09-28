@@ -14,11 +14,12 @@ export function MattressTypesSection() {
     // Fetch actual mattress products when content changes
   useEffect(() => {
     const fetchMattressProducts = async () => {
-      // Check if we have mattress cards with features
-      if (content.mattresses?.mattressCards?.length > 0) {
-        try {
-          // Fetch product details for each mattress card
-          const productPromises = content.mattresses.mattressCards.map(async (mattressCard: any, index: number) => {
+        // Check if we have mattress cards with features
+        if (content.mattresses?.mattressCards?.length > 0) {
+          console.log('🔍 MattressTypesSection - Mattress cards data:', content.mattresses.mattressCards)
+          try {
+            // Fetch product details for each mattress card
+            const productPromises = content.mattresses.mattressCards.map(async (mattressCard: any, index: number) => {
             const { productId, featureToShow } = mattressCard
             
             if (!productId) return null
@@ -37,11 +38,20 @@ export function MattressTypesSection() {
                   // Ensure we have a proper image
                   const productImage = product.images?.[0] || product.image || "/bedcollect.jpeg"
                   
-                  // Ensure we have a proper description
-                  const productDescription = content.mattresses.description || 
+                  // Ensure we have a proper description - use card description first, then product description
+                  const productDescription = mattressCard.description || 
+                    content.mattresses.description || 
                     product.long_description || 
                     product.longDescription || 
                     "Premium mattress offering exceptional comfort and support."
+                  
+                  console.log('🔍 MattressTypesSection - Description sources:', {
+                    cardDescription: mattressCard.description,
+                    globalDescription: content.mattresses.description,
+                    productLongDescription: product.long_description,
+                    productLongDescriptionAlt: product.longDescription,
+                    finalDescription: productDescription
+                  })
                   
                   return {
                     id: product.id,
@@ -51,13 +61,34 @@ export function MattressTypesSection() {
                     image: productImage
                   }
                 } else {
-                  return null
+                  // Fallback to hardcoded data when product not found
+                  return {
+                    id: `fallback-${index}`,
+                    title: featureToShow || `Premium Mattress ${index + 1}`,
+                    icon: <Bed className="h-5 w-5 text-orange-500" />,
+                    description: mattressCard.description || content.mattresses.description || "Premium mattress offering exceptional comfort and support.",
+                    image: "/bedcollect.jpeg"
+                  }
                 }
               } else {
-                return null
+                // Fallback to hardcoded data when API fails
+                return {
+                  id: `fallback-${index}`,
+                  title: featureToShow || `Premium Mattress ${index + 1}`,
+                  icon: <Bed className="h-5 w-5 text-orange-500" />,
+                  description: mattressCard.description || content.mattresses.description || "Premium mattress offering exceptional comfort and support.",
+                  image: "/bedcollect.jpeg"
+                }
               }
             } catch (error) {
-              return null
+              // Fallback to hardcoded data when error occurs
+              return {
+                id: `fallback-${index}`,
+                title: featureToShow || `Premium Mattress ${index + 1}`,
+                icon: <Bed className="h-5 w-5 text-orange-500" />,
+                description: mattressCard.description || content.mattresses.description || "Premium mattress offering exceptional comfort and support.",
+                image: "/bedcollect.jpeg"
+              }
             }
           })
           
@@ -86,12 +117,36 @@ export function MattressTypesSection() {
                     description: content.mattresses.description || product.long_description || "Premium mattress offering exceptional comfort and support.",
                     image: product.images?.[0] || product.image || "/bedcollect.jpeg"
                   }
+                } else {
+                  // Fallback to hardcoded data when product not found
+                  return {
+                    id: `fallback-${index}`,
+                    title: `Premium Mattress ${index + 1}`,
+                    icon: <Bed className="h-5 w-5 text-orange-500" />,
+                    description: content.mattresses.description || "Premium mattress offering exceptional comfort and support.",
+                    image: "/bedcollect.jpeg"
+                  }
+                }
+              } else {
+                // Fallback to hardcoded data when API fails
+                return {
+                  id: `fallback-${index}`,
+                  title: `Premium Mattress ${index + 1}`,
+                  icon: <Bed className="h-5 w-5 text-orange-500" />,
+                  description: content.mattresses.description || "Premium mattress offering exceptional comfort and support.",
+                  image: "/bedcollect.jpeg"
                 }
               }
             } catch (error) {
-              // Handle error silently
+              // Fallback to hardcoded data when error occurs
+              return {
+                id: `fallback-${index}`,
+                title: `Premium Mattress ${index + 1}`,
+                icon: <Bed className="h-5 w-5 text-orange-500" />,
+                description: content.mattresses.description || "Premium mattress offering exceptional comfort and support.",
+                image: "/bedcollect.jpeg"
+              }
             }
-            return null
           })
           
           const products = await Promise.all(productPromises)
@@ -105,6 +160,7 @@ export function MattressTypesSection() {
     fetchMattressProducts()
   }, [content.mattresses])
   
+
   // Use database products if available, otherwise fallback to hardcoded data
   const mattressTypes = mattressProducts.length > 0 ? mattressProducts : [
     {
@@ -201,13 +257,13 @@ export function MattressTypesSection() {
               className="flex transition-transform duration-500 ease-in-out"
               style={{ transform: `translateX(-${currentIndex * (100 / 3)}%)` }}
             >
-              {mattressTypes.map((type) => {
+              {mattressTypes.map((type, index) => {
                 // Check if this is a database product (has UUID format) or fallback
                 const isDatabaseProduct = typeof type.id === 'string' && type.id.includes('-')
                 const categoryForLink = isDatabaseProduct ? 'mattresses' : 'mattresses' // Default category for database products
                 
                 return (
-                  <div key={type.id} className="text-center flex-shrink-0 w-full md:w-1/3 px-4">
+                  <div key={`${type.id}-${index}`} className="text-center flex-shrink-0 w-full md:w-1/3 px-4">
                     {isDatabaseProduct ? (
                       <div className="block group h-full">
                         <div className="relative mb-6">
@@ -234,8 +290,8 @@ export function MattressTypesSection() {
                           </h3>
                         </div>
                         
-                        <p className="text-gray-700 text-sm leading-relaxed font-modern min-h-[3.75rem]" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {type.description}
+                        <p className="text-gray-700 text-sm leading-relaxed font-modern">
+                          {type.description || 'No description available'}
                         </p>
                         <div className="mt-4 text-center">
                           <Link 
@@ -274,8 +330,8 @@ export function MattressTypesSection() {
                           </h3>
                         </div>
                         
-                        <p className="text-gray-700 text-sm leading-relaxed font-modern min-h-[3.75rem]" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {type.description}
+                        <p className="text-gray-700 text-sm leading-relaxed font-modern">
+                          {type.description || 'No description available'}
                         </p>
                         <div className="mt-4 text-center">
                           <Link 

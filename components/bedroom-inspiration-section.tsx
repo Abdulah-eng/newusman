@@ -229,13 +229,13 @@ export function BedroomInspirationSection() {
                 className="flex transition-transform duration-500 ease-in-out"
                 style={{ transform: `translateX(-${currentIndex * (100 / 3)}%)` }}
               >
-                {inspirationTypes.map((type) => {
+                {inspirationTypes.map((type, index) => {
                   // Check if this is a database product (has UUID format) or fallback
                   const isDatabaseProduct = typeof type.id === 'string' && type.id.includes('-')
                   const categoryForLink = isDatabaseProduct ? 'mattresses' : 'beds' // Default category for database products
                   
                   return (
-                    <div key={type.id} className="text-center flex-shrink-0 w-full md:w-1/3 px-4">
+                    <div key={`${type.id}-${index}`} className="text-center flex-shrink-0 w-full md:w-1/3 px-4">
                        {isDatabaseProduct ? (
                          <div className="block group">
                           <div className="relative mb-6">
