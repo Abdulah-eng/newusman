@@ -607,14 +607,17 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           }
         })
         const entries = Array.from(sizeToLowestPrice.entries()).map(([name, price]) => {
-          // Find a variant with this size to get dimensions
-          const variantWithSize = sized.find(v => v.size === name)
+          // Find a variant with this size to get dimensions and availability
+          const variantsForSize = sized.filter(v => v.size === name)
+          const variantWithSize = variantsForSize[0]
+          // If any variant for this size is available, consider the size in stock
+          const anyAvailable = variantsForSize.some(v => v.availability === true)
           return {
-          name,
-          dimensions: `${name} dimensions`,
-          availability: (product as any).inStock ? 'In Stock' : 'Dispatched within 45 Days',
-          inStock: Boolean((product as any).inStock),
-          wasPrice: price.wasPrice || 0,
+            name,
+            dimensions: `${name} dimensions`,
+            availability: anyAvailable ? 'In Stock' : 'Out of Stock',
+            inStock: anyAvailable,
+            wasPrice: price.wasPrice || 0,
             currentPrice: price.currentPrice || 0,
             // Add dimension fields from variant
             length: variantWithSize?.length || null,
@@ -1236,8 +1239,8 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       `}</style>
       <div className="bg-white border border-gray-100 rounded-xl p-3 sm:p-4 lg:p-4 pb-20 sm:pb-24 lg:pb-4">
 
-      {/* Mobile: Product Details First */}
-      <div className="lg:hidden mb-8 bg-white border-b border-gray-200">
+      {/* Mobile: Product Details First (disabled here; moved below gallery to ensure images appear above) */}
+      <div className="hidden mb-8 bg-white border-b border-gray-200">
         {/* Product Details Section for Mobile */}
         <div className="space-y-4">
           {/* Merged Product Info & Size Card */}
@@ -3837,7 +3840,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
         {/* Right: details - takes 2/5 of the width */}
 
-        <div className="hidden lg:block lg:col-span-2 space-y-2 lg:sticky lg:top-0 lg:self-start z-30 bg-white/95 backdrop-blur-sm shadow-lg border-b border-gray-200 transition-all duration-300" style={{ position: 'sticky', top: 0, willChange: 'transform', transform: 'translateZ(0)' }}>
+        <div className="block lg:col-span-2 space-y-2 lg:sticky lg:top-0 lg:self-start z-30 bg-white/95 backdrop-blur-sm shadow-lg border-b border-gray-200 transition-all duration-300" style={{ position: 'sticky', top: 0, willChange: 'transform', transform: 'translateZ(0)' }}>
 
           {/* Merged Product Info & Size Card */}
 

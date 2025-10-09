@@ -465,7 +465,7 @@ export function DealOfTheDay() {
             </div>
 
             {/* Right: Content Section */}
-            <div className="p-8 lg:p-12 flex flex-col justify-center">
+            <div className="p-6 sm:p-8 lg:p-12 flex flex-col justify-center">
               <div className="mb-6">
                 <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 font-display">
                   {mainDealProduct.name || "Premium Product"}
@@ -533,7 +533,7 @@ export function DealOfTheDay() {
         </div>
 
         {/* Additional Deals Grid - make 3 wider cards that fill width */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {dealProducts.slice(1, 5).map((product, index) => {
             const discount = product.originalPrice && product.currentPrice ? 
               calculateDiscount(product.currentPrice, product.originalPrice) : 

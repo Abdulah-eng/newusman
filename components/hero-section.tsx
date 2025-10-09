@@ -397,12 +397,12 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
               <p className="text-lg text-gray-700 font-modern">Discover our most-loved collections</p>
             </div>
 
-            {/* Right Side - Navigation Buttons and Arrows */}
-            <div className="flex items-center gap-3">
+          {/* Right Side - Navigation Buttons and Arrows */}
+            <div className="flex items-center gap-3 overflow-x-auto whitespace-nowrap no-scrollbar py-1">
               {/* Special Mattresses Button */}
               <button 
                 onClick={() => handleCategoryClick('mattresses')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors duration-300 font-modern ${
+                className={`px-4 py-2 rounded-lg font-medium transition-colors duration-300 font-modern shrink-0 ${
                   selectedCategory === 'mattresses' 
                     ? 'bg-orange-500 text-white' 
                     : 'bg-white text-black'
@@ -414,7 +414,7 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
               {/* Other Category Buttons */}
               <button 
                 onClick={() => handleCategoryClick('beds')}
-                className={`px-4 py-2 rounded-full font-medium transition-colors duration-300 font-modern ${
+                className={`px-4 py-2 rounded-full font-medium transition-colors duration-300 font-modern shrink-0 ${
                   selectedCategory === 'beds' 
                     ? 'bg-orange-500 text-white' 
                     : 'bg-white text-black'
@@ -424,7 +424,7 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
               </button>
               <button 
                 onClick={() => handleCategoryClick('sofas')}
-                className={`px-4 py-2 rounded-full font-medium transition-colors duration-300 font-modern ${
+                className={`px-4 py-2 rounded-full font-medium transition-colors duration-300 font-modern shrink-0 ${
                   selectedCategory === 'sofas' 
                     ? 'bg-orange-500 text-white' 
                     : 'bg-white text-black'
@@ -434,7 +434,7 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
               </button>
               <button 
                 onClick={() => handleCategoryClick('pillows')}
-                className={`px-4 py-2 rounded-full font-medium transition-colors duration-300 font-modern ${
+                className={`px-4 py-2 rounded-full font-medium transition-colors duration-300 font-modern shrink-0 ${
                   selectedCategory === 'pillows' 
                     ? 'bg-orange-500 text-white' 
                     : 'bg-white text-black'
@@ -444,7 +444,7 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
               </button>
               <button 
                 onClick={() => handleCategoryClick('toppers')}
-                className={`px-4 py-2 rounded-full font-medium transition-colors duration-300 font-modern ${
+                className={`px-4 py-2 rounded-full font-medium transition-colors duration-300 font-modern shrink-0 ${
                   selectedCategory === 'toppers' 
                     ? 'bg-orange-500 text-white' 
                     : 'bg-white text-black'
@@ -454,7 +454,7 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
               </button>
               <button 
                 onClick={() => handleCategoryClick('bunkbeds')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shrink-0 ${
                   selectedCategory === 'bunkbeds'
                     ? 'bg-orange-500 text-white' 
                     : 'bg-white text-black'
@@ -464,7 +464,7 @@ export default function HeroSection({ onCategoryChange }: HeroSectionProps) {
               </button>
               <button 
                 onClick={() => handleCategoryClick('kids')}
-                className={`px-4 py-2 rounded-full font-medium transition-colors duration-300 font-modern ${
+                className={`px-4 py-2 rounded-full font-medium transition-colors duration-300 font-modern shrink-0 ${
                   selectedCategory === 'kids' 
                     ? 'bg-orange-500 text-white' 
                     : 'bg-white text-black'
