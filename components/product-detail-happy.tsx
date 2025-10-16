@@ -906,7 +906,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       // Find variant that matches all selected options
       const matchingVariant = (product as any).variants.find((variant: any) => {
         const sizeMatch = hasSizes ? variant.size === selectedSize : true
-        const colorMatch = !selectedColor || variant.color === selectedColor
+        const colorMatch = !hasColors || !selectedColor || variant.color === selectedColor
         const depthMatch = !hasDepths || !selectedDepth || variant.depth === selectedDepth
         const firmnessMatch = !hasFirmness || !selectedFirmness || variant.firmness === selectedFirmness
         return sizeMatch && colorMatch && depthMatch && firmnessMatch

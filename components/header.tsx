@@ -339,56 +339,56 @@ export default function Header() {
         <div className="px-6 sm:px-8 py-4 space-y-4">
           {/* Mobile Navigation Links */}
           <div className="grid grid-cols-2 gap-4 text-sm">
-            <Link href="/mattresses" className="flex items-center gap-2 hover:text-orange-400 transition-colors p-2 rounded">
+            <Link href="/mattresses" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
               <ChevronDown className="w-4 h-4 text-gray-300" />
               Mattresses
             </Link>
-            <Link href="/beds" className="flex items-center gap-2 hover:text-orange-400 transition-colors p-2 rounded">
+            <Link href="/beds" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
               <ChevronDown className="w-4 h-4 text-gray-300" />
               Beds
             </Link>
-            <Link href="/sofas" className="flex items-center gap-2 hover:text-orange-400 transition-colors p-2 rounded">
+            <Link href="/sofas" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
               <ChevronDown className="w-4 h-4 text-gray-300" />
               Sofas
             </Link>
-            <Link href="/kids" className="flex items-center gap-2 hover:text-orange-400 transition-colors p-2 rounded">
+            <Link href="/kids" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
               <ChevronDown className="w-4 h-4 text-gray-300" />
               Kids
             </Link>
-            <Link href="/pillows" className="flex items-center gap-2 hover:text-orange-400 transition-colors p-2 rounded">
+            <Link href="/pillows" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
               <ChevronDown className="w-4 h-4 text-gray-300" />
               Pillows
             </Link>
-            <Link href="/toppers" className="flex items-center gap-2 hover:text-orange-400 transition-colors p-2 rounded">
+            <Link href="/toppers" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
               <ChevronDown className="w-4 h-4 text-gray-300" />
               Toppers
             </Link>
-            <Link href="/bunkbeds" className="flex items-center gap-2 hover:text-orange-400 transition-colors p-2 rounded">
+            <Link href="/bunkbeds" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
               <ChevronDown className="w-4 h-4 text-gray-300" />
               Bunkbeds
             </Link>
-            <Link href="/guides" className="flex items-center gap-2 hover:text-orange-400 transition-colors p-2 rounded">
+            <Link href="/guides" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
               Guide
             </Link>
           </div>
 
           {/* Mobile Special Links */}
           <div className="space-y-3">
-                          <Link href="/sale" className="flex items-center space-x-3 rounded-lg p-3 bg-gray-700">
+                          <Link href="/sale" className="flex items-center space-x-3 rounded-lg p-3 hover:bg-gray-700 transition-colors duration-200">
                 <div className="w-16 h-16 flex items-center justify-center">
                   <img src="/clearance.png" alt="Clearance" className="w-16 h-16 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(100%)' }} />
                 </div>
                 <div className="leading-5">
-                  <div className="text-sm font-semibold">SALES & CLEARANCE</div>
+                  <div className="text-sm font-semibold text-white">SALES & CLEARANCE</div>
                   <div className="text-xs text-gray-300">Hurry! Discounts Up to 60%</div>
                 </div>
               </Link>
-                          <Link href="/mattress-finder" className="flex items-center space-x-3 rounded-lg p-3 bg-gray-700">
+                          <Link href="/mattress-finder" className="flex items-center space-x-3 rounded-lg p-3 hover:bg-gray-700 transition-colors duration-200">
                 <div className="w-20 h-20 flex items-center justify-center">
                   <img src="/quiz.png" alt="Mattress Quiz" className="w-20 h-20 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(100%)' }} />
                 </div>
                 <div className="leading-5">
-                  <div className="text-sm font-semibold whitespace-nowrap">MATTRESS QUIZ</div>
+                  <div className="text-sm font-semibold text-white whitespace-nowrap">MATTRESS QUIZ</div>
                   <div className="text-xs text-gray-300">find your perfect match</div>
                 </div>
               </Link>

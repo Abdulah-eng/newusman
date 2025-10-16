@@ -124,9 +124,9 @@ export function ColorSelectionModal({
     // Find variant that matches all selected options
     const matchingVariant = variants.find(variant => {
       const sizeMatch = !selectedSize || variant.size === selectedSize
-      const colorMatch = !localSelectedColor || variant.color === localSelectedColor
-      const depthMatch = !localSelectedDepth || variant.depth === localSelectedDepth
-      const firmnessMatch = !localSelectedFirmness || variant.firmness === localSelectedFirmness
+      const colorMatch = !hasColorOptions || !localSelectedColor || variant.color === localSelectedColor
+      const depthMatch = !hasDepthOptions || !localSelectedDepth || variant.depth === localSelectedDepth
+      const firmnessMatch = !hasFirmnessOptions || !localSelectedFirmness || variant.firmness === localSelectedFirmness
       
       return sizeMatch && colorMatch && depthMatch && firmnessMatch
     })
@@ -141,9 +141,15 @@ export function ColorSelectionModal({
     // Find variant that matches current selections plus this option
     const matchingVariant = variants.find(variant => {
       const sizeMatch = !selectedSize || variant.size === selectedSize
-      const colorMatch = optionType === 'color' ? variant.color === optionValue : (!localSelectedColor || variant.color === localSelectedColor)
-      const depthMatch = optionType === 'depth' ? variant.depth === optionValue : (!localSelectedDepth || variant.depth === localSelectedDepth)
-      const firmnessMatch = optionType === 'firmness' ? variant.firmness === optionValue : (!localSelectedFirmness || variant.firmness === localSelectedFirmness)
+      const colorMatch = optionType === 'color' 
+        ? variant.color === optionValue 
+        : (!hasColorOptions || !localSelectedColor || variant.color === localSelectedColor)
+      const depthMatch = optionType === 'depth' 
+        ? variant.depth === optionValue 
+        : (!hasDepthOptions || !localSelectedDepth || variant.depth === localSelectedDepth)
+      const firmnessMatch = optionType === 'firmness' 
+        ? variant.firmness === optionValue 
+        : (!hasFirmnessOptions || !localSelectedFirmness || variant.firmness === localSelectedFirmness)
       
       return sizeMatch && colorMatch && depthMatch && firmnessMatch
     })
