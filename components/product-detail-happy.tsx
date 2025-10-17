@@ -231,6 +231,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   const [colorModalOpen, setColorModalOpen] = useState(false)
   const [lastSelection, setLastSelection] = useState<string | null>(null)
   const [isSequentialFlow, setIsSequentialFlow] = useState(false)
+  const [isAddingToCart, setIsAddingToCart] = useState(false)
 
   // Smart variant selection state
   const [isAutoSelectionMode, setIsAutoSelectionMode] = useState(false)
@@ -696,7 +697,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
   // useEffect to automatically add to cart when all variants are selected in sequential flow
   useEffect(() => {
-    if (!isSequentialFlow) return // Only run when in sequential flow mode
+    if (!isSequentialFlow || isAddingToCart) return // Only run when in sequential flow mode and not already adding
     
     // Add a small delay to ensure state updates are complete
     const timeoutId = setTimeout(() => {
@@ -712,6 +713,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     
     if (allVariantsSelected) {
       console.log('All variants selected, automatically adding to cart')
+      setIsAddingToCart(true) // Prevent duplicate additions
       setIsSequentialFlow(false) // Reset the flag
       
       // Use unified selection price so cart/side bar match the page/modal
@@ -777,11 +779,14 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
       // Open the basket sidebar
       setBasketSidebarOpen(true)
+      
+      // Reset the flag after adding to cart
+      setTimeout(() => setIsAddingToCart(false), 200)
     }
     }, 100) // Small delay to ensure state updates are complete
     
     return () => clearTimeout(timeoutId)
-  }, [isSequentialFlow, selectedSize, selectedColor, selectedDepth, selectedFirmness, getAvailableVariantOptions, dispatch, selectedImage, sizeData, product])
+  }, [isSequentialFlow, isAddingToCart, selectedSize, selectedColor, selectedDepth, selectedFirmness, getAvailableVariantOptions, dispatch, selectedImage, sizeData, product])
 
   // Enhanced smart selection that can start with either size or color
   const startSmartSelectionWithPriority = useCallback((priorityType?: 'size' | 'color') => {
@@ -4949,6 +4954,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
               
               if (allVariantsSelected) {
                 console.log('All variants selected in sequential flow, adding to cart')
+                setIsAddingToCart(true) // Prevent duplicate additions
                 setIsSequentialFlow(false)
                 
                 // Calculate price using the actual selected values from modal parameters
@@ -5020,6 +5026,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                 })
                 
                 setBasketSidebarOpen(true)
+                
+                // Reset the flag after adding to cart
+                setTimeout(() => setIsAddingToCart(false), 200)
               }
             }, 100)
           }
