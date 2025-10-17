@@ -278,30 +278,16 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           // All variants selected, add to cart directly
           setIsSequentialFlow(false) // Reset the flag
           
-          // Add to cart logic here (copy from addToCart function)
-          const currentVariantPrice = (() => {
-            const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
-            if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
-              return product.currentPrice || 0
-            }
-            
-            const { hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
-            const matchingVariant = (product as any).variants.find((variant: any) => {
-              const norm = (v: any) => String(v ?? '').toLowerCase().trim()
-              const sizeMatch = hasSizes ? norm(variant.size) === norm(selectedSize) : true
-              const colorMatch = !hasColors || !selectedColor ? true : norm(variant.color) === norm(selectedColor)
-              const depthMatch = !hasDepths || !selectedDepth ? true : norm(variant.depth) === norm(selectedDepth)
-              const firmnessMatch = !hasFirmness || !selectedFirmness ? true : norm(variant.firmness) === norm(selectedFirmness)
-              return sizeMatch && colorMatch && depthMatch && firmnessMatch
-            })
-            
-            return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
-          })()
+          // Use unified selection price so cart/side bar match the page/modal
+          const currentVariantPrice = Number(currentSelectionPrice || product.currentPrice || 0)
           
           const hasFreeGift = (product as any).free_gift_product_id && (
             (product as any).free_gift_enabled || 
             (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
           )
+          
+          // Find the selected variant to get its SKU
+          const selectedVariant = getCurrentVariant()
           
           const payload: any = {
                   id: String(product.id),
@@ -311,7 +297,10 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
             currentPrice: currentVariantPrice,
                   originalPrice: product.originalPrice,
             size: selectedSizeData?.name || 'Standard',
-                  color: selectedColor
+                  color: selectedColor,
+                  depth: selectedDepth,
+                  firmness: selectedFirmness,
+                  variantSku: selectedVariant?.sku
                 }
           
           if (hasFreeGift) {
@@ -359,30 +348,16 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           // All variants selected, add to cart directly
           setIsSequentialFlow(false) // Reset the flag
           
-          // Add to cart logic here (copy from addToCart function)
-          const currentVariantPrice = (() => {
-            const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
-            if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
-              return product.currentPrice || 0
-            }
-            
-            const { hasDepths, hasFirmness } = getAvailableVariantOptions()
-            const matchingVariant = (product as any).variants.find((variant: any) => {
-              const norm = (v: any) => String(v ?? '').toLowerCase().trim()
-              const sizeMatch = hasSizes ? norm(variant.size) === norm(selectedSize) : true
-              const colorMatch = !selectedColor ? true : norm(variant.color) === norm(selectedColor)
-              const depthMatch = !hasDepths || !selectedDepth ? true : norm(variant.depth) === norm(selectedDepth)
-              const firmnessMatch = !hasFirmness || !selectedFirmness ? true : norm(variant.firmness) === norm(selectedFirmness)
-              return sizeMatch && colorMatch && depthMatch && firmnessMatch
-            })
-            
-            return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
-          })()
+          // Use unified selection price so cart/side bar match the page/modal
+          const currentVariantPrice = Number(currentSelectionPrice || product.currentPrice || 0)
           
           const hasFreeGift = (product as any).free_gift_product_id && (
             (product as any).free_gift_enabled || 
             (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
           )
+          
+          // Find the selected variant to get its SKU
+          const selectedVariant = getCurrentVariant()
           
           const payload: any = {
                   id: String(product.id),
@@ -392,7 +367,10 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
             currentPrice: currentVariantPrice,
                   originalPrice: product.originalPrice,
             size: selectedSizeData?.name || 'Standard',
-            color: selectedColor
+            color: selectedColor,
+            depth: selectedDepth,
+            firmness: selectedFirmness,
+            variantSku: selectedVariant?.sku
           }
           
           if (hasFreeGift) {
@@ -736,27 +714,16 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       console.log('All variants selected, automatically adding to cart')
       setIsSequentialFlow(false) // Reset the flag
       
-      // Calculate current variant price
-      const currentVariantPrice = (() => {
-        const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
-        if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
-          return product.currentPrice || 0
-        }
-
-        // Find variant that matches selected size and color
-        const matchingVariant = (product as any).variants.find((variant: any) => {
-          const sizeMatch = hasSizes ? variant.size === selectedSize : true
-          const colorMatch = !selectedColor || variant.color === selectedColor
-          return sizeMatch && colorMatch
-        })
-
-        return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
-      })()
+      // Use unified selection price so cart/side bar match the page/modal
+      const currentVariantPrice = Number(currentSelectionPrice || product.currentPrice || 0)
       
       // Get selected size data
       const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
       
       // Prepare payload with free gift details if available
+      // Find the selected variant to get its SKU
+      const selectedVariant = getCurrentVariant()
+      
       const payload: any = {
           id: String(product.id),
           name: product.name,
@@ -765,7 +732,10 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           currentPrice: currentVariantPrice,
           originalPrice: product.originalPrice,
           size: selectedSizeData?.name || 'Standard',
-          color: selectedColor
+          color: selectedColor,
+          depth: selectedDepth,
+          firmness: selectedFirmness,
+          variantSku: selectedVariant?.sku
       }
 
       // Add free gift details if available
@@ -928,25 +898,12 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     // All required variants are selected, proceed to add to cart
     console.log('All variants selected in startSequentialVariantSelection, adding to cart')
     
-    // Calculate current variant price
-    const currentVariantPrice = (() => {
-      const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
-      if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
-        return product.currentPrice || 0
-      }
+    // Use unified selection price so cart/side bar match the page/modal
+    const currentVariantPrice = Number(currentSelectionPrice || product.currentPrice || 0)
 
-      // Find variant that matches all selected options
-      const matchingVariant = (product as any).variants.find((variant: any) => {
-        const sizeMatch = hasSizes ? variant.size === selectedSize : true
-        const colorMatch = !hasColors || !selectedColor || variant.color === selectedColor
-        const depthMatch = !hasDepths || !selectedDepth || variant.depth === selectedDepth
-        const firmnessMatch = !hasFirmness || !selectedFirmness || variant.firmness === selectedFirmness
-        return sizeMatch && colorMatch && depthMatch && firmnessMatch
-      })
-
-      return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
-    })()
-
+    // Find the selected variant to get its SKU
+    const selectedVariant = getCurrentVariant()
+    
     // Prepare payload with free gift details if available
     const payload: any = {
         id: String(product.id),
@@ -958,7 +915,8 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
         size: selectedSizeData?.name || 'Standard',
         color: selectedColor,
         depth: selectedDepth,
-        firmness: selectedFirmness
+        firmness: selectedFirmness,
+        variantSku: selectedVariant?.sku
     }
 
     // Add free gift details if available
@@ -1547,7 +1505,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                   <div className="flex items-center">
 
                     <span className="font-bold text-xl tracking-wide">
-                      {hasOnlyOneVariant ? 'Add to Basket' : 'Choose Options & Add to Basket'}
+                      Add to Basket
                     </span>
 
                   </div>
@@ -2049,7 +2007,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                     </div>
                     <div className="flex items-center">
                       <span className="font-bold text-xl tracking-wide">
-                        {hasOnlyOneVariant ? 'Add to Basket' : 'Choose Options & Add to Basket'}
+                        Add to Basket
                       </span>
                     </div>
                   </div>
@@ -4992,25 +4950,41 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
               if (allVariantsSelected) {
                 console.log('All variants selected in sequential flow, adding to cart')
                 setIsSequentialFlow(false)
-                // Add to cart directly without going through addToCart function
+                
+                // Calculate price using the actual selected values from modal parameters
+                // instead of state which might not be updated yet
                 const currentVariantPrice = (() => {
-                  const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
-                  if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
-                    return product.currentPrice || 0
-                  }
-
-                  const matchingVariant = (product as any).variants.find((variant: any) => {
-                    const sizeMatch = hasSizes ? variant.size === selectedSize : true
-                    const colorMatch = !color.name || variant.color === color.name
-                    const depthMatch = !depth?.name || variant.depth === depth.name
-                    const firmnessMatch = !firmness?.name || variant.firmness === firmness.name
+                  const variants = (product as any).variants || []
+                  if (variants.length === 0) return product.currentPrice || 0
+                  
+                  const normalize = (v: any) => String(v ?? '').toLowerCase().trim()
+                  const matchingVariant = variants.find((variant: any) => {
+                    const sizeMatch = !hasSizes || !selectedSize || normalize(variant.size) === normalize(selectedSize)
+                    const colorMatch = !hasColors || !color.name || normalize(variant.color) === normalize(color.name)
+                    const depthMatch = !hasDepths || !depth?.name || normalize(variant.depth) === normalize(depth.name)
+                    const firmnessMatch = !hasFirmness || !firmness?.name || normalize(variant.firmness) === normalize(firmness.name)
                     return sizeMatch && colorMatch && depthMatch && firmnessMatch
                   })
-
+                  
                   return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
                 })()
 
                 const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
+                
+                // Find the selected variant to get its SKU using the same logic as price calculation
+                const selectedVariant = (() => {
+                  const variants = (product as any).variants || []
+                  if (variants.length === 0) return null
+                  
+                  const normalize = (v: any) => String(v ?? '').toLowerCase().trim()
+                  return variants.find((variant: any) => {
+                    const sizeMatch = !hasSizes || !selectedSize || normalize(variant.size) === normalize(selectedSize)
+                    const colorMatch = !hasColors || !color.name || normalize(variant.color) === normalize(color.name)
+                    const depthMatch = !hasDepths || !depth?.name || normalize(variant.depth) === normalize(depth.name)
+                    const firmnessMatch = !hasFirmness || !firmness?.name || normalize(variant.firmness) === normalize(firmness.name)
+                    return sizeMatch && colorMatch && depthMatch && firmnessMatch
+                  })
+                })()
                 
                 const hasFreeGift = (product as any).free_gift_product_id && (
                   (product as any).free_gift_enabled || 
@@ -5027,7 +5001,8 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                   size: selectedSizeData?.name || 'Standard',
                   color: color.name,
                   depth: depth?.name,
-                  firmness: firmness?.name
+                  firmness: firmness?.name,
+                  variantSku: selectedVariant?.sku
                 }
 
                 if (hasFreeGift) {
