@@ -285,10 +285,14 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
               return product.currentPrice || 0
             }
             
+            const { hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
             const matchingVariant = (product as any).variants.find((variant: any) => {
-              const sizeMatch = hasSizes ? variant.size === selectedSize : true
-              const colorMatch = !selectedColor || variant.color === selectedColor
-              return sizeMatch && colorMatch
+              const norm = (v: any) => String(v ?? '').toLowerCase().trim()
+              const sizeMatch = hasSizes ? norm(variant.size) === norm(selectedSize) : true
+              const colorMatch = !hasColors || !selectedColor ? true : norm(variant.color) === norm(selectedColor)
+              const depthMatch = !hasDepths || !selectedDepth ? true : norm(variant.depth) === norm(selectedDepth)
+              const firmnessMatch = !hasFirmness || !selectedFirmness ? true : norm(variant.firmness) === norm(selectedFirmness)
+              return sizeMatch && colorMatch && depthMatch && firmnessMatch
             })
             
             return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
@@ -362,10 +366,14 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
               return product.currentPrice || 0
             }
             
+            const { hasDepths, hasFirmness } = getAvailableVariantOptions()
             const matchingVariant = (product as any).variants.find((variant: any) => {
-              const sizeMatch = hasSizes ? variant.size === selectedSize : true
-              const colorMatch = !selectedColor || variant.color === selectedColor
-              return sizeMatch && colorMatch
+              const norm = (v: any) => String(v ?? '').toLowerCase().trim()
+              const sizeMatch = hasSizes ? norm(variant.size) === norm(selectedSize) : true
+              const colorMatch = !selectedColor ? true : norm(variant.color) === norm(selectedColor)
+              const depthMatch = !hasDepths || !selectedDepth ? true : norm(variant.depth) === norm(selectedDepth)
+              const firmnessMatch = !hasFirmness || !selectedFirmness ? true : norm(variant.firmness) === norm(selectedFirmness)
+              return sizeMatch && colorMatch && depthMatch && firmnessMatch
             })
             
             return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
@@ -838,27 +846,51 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
   // Get the selected size data with fallback
   const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
 
-  // Get current variant based on selected options
+  // Get current variant based on ALL selected options (size, color, depth, firmness)
   const getCurrentVariant = useCallback(() => {
+    const normalize = (v: any) => String(v ?? '').toLowerCase().trim()
     const variants = (product as any).variants || []
     if (variants.length === 0) return null
-    
-    // If no size or color selected, return first variant
-    if (!selectedSize && !selectedColor) {
-      return variants[0]
-    }
-    
-    // Find variant that matches selected size and color
+
+    // Detect which options actually exist across variants
+    const distinct = (vals: any[]) => Array.from(new Set(vals.filter(Boolean).map((x) => normalize(x))))
+    const sizeSet = distinct(variants.map((v: any) => v.size))
+    const colorSet = distinct(variants.map((v: any) => v.color))
+    const depthSet = distinct(variants.map((v: any) => v.depth))
+    const firmnessSet = distinct(variants.map((v: any) => v.firmness))
+
+    const hasSizes = sizeSet.length > 0
+    const hasColors = colorSet.length > 0
+    const hasDepths = depthSet.length > 0
+    const hasFirmness = firmnessSet.length > 0
+
     const matchingVariant = variants.find((variant: any) => {
-      const sizeMatch = !selectedSize || variant.size === selectedSize
-      const colorMatch = !selectedColor || variant.color === selectedColor
-      return sizeMatch && colorMatch
+      const sizeMatch = !hasSizes || !selectedSize || normalize(variant.size) === normalize(selectedSize)
+      const colorMatch = !hasColors || !selectedColor || normalize(variant.color) === normalize(selectedColor)
+      const depthMatch = !hasDepths || !selectedDepth || normalize(variant.depth) === normalize(selectedDepth)
+      const firmnessMatch = !hasFirmness || !selectedFirmness || normalize(variant.firmness) === normalize(selectedFirmness)
+      return sizeMatch && colorMatch && depthMatch && firmnessMatch
     })
-    
-    return matchingVariant || variants[0] // Fallback to first variant
-  }, [selectedSize, selectedColor, product])
+
+    return matchingVariant || null
+  }, [selectedSize, selectedColor, selectedDepth, selectedFirmness, product])
 
   const currentVariant = getCurrentVariant()
+
+  // Derive the price to display for the current selection (falls back gracefully)
+  const currentSelectionPrice = useMemo(() => {
+    if (currentVariant && (currentVariant.currentPrice || currentVariant.originalPrice)) {
+      return Number(currentVariant.currentPrice || currentVariant.originalPrice)
+    }
+    if (selectedSizeData?.currentPrice) return Number(selectedSizeData.currentPrice)
+    return Number(product.currentPrice || 0)
+  }, [currentVariant, selectedSizeData, product])
+
+  const wasPriceForSelection = useMemo(() => {
+    if (currentVariant && currentVariant.originalPrice) return Number(currentVariant.originalPrice)
+    if (selectedSizeData?.wasPrice) return Number(selectedSizeData.wasPrice)
+    return Number(product.originalPrice || 0)
+  }, [currentVariant, selectedSizeData, product])
 
   // Function to start sequential variant selection flow for Add to Basket
   const startSequentialVariantSelection = useCallback(() => {
@@ -969,7 +1001,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     // Open the basket sidebar
     setBasketSidebarOpen(true)
     setIsSequentialFlow(false) // Reset the flag
-  }, [getAvailableVariantOptions, selectedSize, selectedColor, product, dispatch, selectedImage, sizeData, selectedSizeData, colorModalOpen])
+  }, [getAvailableVariantOptions, selectedSize, selectedColor, selectedDepth, selectedFirmness, product, dispatch, selectedImage, sizeData, selectedSizeData, colorModalOpen])
 
   const addToCart = useCallback(() => {
     console.log('addToCart function called')
@@ -977,22 +1009,8 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     console.log('Selected size:', selectedSize)
     console.log('Selected color:', selectedColor)
     
-    // Get current variant price based on selected options
-    const currentVariantPrice = (() => {
-      const hasSizes = Array.isArray(sizeData) && sizeData.length > 0
-      if (!hasSizes || !(product as any).variants || (product as any).variants.length === 0) {
-        return product.currentPrice || 0
-      }
-
-      // Find variant that matches selected size and color
-      const matchingVariant = (product as any).variants.find((variant: any) => {
-        const sizeMatch = hasSizes ? variant.size === selectedSize : true
-        const colorMatch = !selectedColor || variant.color === selectedColor
-        return sizeMatch && colorMatch
-      })
-
-      return matchingVariant ? (matchingVariant.currentPrice || matchingVariant.originalPrice || 0) : (product.currentPrice || 0)
-    })()
+    // Use unified selection price so cart/side bar match the page/modal
+    const currentVariantPrice = Number(currentSelectionPrice || product.currentPrice || 0)
     
     console.log('Current variant price:', currentVariantPrice)
 
@@ -1096,12 +1114,10 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
       
       // Find the selected variant to get its SKU
-      const selectedVariant = (product as any).variants?.find((variant: any) => 
-        variant.size === (selectedSizeData?.name || 'Standard')
-      )
+      const selectedVariant = getCurrentVariant()
       
       // Prepare payload with free gift details if available
-      const payload: any = {
+    const payload: any = {
           id: String(product.id),
           name: product.name,
           brand: product.brand,
@@ -1109,7 +1125,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           currentPrice: currentVariantPrice,
           originalPrice: product.originalPrice,
           size: selectedSizeData?.name || 'Standard',
-          color: selectedColor,
+        color: selectedColor,
+        depth: selectedDepth,
+        firmness: selectedFirmness,
           variantSku: selectedVariant?.sku
       }
 
@@ -1158,7 +1176,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
 
   // Safe monthly price calculation - use product prices when no size is selected
-  const monthlyPrice = selectedSizeData?.currentPrice ? Math.floor(selectedSizeData.currentPrice / 12) : Math.floor((product.currentPrice || currentPrice) / 12)
+  const monthlyPrice = Math.floor((currentSelectionPrice || 0) / 12)
 
   const gallery = useMemo(() => 
   product.images && product.images.length > 0 ? product.images : [product.image], 
@@ -1220,23 +1238,6 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
   return (
     <>
-      <style jsx>{`
-        .safe-area-bottom {
-          padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
-        }
-        @media (max-width: 640px) {
-          .safe-area-bottom {
-            padding-left: max(1rem, env(safe-area-inset-left));
-            padding-right: max(1rem, env(safe-area-inset-right));
-          }
-        }
-        .mobile-sticky-button {
-          max-width: 100vw;
-          width: 100vw;
-          left: 0;
-          right: 0;
-        }
-      `}</style>
       <div className="bg-white border border-gray-100 rounded-xl p-3 sm:p-4 lg:p-4 pb-20 sm:pb-24 lg:pb-4">
 
       {/* Mobile: Product Details First (kept hidden so images appear first) */}
@@ -1258,15 +1259,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                         </svg>
                       </div>
                                               <span className="text-sm sm:text-lg text-gray-800 break-words">
-                          {selectedSizeData && selectedSizeData.wasPrice && selectedSizeData.currentPrice && selectedSizeData.wasPrice > selectedSizeData.currentPrice ? (
-                            `Save £${(selectedSizeData.wasPrice - selectedSizeData.currentPrice).toFixed(2)}`
-                          ) : selectedSizeData && selectedSizeData.currentPrice ? (
-                            `£${selectedSizeData.currentPrice.toFixed(2)}`
-                          ) : product.originalPrice && product.currentPrice && product.originalPrice > product.currentPrice ? (
-                            `Save £${(product.originalPrice - product.currentPrice).toFixed(2)}`
-                          ) : (
-                            `£${product.currentPrice.toFixed(2)}`
-                          )}
+                          {wasPriceForSelection && currentSelectionPrice && wasPriceForSelection > currentSelectionPrice
+                            ? `Save £${(wasPriceForSelection - currentSelectionPrice).toFixed(2)}`
+                            : `£${currentSelectionPrice.toFixed(2)}`}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -1292,8 +1287,10 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                   {/* Pricing - Now under the size name */}
                   <div className="space-y-1">
-                    <div className="text-sm text-gray-500 line-through">Was £{selectedSizeData.wasPrice > 0 ? selectedSizeData.wasPrice.toFixed(2) : '0.00'}</div>
-                    <div className="text-2xl font-black text-orange-600">£{selectedSizeData.currentPrice > 0 ? selectedSizeData.currentPrice.toFixed(2) : '0.00'}</div>
+                    {wasPriceForSelection > currentSelectionPrice && (
+                      <div className="text-sm text-gray-500 line-through">Was £{wasPriceForSelection.toFixed(2)}</div>
+                    )}
+                    <div className="text-2xl font-black text-orange-600">£{currentSelectionPrice.toFixed(2)}</div>
                   </div>
                 </div>
 
@@ -1930,15 +1927,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                       </svg>
                     </div>
                     <span className="text-sm text-gray-800 break-words">
-                      {selectedSizeData && selectedSizeData.wasPrice && selectedSizeData.currentPrice && selectedSizeData.wasPrice > selectedSizeData.currentPrice ? (
-                        `Save £${(selectedSizeData.wasPrice - selectedSizeData.currentPrice).toFixed(2)}`
-                      ) : selectedSizeData && selectedSizeData.currentPrice ? (
-                        `£${selectedSizeData.currentPrice.toFixed(2)}`
-                      ) : product.originalPrice && product.currentPrice && product.originalPrice > product.currentPrice ? (
-                        `Save £${(product.originalPrice - product.currentPrice).toFixed(2)}`
-                      ) : (
-                        `£${product.currentPrice.toFixed(2)}`
-                      )}
+                      {wasPriceForSelection && currentSelectionPrice && wasPriceForSelection > currentSelectionPrice
+                        ? `Save £${(wasPriceForSelection - currentSelectionPrice).toFixed(2)}`
+                        : `£${currentSelectionPrice.toFixed(2)}`}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
@@ -1953,80 +1944,28 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
               </div>
 
               {/* Price and Dimensions summary (inside header card) */}
-              {selectedSizeData ? (
-                <div className="bg-gray-50 rounded-lg p-4 mt-4">
+              <div className="bg-gray-50 rounded-lg p-4 mt-4">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0">
                     {/* Left: Pricing */}
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-gray-500 line-through">Was £{selectedSizeData.wasPrice > 0 ? selectedSizeData.wasPrice.toFixed(2) : '0.00'}</div>
-                      <div className="text-2xl font-black text-orange-600">£{selectedSizeData.currentPrice > 0 ? selectedSizeData.currentPrice.toFixed(2) : '0.00'}</div>
+                      {wasPriceForSelection > currentSelectionPrice && (
+                        <div className="text-sm text-gray-500 line-through">Was £{wasPriceForSelection.toFixed(2)}</div>
+                      )}
+                      <div className="text-2xl font-black text-orange-600">£{currentSelectionPrice.toFixed(2)}</div>
                     </div>
                     {/* Right: Dimensions Selected */}
                     <div className="text-left sm:text-right sm:ml-4 min-w-0">
                       <div className="text-sm text-gray-600 font-medium mb-1">Dimensions (Selected):</div>
                       <div className="text-xl font-black text-gray-900">
-                        {selectedSizeData.length && `${selectedSizeData.length}cm`}
-                        {selectedSizeData.width && selectedSizeData.length && ' × '}
-                        {selectedSizeData.width && `${selectedSizeData.width}cm`}
-                        {selectedSizeData.height && (selectedSizeData.length || selectedSizeData.width) && ' × '}
-                        {selectedSizeData.height && `${selectedSizeData.height}cm`}
+                        {(selectedSizeData?.length || currentVariant?.length) && `${(selectedSizeData?.length || currentVariant?.length) as any}cm`}
+                        {(selectedSizeData?.width || currentVariant?.width) && (selectedSizeData?.length || currentVariant?.length) && ' × '}
+                        {(selectedSizeData?.width || currentVariant?.width) && `${(selectedSizeData?.width || currentVariant?.width) as any}cm`}
+                        {(selectedSizeData?.height || currentVariant?.height) && ((selectedSizeData?.length || currentVariant?.length) || (selectedSizeData?.width || currentVariant?.width)) && ' × '}
+                        {(selectedSizeData?.height || currentVariant?.height) && `${(selectedSizeData?.height || currentVariant?.height) as any}cm`}
                       </div>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div className="bg-gray-50 rounded-lg p-4 mt-4">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-lg font-semibold text-gray-600 mb-2">Starting Price</div>
-                      <div className="space-y-1">
-                        {(() => {
-                          const vars = ((product as any).variants || []) as Array<any>
-                          const lowestPrice = vars.length > 0 
-                            ? Math.min(...vars.map((v: any) => Number(v.currentPrice || v.originalPrice || 0)))
-                            : product.currentPrice || 0
-                          const originalPrice = product.originalPrice || 0
-                          return (
-                            <>
-                              {originalPrice > lowestPrice && (
-                                <div className="text-sm text-gray-500 line-through">Was £{originalPrice.toFixed(2)}</div>
-                              )}
-                              <div className="text-2xl font-black text-orange-600">£{lowestPrice.toFixed(2)}</div>
-                            </>
-                          )
-                        })()}
-                      </div>
-                    </div>
-                    {/* Right: Variant Dimensions if available */}
-                    <div className="text-left sm:text-right sm:ml-4 min-w-0">
-                      {(() => {
-                        const dimensions = currentVariant ? {
-                          length: currentVariant.length,
-                          width: currentVariant.width,
-                          height: currentVariant.height
-                        } : (product.dimensions ? {
-                          length: product.dimensions.length,
-                          width: product.dimensions.width,
-                          height: product.dimensions.height
-                        } : null)
-                        if (!dimensions || (!dimensions.length && !dimensions.width && !dimensions.height)) return null
-                        return (
-                          <div>
-                            <div className="text-sm text-gray-600 font-medium mb-1">Dimensions:</div>
-                            <div className="text-xl font-black text-gray-900">
-                              {dimensions.length && `${String(dimensions.length).replace('L ', '').replace('cm', '')}cm`}
-                              {dimensions.width && dimensions.length && ' × '}
-                              {dimensions.width && `${String(dimensions.width).replace('cm', '')}cm`}
-                              {dimensions.height && (dimensions.length || dimensions.width) && ' × '}
-                              {dimensions.height && `${String(dimensions.height).replace('cm', '')}cm`}
-                            </div>
-                          </div>
-                        )
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
 
             {/* Product Features (compact) */}
@@ -4120,25 +4059,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
                         </div>
 
                         <span className="text-lg font-bold text-gray-800">
-
-                          {selectedSizeData && selectedSizeData.wasPrice && selectedSizeData.currentPrice && selectedSizeData.wasPrice > selectedSizeData.currentPrice ? (
-
-                            `Save £${(selectedSizeData.wasPrice - selectedSizeData.currentPrice).toFixed(2)}`
-
-                          ) : selectedSizeData && selectedSizeData.currentPrice ? (
-
-                            `£${selectedSizeData.currentPrice.toFixed(2)}`
-
-                          ) : product.originalPrice && product.currentPrice && product.originalPrice > product.currentPrice ? (
-
-                            `Save £${(product.originalPrice - product.currentPrice).toFixed(2)}`
-
-                          ) : (
-
-                            `£${product.currentPrice.toFixed(2)}`
-
-                          )}
-
+                          {wasPriceForSelection && currentSelectionPrice && wasPriceForSelection > currentSelectionPrice
+                            ? `Save £${(wasPriceForSelection - currentSelectionPrice).toFixed(2)}`
+                            : `£${currentSelectionPrice.toFixed(2)}`}
                         </span>
 
                       </div>
@@ -4185,14 +4108,12 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                   
 
-                  {/* Pricing - Now under the size name */}
-
+                  {/* Pricing - Use fully matched variant (size/color/depth/firmness) */}
                   <div className="space-y-1">
-
-                    <div className="text-sm text-gray-500 line-through">Was £{selectedSizeData.wasPrice > 0 ? selectedSizeData.wasPrice.toFixed(2) : '0.00'}</div>
-
-                    <div className="text-2xl font-black text-orange-600">£{selectedSizeData.currentPrice > 0 ? selectedSizeData.currentPrice.toFixed(2) : '0.00'}</div>
-
+                    {wasPriceForSelection > currentSelectionPrice && (
+                      <div className="text-sm text-gray-500 line-through">Was £{wasPriceForSelection.toFixed(2)}</div>
+                    )}
+                    <div className="text-2xl font-black text-orange-600">£{currentSelectionPrice.toFixed(2)}</div>
                   </div>
 
                 </div>
@@ -4301,7 +4222,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                       )}
 
-                      <div className="text-2xl font-black text-orange-600">£{product.currentPrice.toFixed(2)}</div>
+                      <div className="text-2xl font-black text-orange-600">£{currentSelectionPrice.toFixed(2)}</div>
 
                     </div>
 
@@ -4959,14 +4880,19 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
               originalPrice: Number(lastCartItem.originalPrice) || 0,
               size: lastCartItem.size,
               color: lastCartItem.color,
+              depth: (lastCartItem as any).depth,
+              firmness: (lastCartItem as any).firmness,
             }
           }
           const fallbackPrice = (() => {
             const vars = ((product as any).variants || []) as Array<any>
+            const norm = (v: any) => String(v ?? '').toLowerCase().trim()
             const match = vars.find((v: any) => {
-              const sizeMatch = !selectedSizeData?.name || v.size === selectedSizeData.name
-              const colorMatch = !selectedColor || v.color === selectedColor
-              return sizeMatch && colorMatch
+              const sizeMatch = !selectedSizeData?.name || norm(v.size) === norm(selectedSizeData?.name)
+              const colorMatch = !selectedColor || norm(v.color) === norm(selectedColor)
+              const depthMatch = !selectedDepth || norm(v.depth) === norm(selectedDepth)
+              const firmnessMatch = !selectedFirmness || norm(v.firmness) === norm(selectedFirmness)
+              return sizeMatch && colorMatch && depthMatch && firmnessMatch
             })
             return match?.currentPrice ?? product.currentPrice ?? 0
           })()

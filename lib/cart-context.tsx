@@ -11,6 +11,8 @@ interface CartItem {
   originalPrice: number
   size?: string
   color?: string
+  depth?: string
+  firmness?: string
   quantity: number
   variantSku?: string // Added for variant SKU
   freeGiftProductId?: string // Added for free gifts
@@ -39,8 +41,8 @@ type CartAction =
       freeGiftProductName?: string; 
       freeGiftProductImage?: string; 
     } }
-  | { type: 'REMOVE_ITEM'; payload: string | { id: string; size?: string; color?: string; variantSku?: string } }
-  | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number; size?: string; color?: string; variantSku?: string } }
+  | { type: 'REMOVE_ITEM'; payload: string | { id: string; size?: string; color?: string; depth?: string; firmness?: string; variantSku?: string } }
+  | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number; size?: string; color?: string; depth?: string; firmness?: string; variantSku?: string } }
   | { type: 'CLEAR_CART' }
   | { type: 'VALIDATE_ITEM'; payload: { id: string; size?: string; color?: string; variantSku?: string } }
   | { type: 'HIDE_FREE_GIFT_NOTIFICATION' }
@@ -68,6 +70,8 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         item.id === action.payload.id && 
         item.size === action.payload.size && 
         item.color === action.payload.color &&
+        item.depth === action.payload.depth &&
+        item.firmness === action.payload.firmness &&
         item.variantSku === action.payload.variantSku
       )
       
@@ -76,6 +80,8 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           item.id === action.payload.id && 
           item.size === action.payload.size && 
           item.color === action.payload.color &&
+          item.depth === action.payload.depth &&
+          item.firmness === action.payload.firmness &&
           item.variantSku === action.payload.variantSku
             ? { ...item, quantity: item.quantity + 1 }
             : item
@@ -183,14 +189,16 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     
     case 'REMOVE_ITEM': {
       // action.payload should be an object with id, size, color, and variantSku for proper removal
-      const { id, size, color, variantSku } = typeof action.payload === 'string' 
-        ? { id: action.payload, size: undefined, color: undefined, variantSku: undefined }
+      const { id, size, color, depth, firmness, variantSku } = typeof action.payload === 'string' 
+        ? { id: action.payload, size: undefined, color: undefined, depth: undefined, firmness: undefined, variantSku: undefined }
         : action.payload
       
       const updatedItems = state.items.filter(item => 
         !(item.id === id && 
           (size === undefined || item.size === size) && 
           (color === undefined || item.color === color) &&
+          (depth === undefined || item.depth === depth) &&
+          (firmness === undefined || item.firmness === firmness) &&
           (variantSku === undefined || item.variantSku === variantSku))
       )
       
@@ -228,6 +236,8 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         item.id === action.payload.id && 
         item.size === action.payload.size && 
         item.color === action.payload.color &&
+        item.depth === action.payload.depth &&
+        item.firmness === action.payload.firmness &&
         item.variantSku === action.payload.variantSku
           ? { ...item, quantity: action.payload.quantity }
           : item

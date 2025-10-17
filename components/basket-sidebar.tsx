@@ -20,6 +20,8 @@ interface BasketSidebarProps {
     originalPrice: number
     size?: string
     color?: string
+    depth?: string
+    firmness?: string
   }
 }
 
@@ -245,13 +247,19 @@ export function BasketSidebar({ isOpen, onClose, product }: BasketSidebarProps) 
                      </div>
                      
                      {/* Size and Color on same line */}
-                     <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
                        {product.size && (
                          <span>Size: {product.size}</span>
                        )}
                        {product.color && (
                          <span>Color: {product.color}</span>
                        )}
+                      {product.depth && (
+                        <span>Depth: {product.depth}</span>
+                      )}
+                      {product.firmness && (
+                        <span>Firmness: {product.firmness}</span>
+                      )}
                      </div>
                    </div>
                  </div>
