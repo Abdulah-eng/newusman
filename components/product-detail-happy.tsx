@@ -152,7 +152,7 @@ export interface ProductDetailHappyProps {
 }
 
 export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) => {
-  const { dispatch } = useCart()
+  const { state, dispatch } = useCart()
   
   // Helper function to convert string characteristics to numeric values for sliders
   const getCharacteristicValue = (value: string | number | undefined, type: 'support' | 'pressure' | 'air' | 'durability' | 'firmness'): number => {
@@ -1239,7 +1239,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       `}</style>
       <div className="bg-white border border-gray-100 rounded-xl p-3 sm:p-4 lg:p-4 pb-20 sm:pb-24 lg:pb-4">
 
-      {/* Mobile: Product Details First (disabled here; moved below gallery to ensure images appear above) */}
+      {/* Mobile: Product Details First (kept hidden so images appear first) */}
       <div className="hidden mb-8 bg-white border-b border-gray-200">
         {/* Product Details Section for Mobile */}
         <div className="space-y-4">
@@ -1913,6 +1913,251 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
           </div>
 
+
+          {/* Mobile: Product Info Summary just below images */}
+          <div className="block sm:hidden mt-4">
+            <div className="rounded-xl p-4 bg-white shadow-lg border border-gray-100">
+              {/* Product Title */}
+              <h1 className="text-2xl font-bold text-gray-800 mb-3 break-words">{product.name}</h1>
+
+              {/* Price/Savings + Reviews */}
+              <div className="bg-white border-0 rounded-lg p-3 max-w-full overflow-hidden shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg className="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                      </svg>
+                    </div>
+                    <span className="text-sm text-gray-800 break-words">
+                      {selectedSizeData && selectedSizeData.wasPrice && selectedSizeData.currentPrice && selectedSizeData.wasPrice > selectedSizeData.currentPrice ? (
+                        `Save £${(selectedSizeData.wasPrice - selectedSizeData.currentPrice).toFixed(2)}`
+                      ) : selectedSizeData && selectedSizeData.currentPrice ? (
+                        `£${selectedSizeData.currentPrice.toFixed(2)}`
+                      ) : product.originalPrice && product.currentPrice && product.originalPrice > product.currentPrice ? (
+                        `Save £${(product.originalPrice - product.currentPrice).toFixed(2)}`
+                      ) : (
+                        `£${product.currentPrice.toFixed(2)}`
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className={`h-4 w-4 ${i < (product.rating || 4) ? "text-orange-500 fill-current" : "text-gray-300"}`} />
+                      ))}
+                    </div>
+                    <span className="text-sm font-semibold text-gray-800">{product.reviewCount || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Price and Dimensions summary (inside header card) */}
+              {selectedSizeData ? (
+                <div className="bg-gray-50 rounded-lg p-4 mt-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0">
+                    {/* Left: Pricing */}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-gray-500 line-through">Was £{selectedSizeData.wasPrice > 0 ? selectedSizeData.wasPrice.toFixed(2) : '0.00'}</div>
+                      <div className="text-2xl font-black text-orange-600">£{selectedSizeData.currentPrice > 0 ? selectedSizeData.currentPrice.toFixed(2) : '0.00'}</div>
+                    </div>
+                    {/* Right: Dimensions Selected */}
+                    <div className="text-left sm:text-right sm:ml-4 min-w-0">
+                      <div className="text-sm text-gray-600 font-medium mb-1">Dimensions (Selected):</div>
+                      <div className="text-xl font-black text-gray-900">
+                        {selectedSizeData.length && `${selectedSizeData.length}cm`}
+                        {selectedSizeData.width && selectedSizeData.length && ' × '}
+                        {selectedSizeData.width && `${selectedSizeData.width}cm`}
+                        {selectedSizeData.height && (selectedSizeData.length || selectedSizeData.width) && ' × '}
+                        {selectedSizeData.height && `${selectedSizeData.height}cm`}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-4 mt-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-lg font-semibold text-gray-600 mb-2">Starting Price</div>
+                      <div className="space-y-1">
+                        {(() => {
+                          const vars = ((product as any).variants || []) as Array<any>
+                          const lowestPrice = vars.length > 0 
+                            ? Math.min(...vars.map((v: any) => Number(v.currentPrice || v.originalPrice || 0)))
+                            : product.currentPrice || 0
+                          const originalPrice = product.originalPrice || 0
+                          return (
+                            <>
+                              {originalPrice > lowestPrice && (
+                                <div className="text-sm text-gray-500 line-through">Was £{originalPrice.toFixed(2)}</div>
+                              )}
+                              <div className="text-2xl font-black text-orange-600">£{lowestPrice.toFixed(2)}</div>
+                            </>
+                          )
+                        })()}
+                      </div>
+                    </div>
+                    {/* Right: Variant Dimensions if available */}
+                    <div className="text-left sm:text-right sm:ml-4 min-w-0">
+                      {(() => {
+                        const dimensions = currentVariant ? {
+                          length: currentVariant.length,
+                          width: currentVariant.width,
+                          height: currentVariant.height
+                        } : (product.dimensions ? {
+                          length: product.dimensions.length,
+                          width: product.dimensions.width,
+                          height: product.dimensions.height
+                        } : null)
+                        if (!dimensions || (!dimensions.length && !dimensions.width && !dimensions.height)) return null
+                        return (
+                          <div>
+                            <div className="text-sm text-gray-600 font-medium mb-1">Dimensions:</div>
+                            <div className="text-xl font-black text-gray-900">
+                              {dimensions.length && `${String(dimensions.length).replace('L ', '').replace('cm', '')}cm`}
+                              {dimensions.width && dimensions.length && ' × '}
+                              {dimensions.width && `${String(dimensions.width).replace('cm', '')}cm`}
+                              {dimensions.height && (dimensions.length || dimensions.width) && ' × '}
+                              {dimensions.height && `${String(dimensions.height).replace('cm', '')}cm`}
+                            </div>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Product Features (compact) */}
+            {productFeatures.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <h3 className="font-semibold text-gray-800">Product Features</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {productFeatures.map(({ label, Icon }, index) => (
+                    <div key={index} className="flex items-center gap-2 min-w-0">
+                      <div className="text-orange-500" style={{ color: '#f97316' }}>
+                        <Icon />
+                      </div>
+                      <span className="text-sm text-gray-700 break-words">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Choose Size - mobile duplicate */}
+            {!hasOnlyOneVariant && Array.isArray(sizeData) && sizeData.length > 0 && (
+              <div className="border-0 rounded-lg p-4 bg-white mt-4 cursor-pointer" onClick={() => startSmartSelectionWithPriority('size')}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 text-gray-600">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z"/>
+                      </svg>
+                    </div>
+                    <span className="text-gray-700 font-semibold text-lg">Choose Size</span>
+                  </div>
+                  <div className="w-6 h-6 text-gray-600">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Choose Colour & Other Options - mobile duplicate */}
+            {(() => {
+              const { hasColors, hasDepths, hasFirmness } = getAvailableVariantOptions()
+              const hasNonSize = hasColors || hasDepths || hasFirmness
+              return (!hasOnlyOneVariant && hasNonSize)
+            })() && (
+              <div className="border-0 rounded-lg p-4 bg-white mt-2 cursor-pointer" onClick={() => startSmartSelectionWithPriority('color')}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 text-gray-600">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"/>
+                      </svg>
+                    </div>
+                    <span className="text-gray-700 font-semibold text-lg">Choose Colour & Other Options</span>
+                  </div>
+                  <div className="w-6 h-6 text-gray-600">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Price and Dimensions summary (moved into header card above) - removed duplicate here */}
+
+            {/* Mobile Add to Basket */}
+            <div className="mt-4 space-y-4" ref={buttonRef}>
+              <div className="relative group">
+                <button 
+                  onClick={addToCart} 
+                  className="w-full bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 hover:from-orange-600 hover:via-orange-700 hover:to-orange-800 text-white text-lg py-7 rounded-2xl transition-all duration-300 flex items-center justify-start relative overflow-hidden pl-6 shadow-lg hover:shadow-2xl transform hover:scale-[1.02] border border-orange-400/20"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-transparent to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative z-10 flex items-center gap-3">
+                    <div className="w-6 h-6 text-white">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z"/>
+                      </svg>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="font-bold text-xl tracking-wide">
+                        {hasOnlyOneVariant ? 'Add to Basket' : 'Choose Options & Add to Basket'}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); quantity > 1 && setQuantity(quantity - 1); }}
+                    className="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/30 flex items-center justify-center transition-all duration-300 hover:scale-110 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg hover:shadow-xl group/btn"
+                    disabled={quantity <= 1}
+                  >
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-white/10 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+                    <svg className="w-3 h-3 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20 12H4" />
+                    </svg>
+                  </button>
+                  <div className="relative">
+                    <div className="w-12 h-8 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-lg">
+                      <span className="text-sm font-bold text-white tracking-wide">{quantity}</span>
+                    </div>
+                    <div className="absolute inset-0 rounded-full bg-white/10 blur-sm scale-110"></div>
+                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setQuantity(quantity + 1); }}
+                    className="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/30 flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl group/btn"
+                  >
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-white/10 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300"></div>
+                    <svg className="w-3 h-3 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="absolute -bottom-2 left-1/2 transform -translate-y-1/2 w-4/5 h-2 bg-orange-600/30 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              </div>
+
+              <div className="bg-white rounded-lg border p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-5 bg-pink-200 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-bold text-black">Klarna</span>
+                  </div>
+                  <div className="text-sm text-gray-700">
+                    3 payments of <span className="font-semibold">£{((selectedSizeData?.currentPrice || currentPrice) / 3).toFixed(2)}</span> at 0% interest with <span className="font-semibold">Klarna</span>
+                  </div>
+                </div>
+                <div className="text-sm text-primary underline cursor-pointer">Learn more</div>
+              </div>
+            </div>
+          </div>
 
 
           {/* Premium Sleep Experience Section - Beneath the image gallery */}
@@ -3838,9 +4083,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
 
 
-        {/* Right: details - takes 2/5 of the width */}
+        {/* Right: details - takes 2/5 of the width (hidden on mobile) */}
 
-        <div className="block lg:col-span-2 space-y-2 lg:sticky lg:top-0 lg:self-start z-30 bg-white/95 backdrop-blur-sm shadow-lg border-b border-gray-200 transition-all duration-300" style={{ position: 'sticky', top: 0, willChange: 'transform', transform: 'translateZ(0)' }}>
+        <div className="hidden lg:block lg:col-span-2 space-y-2 lg:sticky lg:top-0 lg:self-start z-30 bg-white/95 backdrop-blur-sm shadow-lg border-b border-gray-200 transition-all duration-300" style={{ position: 'sticky', top: 0, willChange: 'transform', transform: 'translateZ(0)' }}>
 
           {/* Merged Product Info & Size Card */}
 
@@ -4700,31 +4945,42 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       {/* Basket Sidebar */}
 
       <BasketSidebar
-
         isOpen={basketSidebarOpen}
-
         onClose={() => setBasketSidebarOpen(false)}
-
-        product={{
-
-          id: String(product.id),
-
-          name: product.name,
-
-          brand: product.brand,
-
-          image: selectedImage || product.image,
-
-          currentPrice: product.currentPrice,
-
-          originalPrice: product.originalPrice,
-
-          size: selectedSizeData?.name,
-
-          color: selectedColor
-
-        }}
-
+        product={(() => {
+          const lastCartItem = state.items[state.items.length - 1]
+          if (lastCartItem) {
+            return {
+              id: String(lastCartItem.id),
+              name: lastCartItem.name,
+              brand: lastCartItem.brand,
+              image: lastCartItem.image || (selectedImage || product.image),
+              currentPrice: Number(lastCartItem.currentPrice) || 0,
+              originalPrice: Number(lastCartItem.originalPrice) || 0,
+              size: lastCartItem.size,
+              color: lastCartItem.color,
+            }
+          }
+          const fallbackPrice = (() => {
+            const vars = ((product as any).variants || []) as Array<any>
+            const match = vars.find((v: any) => {
+              const sizeMatch = !selectedSizeData?.name || v.size === selectedSizeData.name
+              const colorMatch = !selectedColor || v.color === selectedColor
+              return sizeMatch && colorMatch
+            })
+            return match?.currentPrice ?? product.currentPrice ?? 0
+          })()
+          return {
+            id: String(product.id),
+            name: product.name,
+            brand: product.brand,
+            image: selectedImage || product.image,
+            currentPrice: Number(fallbackPrice) || 0,
+            originalPrice: Number(product.originalPrice) || 0,
+            size: selectedSizeData?.name,
+            color: selectedColor,
+          }
+        })()}
       />
 
 
