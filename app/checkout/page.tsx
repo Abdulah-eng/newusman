@@ -867,8 +867,6 @@ export default function CheckoutPage() {
                     <span>Mastercard</span>
                     <span>•</span>
                     <span>American Express</span>
-                    <span>•</span>
-                    <span className="font-semibold text-blue-600">PayPal</span>
                   </div>
                 </div>
               </CardContent>

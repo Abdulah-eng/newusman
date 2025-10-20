@@ -98,6 +98,51 @@ export default function ReviewsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [sortBy, setSortBy] = useState<string>('recent')
   const [dynamicReviews, setDynamicReviews] = useState<Review[]>([])
+  const [helpfulLoading, setHelpfulLoading] = useState<Set<number>>(new Set())
+
+  const handleHelpfulClick = async (reviewId: number, currentCount: number) => {
+    try {
+      // Add to loading set
+      setHelpfulLoading(prev => new Set(prev).add(reviewId))
+      
+      const response = await fetch(`/api/reviews/${reviewId}/helpful`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'increment'
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Update the review in the local state
+        setDynamicReviews(prevReviews => 
+          prevReviews.map(review => 
+            review.id === reviewId 
+              ? { ...review, helpful: data.helpful_count }
+              : review
+          )
+        )
+        
+        console.log('Helpful count updated:', data.helpful_count)
+      } else {
+        const error = await response.json()
+        console.error('Error updating helpful count:', error)
+      }
+    } catch (error) {
+      console.error('Error updating helpful count:', error)
+    } finally {
+      // Remove from loading set
+      setHelpfulLoading(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(reviewId)
+        return newSet
+      })
+    }
+  }
 
   useEffect(() => {
     const loadReviews = async () => {
@@ -115,7 +160,7 @@ export default function ReviewsPage() {
           verified: !!r.verified,
           helpful: r.helpful_count || 0,
           product: r.product_name || 'Product',
-          category: (r.category || 'Mattresses')
+          category: 'Mattresses' // Default category since we don't have category in reviews table
         })) as Review[]
         setDynamicReviews(apiReviews)
       } catch (e) {
@@ -291,8 +336,18 @@ export default function ReviewsPage() {
                   {/* Review Actions */}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                     <div className="flex items-center gap-4">
-                      <Button variant="ghost" size="sm" className="text-gray-600 hover:text-orange-600">
-                        <ThumbsUp className="w-4 h-4 mr-2" />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleHelpfulClick(review.id, review.helpful)}
+                        disabled={helpfulLoading.has(review.id)}
+                        className="text-gray-600 hover:text-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {helpfulLoading.has(review.id) ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-2" />
+                        ) : (
+                          <ThumbsUp className="w-4 h-4 mr-2" />
+                        )}
                         Helpful ({review.helpful})
                       </Button>
                       <Button variant="ghost" size="sm" className="text-gray-600 hover:text-orange-600">

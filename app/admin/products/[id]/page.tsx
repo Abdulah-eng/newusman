@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { SEOForm } from '@/components/admin/seo-form'
 
 type VariantRow = {
   id: string
@@ -99,6 +100,23 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     { type: 'new_in', enabled: false },
     { type: 'free_gift', enabled: false }
   ])
+
+  // SEO state
+  const [seoData, setSeoData] = useState({
+    seo_title: '',
+    seo_description: '',
+    seo_keywords: '',
+    seo_tags: '',
+    meta_robots: 'index, follow',
+    canonical_url: '',
+    og_title: '',
+    og_description: '',
+    og_image: '',
+    twitter_title: '',
+    twitter_description: '',
+    twitter_image: '',
+    structured_data: null
+  })
   const [selectedPopularCategories, setSelectedPopularCategories] = useState<string[]>([])
   const [selectedRecommendedProducts, setSelectedRecommendedProducts] = useState<any[]>([])
   const [reasonsToBuy, setReasonsToBuy] = useState<string[]>([])
@@ -253,6 +271,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       
       // Set selected reasons to love
       setSelectedReasonsToLove(productData.selectedReasonsToLove || [])
+      
+      // Set SEO data
+      if (productData.seoData) {
+        setSeoData(productData.seoData)
+      }
       
       setProduct(productData)
     } catch (err) {
@@ -749,7 +772,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         reasonsToBuy,
         selectedFeatures,
         selectedReasonsToLove,
-        variants
+        variants,
+        seoData
       }
 
       // Omit empty arrays so API won't clear existing data unintentionally
@@ -851,7 +875,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
         <form onSubmit={handleSubmit}>
           <Tabs defaultValue="basic" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-8">
+            <TabsList className="grid w-full grid-cols-9">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="images">Images</TabsTrigger>
               <TabsTrigger value="variants">Variants</TabsTrigger>
@@ -860,6 +884,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               <TabsTrigger value="features">Features</TabsTrigger>
               <TabsTrigger value="dimensions">Dimensions</TabsTrigger>
               <TabsTrigger value="warranty">Warranty</TabsTrigger>
+              <TabsTrigger value="seo">SEO</TabsTrigger>
             </TabsList>
 
             {/* Basic Info Tab */}
@@ -2161,6 +2186,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   ))}
             </div>
               </Card>
+            </TabsContent>
+
+            {/* SEO Tab */}
+            <TabsContent value="seo" className="space-y-6">
+              <SEOForm
+                seoData={seoData}
+                onChange={setSeoData}
+                productName={name}
+                productDescription={longDescription}
+              />
             </TabsContent>
           </Tabs>
         </form>

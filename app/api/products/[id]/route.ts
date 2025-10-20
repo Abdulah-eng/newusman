@@ -249,7 +249,23 @@ export async function GET(
       free_gift_product_name: giftProductDetails?.name || null,
       free_gift_product_image: giftProductDetails?.image || null,
       createdAt: product.created_at,
-      updatedAt: product.updated_at
+      updatedAt: product.updated_at,
+      // SEO fields
+      seoData: {
+        seo_title: product.seo_title || '',
+        seo_description: product.seo_description || '',
+        seo_keywords: product.seo_keywords || '',
+        seo_tags: product.seo_tags || '',
+        meta_robots: product.meta_robots || 'index, follow',
+        canonical_url: product.canonical_url || '',
+        og_title: product.og_title || '',
+        og_description: product.og_description || '',
+        og_image: product.og_image || '',
+        twitter_title: product.twitter_title || '',
+        twitter_description: product.twitter_description || '',
+        twitter_image: product.twitter_image || '',
+        structured_data: product.structured_data || null
+      }
     }
 
     // Debug logging to check what data we're returning
@@ -360,6 +376,22 @@ export async function PUT(
     }
     if (body.badges !== undefined) {
       updateData.badges = body.badges
+    }
+
+    // Add SEO fields
+    if (body.seoData) {
+      const seoFields = [
+        'seo_title', 'seo_description', 'seo_keywords', 'seo_tags',
+        'meta_robots', 'canonical_url', 'og_title', 'og_description',
+        'og_image', 'twitter_title', 'twitter_description', 'twitter_image',
+        'structured_data'
+      ]
+      
+      seoFields.forEach(field => {
+        if (body.seoData[field] !== undefined) {
+          updateData[field] = body.seoData[field]
+        }
+      })
     }
 
     console.log('Updating product with data:', updateData)

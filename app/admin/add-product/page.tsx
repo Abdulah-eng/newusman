@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { X, Plus, Upload, Save } from "lucide-react"
 import Link from "next/link"
+import { SEOForm } from "@/components/admin/seo-form"
 
 export default function AddProductPage() {
   const [formData, setFormData] = useState({
@@ -29,6 +30,22 @@ export default function AddProductPage() {
     warranty: '',
     trial: '',
     delivery: ''
+  })
+
+  const [seoData, setSeoData] = useState({
+    seo_title: '',
+    seo_description: '',
+    seo_keywords: '',
+    seo_tags: '',
+    meta_robots: 'index, follow',
+    canonical_url: '',
+    og_title: '',
+    og_description: '',
+    og_image: '',
+    twitter_title: '',
+    twitter_description: '',
+    twitter_image: '',
+    structured_data: null
   })
 
   const [newFeature, setNewFeature] = useState('')
@@ -379,6 +396,14 @@ export default function AddProductPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* SEO Settings */}
+          <SEOForm
+            seoData={seoData}
+            onChange={setSeoData}
+            productName={formData.name}
+            productDescription={formData.description}
+          />
 
           {/* Submit Button */}
           <div className="flex justify-end space-x-4">

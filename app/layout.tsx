@@ -4,6 +4,7 @@ import './globals.css'
 import { CartProvider } from "@/lib/cart-context"
 import { WishlistProvider } from "@/lib/wishlist-context"
 import { AuthProvider } from "@/lib/auth-context"
+import { ManagerAuthProvider } from "@/lib/manager-auth-context"
 import Header from "@/components/header"
 import { TrustBadgesSection } from "@/components/trust-badges-section"
 import { Footer } from "@/components/footer"
@@ -124,19 +125,21 @@ html {
       <body className={`${inter.variable} ${poppins.variable} ${outfit.variable} ${playfair.variable}`} suppressHydrationWarning={true}>
         <HydrationBoundary>
           <AuthProvider>
-            <CartProvider>
-              <WishlistProvider>
-                <SeoDefault />
-                <Header />
-                <TrustBadgesSection />
-                {children}
-                <Footer />
-                    <CartNotificationWrapper />
-                    <PopupCoordinator />
-                    <Chatbot />
-                <PerformanceMonitor />
-              </WishlistProvider>
-            </CartProvider>
+            <ManagerAuthProvider>
+              <CartProvider>
+                <WishlistProvider>
+                  <SeoDefault />
+                  <Header />
+                  <TrustBadgesSection />
+                  {children}
+                  <Footer />
+                      <CartNotificationWrapper />
+                      <PopupCoordinator />
+                      <Chatbot />
+                  <PerformanceMonitor />
+                </WishlistProvider>
+              </CartProvider>
+            </ManagerAuthProvider>
           </AuthProvider>
         </HydrationBoundary>
       </body>
