@@ -45,12 +45,7 @@ export default function ManagerAccountsPage() {
 
   const fetchManagers = async () => {
     try {
-      const token = localStorage.getItem('manager_token')
-      const response = await fetch('/api/manager/accounts', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+      const response = await fetch('/api/manager/accounts')
 
       if (response.ok) {
         const data = await response.json()
@@ -78,12 +73,10 @@ export default function ManagerAccountsPage() {
     e.preventDefault()
     
     try {
-      const token = localStorage.getItem('manager_token')
       const response = await fetch('/api/manager/accounts', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData)
       })
@@ -99,9 +92,10 @@ export default function ManagerAccountsPage() {
         setFormData({ email: '', password: '', fullName: '', role: 'manager' })
         fetchManagers()
       } else {
+        console.log('API Error Response:', data)
         toast({
           title: "Error",
-          description: data.error || "Failed to create manager account",
+          description: data.details || data.error || "Failed to create manager account",
           variant: "destructive"
         })
       }
@@ -119,12 +113,8 @@ export default function ManagerAccountsPage() {
     if (!selectedManager) return
 
     try {
-      const token = localStorage.getItem('manager_token')
       const response = await fetch(`/api/manager/accounts?id=${selectedManager.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        method: 'DELETE'
       })
 
       const data = await response.json()

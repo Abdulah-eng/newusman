@@ -133,9 +133,9 @@ html {
                   <TrustBadgesSection />
                   {children}
                   <Footer />
-                      <CartNotificationWrapper />
-                      <PopupCoordinator />
-                      <Chatbot />
+                  <CartNotificationWrapper />
+                  <PopupCoordinator />
+                  <Chatbot />
                   <PerformanceMonitor />
                 </WishlistProvider>
               </CartProvider>

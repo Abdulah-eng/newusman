@@ -6,11 +6,7 @@ import { FreeGiftNotification } from './free-gift-notification'
 export function CartNotificationWrapper() {
   const { state, hideFreeGiftNotification } = useCart()
 
-  console.log('CartNotificationWrapper state:', {
-    showFreeGiftNotification: state.showFreeGiftNotification,
-    freeGiftInfo: state.freeGiftInfo,
-    itemCount: state.itemCount
-  })
+  // Debug logging removed to prevent console spam
 
   if (!state.showFreeGiftNotification || !state.freeGiftInfo) {
     return null

@@ -1,12 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+
+// Create admin client with service role key for admin operations
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+  process.env.SUPABASE_SERVICE_ROLE_KEY as string,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+)
 
 // GET /api/manager/accounts - Get all manager accounts
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const cookieStore = await cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
     
     // Get current user from Supabase auth
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -18,19 +32,25 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check if user is admin in managers table
-    const { data: manager, error: managerError } = await supabase
-      .from('managers')
-      .select('role')
-      .eq('email', user.email)
-      .eq('is_active', true)
-      .single()
+    // Special bypass for mabdulaharshad@gmail.com
+    if (user.email === 'mabdulaharshad@gmail.com') {
+      console.log('🚀 Bypassing manager check for mabdulaharshad@gmail.com in API')
+      // Allow access without checking managers table
+    } else {
+      // Check if user is admin in managers table
+      const { data: manager, error: managerError } = await supabase
+        .from('managers')
+        .select('role')
+        .eq('email', user.email)
+        .eq('is_active', true)
+        .single()
 
-    if (managerError || !manager || manager.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      )
+      if (managerError || !manager || manager.role !== 'admin') {
+        return NextResponse.json(
+          { error: 'Admin access required' },
+          { status: 403 }
+        )
+      }
     }
 
     // Get all managers
@@ -64,7 +84,8 @@ export async function GET(request: NextRequest) {
 // POST /api/manager/accounts - Create new manager account
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const cookieStore = await cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
     
     // Get current user from Supabase auth
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -76,19 +97,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user is admin in managers table
-    const { data: currentManager, error: managerError } = await supabase
-      .from('managers')
-      .select('id, role')
-      .eq('email', user.email)
-      .eq('is_active', true)
-      .single()
+    // Special bypass for mabdulaharshad@gmail.com
+    let currentManager
+    if (user.email === 'mabdulaharshad@gmail.com') {
+      console.log('🚀 Bypassing manager check for mabdulaharshad@gmail.com in POST API')
+      // Create a virtual manager object for bypass user
+      currentManager = {
+        id: user.id,
+        role: 'admin'
+      }
+    } else {
+      // Check if user is admin in managers table
+      const { data: manager, error: managerError } = await supabase
+        .from('managers')
+        .select('id, role')
+        .eq('email', user.email)
+        .eq('is_active', true)
+        .single()
 
-    if (managerError || !currentManager || currentManager.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      )
+      if (managerError || !manager || manager.role !== 'admin') {
+        return NextResponse.json(
+          { error: 'Admin access required' },
+          { status: 403 }
+        )
+      }
+      currentManager = manager
     }
 
     const { email, password, fullName, role = 'manager' } = await request.json()
@@ -123,13 +156,34 @@ export async function POST(request: NextRequest) {
 
     if (existingManager) {
       return NextResponse.json(
-        { error: 'Email already exists' },
+        { error: 'Email already exists in managers' },
         { status: 400 }
       )
     }
 
-    // Create user in Supabase auth
-    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+    // Also check if email exists in auth users (additional safety check)
+    try {
+      const { data: existingAuthUser } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000
+      })
+      
+      const emailExists = existingAuthUser?.users?.some(user => 
+        user.email?.toLowerCase() === email.toLowerCase()
+      )
+      
+      if (emailExists) {
+        return NextResponse.json(
+          { error: 'Email already exists in the system' },
+          { status: 400 }
+        )
+      }
+    } catch (listError) {
+      console.log('Could not check existing auth users, proceeding with creation')
+    }
+
+    // Create user in Supabase auth using admin client
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email.toLowerCase(),
       password: password,
       email_confirm: true
@@ -137,8 +191,23 @@ export async function POST(request: NextRequest) {
 
     if (authError) {
       console.error('Error creating auth user:', authError)
+      
+      // Handle specific auth errors
+      if (authError.message.includes('already been registered') || authError.message.includes('email_exists')) {
+        return NextResponse.json(
+          { 
+            error: 'Email already exists in the system',
+            details: 'This email address is already registered. Please use a different email.'
+          },
+          { status: 400 }
+        )
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to create user account' },
+        { 
+          error: 'Failed to create user account',
+          details: authError.message 
+        },
         { status: 500 }
       )
     }
@@ -160,9 +229,17 @@ export async function POST(request: NextRequest) {
     if (createError) {
       console.error('Error creating manager:', createError)
       // Clean up auth user if manager creation fails
-      await supabase.auth.admin.deleteUser(authUser.user.id)
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
+        console.log('Cleaned up auth user after manager creation failure')
+      } catch (cleanupError) {
+        console.error('Failed to cleanup auth user:', cleanupError)
+      }
       return NextResponse.json(
-        { error: 'Failed to create manager account' },
+        { 
+          error: 'Failed to create manager account',
+          details: createError.message 
+        },
         { status: 500 }
       )
     }
@@ -185,7 +262,8 @@ export async function POST(request: NextRequest) {
 // DELETE /api/manager/accounts - Delete manager account
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const cookieStore = await cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
     
     // Get current user from Supabase auth
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -197,19 +275,31 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Check if user is admin in managers table
-    const { data: currentManager, error: managerError } = await supabase
-      .from('managers')
-      .select('id, role')
-      .eq('email', user.email)
-      .eq('is_active', true)
-      .single()
+    // Special bypass for mabdulaharshad@gmail.com
+    let currentManager
+    if (user.email === 'mabdulaharshad@gmail.com') {
+      console.log('🚀 Bypassing manager check for mabdulaharshad@gmail.com in DELETE API')
+      // Create a virtual manager object for bypass user
+      currentManager = {
+        id: user.id,
+        role: 'admin'
+      }
+    } else {
+      // Check if user is admin in managers table
+      const { data: manager, error: managerError } = await supabase
+        .from('managers')
+        .select('id, role')
+        .eq('email', user.email)
+        .eq('is_active', true)
+        .single()
 
-    if (managerError || !currentManager || currentManager.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      )
+      if (managerError || !manager || manager.role !== 'admin') {
+        return NextResponse.json(
+          { error: 'Admin access required' },
+          { status: 403 }
+        )
+      }
+      currentManager = manager
     }
 
     const { searchParams } = new URL(request.url)
@@ -230,13 +320,16 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Delete from Supabase auth
-    const { error: authDeleteError } = await supabase.auth.admin.deleteUser(managerId)
+    // Delete from Supabase auth using admin client
+    const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(managerId)
     
     if (authDeleteError) {
       console.error('Error deleting auth user:', authDeleteError)
       return NextResponse.json(
-        { error: 'Failed to delete user account' },
+        { 
+          error: 'Failed to delete user account',
+          details: authDeleteError.message 
+        },
         { status: 500 }
       )
     }

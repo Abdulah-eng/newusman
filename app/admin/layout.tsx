@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactNode, useEffect } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useManagerAuth } from '@/lib/manager-auth-context'
 import { Button } from '@/components/ui/button'
@@ -18,7 +18,9 @@ import {
   Image,
   MessageSquare,
   HelpCircle,
-  Moon
+  Moon,
+  Menu,
+  X
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
@@ -28,23 +30,39 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const { toast } = useToast()
+  const [sidebarOpen, setSidebarOpen] = useState(false) // Start with sidebar closed for better UX
 
   useEffect(() => {
     if (!loading && !manager && pathname !== '/admin/login') {
+      console.log('🔄 Redirecting to login - no manager found')
       router.push('/admin/login')
+    }
+  }, [manager, loading, pathname, router])
+
+  // Handle successful login navigation
+  useEffect(() => {
+    if (manager && !loading && pathname === '/admin/login') {
+      console.log('✅ Manager logged in, redirecting to dashboard')
+      router.push('/admin')
     }
   }, [manager, loading, pathname, router])
 
   const handleLogout = async () => {
     try {
-      logout()
+      console.log('🔄 Admin layout logout triggered')
+      await logout()
       toast({
         title: "Success",
         description: "Logged out successfully"
       })
-      router.push('/admin/login')
+      // The logout function will handle the redirect
     } catch (error) {
       console.error('Logout error:', error)
+      toast({
+        title: "Error",
+        description: "Logout failed",
+        variant: "destructive"
+      })
     }
   }
 
@@ -87,17 +105,43 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black bg-opacity-50"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg">
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex h-16 items-center px-6 border-b border-gray-200">
+          <div className="flex h-16 items-center justify-between px-6 border-b border-gray-200">
             <div className="flex items-center">
-              <div className="h-8 w-8 bg-orange-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">B</span>
-              </div>
+              {/* Hamburger menu button replacing B icon */}
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all duration-200 group ${
+                  sidebarOpen 
+                    ? 'bg-red-600 hover:bg-red-700' 
+                    : 'bg-orange-600 hover:bg-orange-700'
+                }`}
+                title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+              >
+                <Menu className="h-4 w-4 text-white group-hover:text-white" />
+              </button>
               <span className="ml-2 text-xl font-bold text-gray-900">Bedora Admin</span>
             </div>
+            {/* Close button for mobile */}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
           {/* Navigation */}
@@ -126,8 +170,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           {/* User Info & Logout */}
           <div className="border-t border-gray-200 p-4">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="h-8 w-8 bg-orange-100 rounded-full flex items-center justify-center">
-                <Users className="h-4 w-4 text-orange-600" />
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                manager?.role === 'admin' 
+                  ? 'bg-red-100' 
+                  : 'bg-blue-100'
+              }`}>
+                {manager?.role === 'admin' ? (
+                  <Users className="h-4 w-4 text-red-600" />
+                ) : (
+                  <Users className="h-4 w-4 text-blue-600" />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
@@ -136,9 +188,18 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 <p className="text-xs text-gray-500 truncate">
                   {manager?.email}
                 </p>
-                <p className="text-xs text-orange-600 font-medium capitalize">
-                  {manager?.role}
-                </p>
+                <div className="flex items-center space-x-1">
+                  <p className={`text-xs font-medium capitalize ${
+                    manager?.role === 'admin' 
+                      ? 'text-red-600' 
+                      : 'text-blue-600'
+                  }`}>
+                    {manager?.role}
+                  </p>
+                  {manager?.role === 'admin' && (
+                    <span className="text-xs text-red-500">👑</span>
+                  )}
+                </div>
               </div>
             </div>
             <Button
@@ -154,7 +215,33 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Main Content */}
-      <div className="pl-64">
+      <div className={`transition-all duration-300 ease-in-out ${
+        sidebarOpen ? 'ml-64' : 'ml-0'
+      }`}>
+        {/* Top bar with hamburger menu */}
+        <div className="sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className={`p-2 rounded-md transition-all duration-200 group ${
+                sidebarOpen 
+                  ? 'bg-red-100 hover:bg-red-200' 
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+              title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+            >
+              <Menu className={`h-5 w-5 transition-colors ${
+                sidebarOpen 
+                  ? 'text-red-600 group-hover:text-red-700' 
+                  : 'text-gray-600 group-hover:text-gray-800'
+              }`} />
+            </button>
+            
+            {/* Page title or other header content can go here */}
+            <div className="flex-1"></div>
+          </div>
+        </div>
+        
         <main className="py-8">
           {children}
         </main>
@@ -162,5 +249,3 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     </div>
   )
 }
-
-

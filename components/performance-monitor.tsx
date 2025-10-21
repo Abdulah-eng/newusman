@@ -29,7 +29,9 @@ export function PerformanceMonitor() {
     const lcpObserver = new PerformanceObserver((list) => {
       const entries = list.getEntries()
       const lastEntry = entries[entries.length - 1]
-      console.log('🎯 Largest Contentful Paint:', `${lastEntry.startTime}ms`)
+      if (lastEntry.startTime > 2000) {
+        console.log('🎯 Largest Contentful Paint:', `${lastEntry.startTime}ms`)
+      }
     })
 
     lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] })
