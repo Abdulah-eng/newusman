@@ -59,12 +59,75 @@ const CartContext = createContext<{
   ) => { isValid: boolean; missingFields: string[] }
   hideFreeGiftNotification: () => void
   updateQuantity: (id: string, quantity: number, size?: string, color?: string, variantSku?: string) => void
+  clearCart: () => void
+  forceClearCart: () => void
 } | null>(null)
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case 'ADD_ITEM': {
       console.log('ADD_ITEM action received:', action.payload)
+      console.log('Current cart state before ADD_ITEM:', {
+        items: state.items,
+        total: state.total,
+        itemCount: state.itemCount
+      })
+      
+      // Debug: Log the payload details
+      console.log('ADD_ITEM payload details:', {
+        id: action.payload.id,
+        name: action.payload.name,
+        currentPrice: action.payload.currentPrice,
+        originalPrice: action.payload.originalPrice,
+        size: action.payload.size,
+        color: action.payload.color,
+        variantSku: action.payload.variantSku
+      })
+      
+      // Debug: Check validation conditions
+      console.log('Validation checks:', {
+        currentPrice: action.payload.currentPrice,
+        originalPrice: action.payload.originalPrice,
+        isZeroPrice: action.payload.currentPrice === 0,
+        isSameAsOriginal: action.payload.currentPrice === action.payload.originalPrice,
+        size: action.payload.size,
+        color: action.payload.color,
+        isEmptySize: action.payload.size === '',
+        isEmptyColor: action.payload.color === ''
+      })
+      
+      // CRITICAL: Validate that we're not adding items with invalid prices
+      if (action.payload.currentPrice === 0) {
+        console.error('BLOCKING: Attempting to add item with zero price:', {
+          currentPrice: action.payload.currentPrice,
+          originalPrice: action.payload.originalPrice,
+          size: action.payload.size,
+          payload: action.payload
+        })
+        return state // Don't add the item
+      }
+      
+      // Only block items with truly empty required fields
+      // For size-only products, only size is required
+      // For color-only products, only color is required
+      // For multi-variant products, all selected variants are required
+      const hasEmptyRequiredFields = (
+        (action.payload.size === '' && action.payload.size !== undefined) ||
+        (action.payload.color === '' && action.payload.color !== undefined) ||
+        (action.payload.depth === '' && action.payload.depth !== undefined) ||
+        (action.payload.firmness === '' && action.payload.firmness !== undefined)
+      )
+      
+      if (hasEmptyRequiredFields) {
+        console.error('BLOCKING: Attempting to add item with empty required variant selections:', {
+          size: action.payload.size,
+          color: action.payload.color,
+          depth: action.payload.depth,
+          firmness: action.payload.firmness,
+          payload: action.payload
+        })
+        return state // Don't add the item
+      }
       
       const existingItem = state.items.find(item => 
         item.id === action.payload.id && 
@@ -74,6 +137,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         item.firmness === action.payload.firmness &&
         item.variantSku === action.payload.variantSku
       )
+      
+      // Note: We no longer need to handle existing items with different variants
+      // because we prevent adding items to cart until all variants are selected
       
       if (existingItem) {
         const updatedItems = state.items.map(item =>
@@ -89,6 +155,23 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         const total = updatedItems.reduce((sum, item) => sum + (item.currentPrice * item.quantity), 0)
         const itemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0)
         
+        console.log('CartContext - Updating existing item - Total calculation:', {
+          items: updatedItems.map(item => ({
+            id: item.id,
+            name: item.name,
+            size: item.size,
+            color: item.color,
+            depth: item.depth,
+            firmness: item.firmness,
+            variantSku: item.variantSku,
+            currentPrice: item.currentPrice,
+            quantity: item.quantity,
+            subtotal: item.currentPrice * item.quantity
+          })),
+          total,
+          itemCount
+        })
+        
         // Check if this product has a free gift and should show notification
         const hasFreeGift = !!action.payload.freeGiftProductId
         const showNotification = hasFreeGift
@@ -100,7 +183,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           showNotification
         })
         
-        return { 
+        const newState = { 
           items: updatedItems, 
           total, 
           itemCount,
@@ -116,6 +199,19 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             }
           } : null
         }
+        
+        console.log('Cart state after updating existing item:', newState)
+        
+        // CRITICAL: Log that the existing item was successfully updated
+        console.log('✅ SUCCESS: Existing item updated in cart successfully!', {
+          itemId: action.payload.id,
+          itemName: action.payload.name,
+          itemPrice: action.payload.currentPrice,
+          cartTotal: newState.total,
+          cartItemCount: newState.itemCount
+        })
+        
+        return newState
       } else {
         const newItem = { ...action.payload, quantity: 1 }
         
@@ -124,8 +220,20 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           id: newItem.id,
           name: newItem.name,
           size: newItem.size,
+          color: newItem.color,
+          depth: newItem.depth,
+          firmness: newItem.firmness,
+          currentPrice: newItem.currentPrice,
           variantSku: newItem.variantSku,
           payload: action.payload
+        })
+        
+        console.log('CartContext - Item will be added to cart:', {
+          itemId: newItem.id,
+          itemName: newItem.name,
+          itemPrice: newItem.currentPrice,
+          itemSize: newItem.size,
+          itemColor: newItem.color
         })
         
         let updatedItems = [...state.items, newItem]
@@ -157,6 +265,112 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         const total = updatedItems.reduce((sum, item) => sum + (item.currentPrice * item.quantity), 0)
         const itemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0)
         
+        console.log('CartContext - Total calculation:', {
+          items: updatedItems.map(item => ({
+            id: item.id,
+            name: item.name,
+            size: item.size,
+            color: item.color,
+            depth: item.depth,
+            firmness: item.firmness,
+            variantSku: item.variantSku,
+            currentPrice: item.currentPrice,
+            quantity: item.quantity,
+            subtotal: item.currentPrice * item.quantity
+          })),
+          total,
+          itemCount
+        })
+        
+        // CRITICAL FIX: Only replace items if there's a significant price mismatch
+        // and we have existing items with very different prices
+        const hasExistingItems = state.items.length > 0
+        const hasSignificantPriceMismatch = hasExistingItems && 
+          state.items.some(item => Math.abs(item.currentPrice - action.payload.currentPrice) > 50)
+        
+        if (hasSignificantPriceMismatch) {
+          console.warn('CRITICAL: Significant price mismatch detected, replacing cart with correct variant:', {
+            existingItems: state.items.map(item => ({
+              id: item.id,
+              name: item.name,
+              size: item.size,
+              color: item.color,
+              currentPrice: item.currentPrice,
+              quantity: item.quantity
+            })),
+            newItemPrice: action.payload.currentPrice,
+            calculatedTotal: total,
+            expectedTotal: action.payload.currentPrice
+          })
+          
+          // Replace all items with the correct variant
+          const correctedItems = [newItem]
+          const correctedTotal = action.payload.currentPrice
+          const correctedItemCount = 1
+          
+          // Check if this product has a free gift and should show notification
+          const hasFreeGift = !!action.payload.freeGiftProductId
+          const showNotification = hasFreeGift
+          
+          const newState = { 
+            items: correctedItems, 
+            total: correctedTotal, 
+            itemCount: correctedItemCount,
+            showFreeGiftNotification: showNotification,
+            freeGiftInfo: showNotification ? {
+              giftProduct: {
+                name: action.payload.freeGiftProductName || 'Free Gift',
+                image: action.payload.freeGiftProductImage || ''
+              },
+              mainProduct: {
+                name: action.payload.name,
+                image: action.payload.image
+              }
+            } : null
+          }
+          console.log('Cart state after price correction:', newState)
+          return newState
+        }
+        
+        // TEMPORARY FIX: If there's only one item and it's the same as the one being added,
+        // ensure the total matches the item price
+        if (updatedItems.length === 1 && updatedItems[0].id === action.payload.id) {
+          const expectedTotal = updatedItems[0].currentPrice * updatedItems[0].quantity
+          if (Math.abs(total - expectedTotal) > 0.01) {
+            console.warn('Cart total mismatch detected, correcting:', {
+              calculatedTotal: total,
+              expectedTotal: expectedTotal,
+              itemPrice: updatedItems[0].currentPrice,
+              quantity: updatedItems[0].quantity
+            })
+            // Use the expected total instead
+            const correctedTotal = expectedTotal
+            
+            // Check if this product has a free gift and should show notification
+            const hasFreeGift = !!action.payload.freeGiftProductId
+            const showNotification = hasFreeGift
+            
+            const newState = { 
+              items: updatedItems, 
+              total: correctedTotal, 
+              itemCount,
+              showFreeGiftNotification: showNotification,
+              freeGiftInfo: showNotification ? {
+                giftProduct: {
+                  name: action.payload.freeGiftProductName || 'Free Gift',
+                  image: action.payload.freeGiftProductImage || ''
+                },
+                mainProduct: {
+                  name: action.payload.name,
+                  image: action.payload.image
+                }
+              } : null
+            }
+            console.log('Cart state after correction:', newState)
+            return newState
+          }
+        }
+        
         // Check if we added a free gift and should show notification
         const hasFreeGift = !!action.payload.freeGiftProductId
         const showNotification = hasFreeGift
@@ -168,7 +382,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           showNotification
         })
         
-        return { 
+        const newState = { 
           items: updatedItems, 
           total, 
           itemCount,
@@ -184,6 +398,32 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             }
           } : null
         }
+        
+        console.log('Cart state after adding new item:', newState)
+      console.log('CartContext - Final cart state:', {
+        itemsCount: newState.items.length,
+        total: newState.total,
+        itemCount: newState.itemCount,
+        items: newState.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          size: item.size,
+          color: item.color,
+          currentPrice: item.currentPrice,
+          quantity: item.quantity
+        }))
+      })
+      
+      // CRITICAL: Log that the item was successfully added
+      console.log('✅ SUCCESS: Item added to cart successfully!', {
+        itemId: newItem.id,
+        itemName: newItem.name,
+        itemPrice: newItem.currentPrice,
+        cartTotal: newState.total,
+        cartItemCount: newState.itemCount
+      })
+      
+      return newState
       }
     }
     
@@ -336,6 +576,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
+        console.log('CartContext - Saving cart state to localStorage:', {
+          items: state.items.map(item => ({
+            id: item.id,
+            name: item.name,
+            size: item.size,
+            color: item.color,
+            depth: item.depth,
+            firmness: item.firmness,
+            variantSku: item.variantSku,
+            currentPrice: item.currentPrice,
+            quantity: item.quantity
+          })),
+          total: state.total,
+          itemCount: state.itemCount
+        })
         localStorage.setItem('cart', JSON.stringify(state))
       } catch (error) {
         console.error('Error saving cart to localStorage:', error)
@@ -386,8 +641,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity, size, color, variantSku } })
   }
 
+  const clearCart = () => {
+    console.log('Clearing cart - Current state before clear:', {
+      items: state.items.map(item => ({
+        id: item.id,
+        name: item.name,
+        size: item.size,
+        color: item.color,
+        currentPrice: item.currentPrice,
+        quantity: item.quantity
+      })),
+      total: state.total,
+      itemCount: state.itemCount
+    })
+    dispatch({ type: 'CLEAR_CART' })
+  }
+
+  const forceClearCart = () => {
+    console.log('Force clearing cart and localStorage')
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('cart')
+    }
+    dispatch({ type: 'CLEAR_CART' })
+  }
+
   return (
-    <CartContext.Provider value={{ state, dispatch, validateItem, hideFreeGiftNotification, updateQuantity }}>
+    <CartContext.Provider value={{ state, dispatch, validateItem, hideFreeGiftNotification, updateQuantity, clearCart, forceClearCart }}>
       {children}
     </CartContext.Provider>
   )
@@ -403,7 +682,9 @@ export function useCart() {
       dispatch: noop as unknown as React.Dispatch<any>,
       validateItem: () => ({ isValid: true, missingFields: [] }),
       hideFreeGiftNotification: noop,
-      updateQuantity: noop
+      updateQuantity: noop,
+      clearCart: noop,
+      forceClearCart: noop
     }
   }
   return context
