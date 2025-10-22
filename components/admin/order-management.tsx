@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Eye, Package, Truck, CheckCircle, Trash2, X, Calendar, Mail, Phone, MapPin, CreditCard } from 'lucide-react'
+import { Eye, Package, Truck, CheckCircle, Trash2, X, Calendar, Mail, Phone, MapPin, CreditCard, Download } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -57,6 +57,7 @@ export function OrderManagement() {
   const [statusChangeTracking, setStatusChangeTracking] = useState('')
   const [showTrackingInput, setShowTrackingInput] = useState(false)
   const [pendingStatusChange, setPendingStatusChange] = useState<{orderId: string, status: string} | null>(null)
+  const [isDownloading, setIsDownloading] = useState(false)
 
 
   useEffect(() => {
@@ -182,6 +183,38 @@ export function OrderManagement() {
     }
   }
 
+  const downloadTodaysOrders = async (format: 'csv' | 'pdf') => {
+    setIsDownloading(true)
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      // Use relative URL to avoid port issues
+      const response = await fetch(`/api/admin/orders/download?format=${format}&date=${today}`)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to download orders')
+      }
+
+      // Create blob and download
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `orders_${today}.${format}`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      alert(`Orders downloaded successfully as ${format.toUpperCase()}`)
+    } catch (error) {
+      console.error('Error downloading orders:', error)
+      alert(`Failed to download orders: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
 
 
   const getStatusBadge = (status: string) => {
@@ -259,8 +292,32 @@ export function OrderManagement() {
           />
         </div>
         
-        <div className="text-sm text-gray-600">
-          {filteredOrders.length} of {orders.length} orders
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-gray-600">
+            {filteredOrders.length} of {orders.length} orders
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => downloadTodaysOrders('csv')}
+              disabled={isDownloading}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              {isDownloading ? 'Downloading...' : 'Download CSV'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => downloadTodaysOrders('pdf')}
+              disabled={isDownloading}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              {isDownloading ? 'Downloading...' : 'Download PDF'}
+            </Button>
+          </div>
         </div>
       </div>
 

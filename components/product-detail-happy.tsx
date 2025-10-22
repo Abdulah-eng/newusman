@@ -282,6 +282,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           // Use unified selection price so cart/side bar match the page/modal
           const currentVariantPrice = Number(currentSelectionPrice || product.currentPrice || 0)
           
+          // Get selected size data with fallback - recalculate inside function
+          const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
+          
           const hasFreeGift = (product as any).free_gift_product_id && (
             (product as any).free_gift_enabled || 
             (product as any).badges?.some((b: any) => b.type === 'free_gift' && b.enabled)
@@ -351,6 +354,9 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
           
           // Use unified selection price so cart/side bar match the page/modal
           const currentVariantPrice = Number(currentSelectionPrice || product.currentPrice || 0)
+          
+          // Get selected size data with fallback - recalculate inside function
+          const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
           
           const hasFreeGift = (product as any).free_gift_product_id && (
             (product as any).free_gift_enabled || 
@@ -770,12 +776,22 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       }
 
       // Actually add the item to cart using cart context
-      console.log('Dispatching ADD_ITEM with payload:', payload)
+      console.log('Sequential flow completion - Dispatching ADD_ITEM with payload:', payload)
+      console.log('Sequential flow completion - Payload details:', {
+        id: payload.id,
+        name: payload.name,
+        size: payload.size,
+        color: payload.color,
+        depth: payload.depth,
+        firmness: payload.firmness,
+        currentPrice: payload.currentPrice,
+        variantSku: payload.variantSku
+      })
       dispatch({
         type: 'ADD_ITEM',
         payload
       })
-      console.log('ADD_ITEM dispatched successfully')
+      console.log('Sequential flow completion - ADD_ITEM dispatched successfully')
 
       // Open the basket sidebar
       setBasketSidebarOpen(true)
@@ -902,12 +918,22 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     
     // All required variants are selected, proceed to add to cart
     console.log('All variants selected in startSequentialVariantSelection, adding to cart')
+    console.log('Sequential flow - Selected size:', selectedSize)
+    console.log('Sequential flow - Selected color:', selectedColor)
+    console.log('Sequential flow - Selected depth:', selectedDepth)
+    console.log('Sequential flow - Selected firmness:', selectedFirmness)
+    console.log('Sequential flow - Current selection price:', currentSelectionPrice)
     
     // Use unified selection price so cart/side bar match the page/modal
     const currentVariantPrice = Number(currentSelectionPrice || product.currentPrice || 0)
 
+    // Get selected size data with fallback - recalculate inside function
+    const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
+    console.log('Sequential flow - Selected size data:', selectedSizeData)
+
     // Find the selected variant to get its SKU
     const selectedVariant = getCurrentVariant()
+    console.log('Sequential flow - Selected variant:', selectedVariant)
     
     // Prepare payload with free gift details if available
     const payload: any = {
@@ -954,23 +980,37 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     }
 
     // Actually add the item to cart using cart context
-    console.log('Dispatching ADD_ITEM with payload:', payload)
+    console.log('Sequential flow - Dispatching ADD_ITEM with payload:', payload)
+    console.log('Sequential flow - Payload details:', {
+      id: payload.id,
+      name: payload.name,
+      size: payload.size,
+      color: payload.color,
+      depth: payload.depth,
+      firmness: payload.firmness,
+      currentPrice: payload.currentPrice,
+      variantSku: payload.variantSku
+    })
     dispatch({
       type: 'ADD_ITEM',
       payload
     })
-    console.log('ADD_ITEM dispatched successfully')
+    console.log('Sequential flow - ADD_ITEM dispatched successfully')
 
     // Open the basket sidebar
     setBasketSidebarOpen(true)
     setIsSequentialFlow(false) // Reset the flag
-  }, [getAvailableVariantOptions, selectedSize, selectedColor, selectedDepth, selectedFirmness, product, dispatch, selectedImage, sizeData, selectedSizeData, colorModalOpen])
+  }, [getAvailableVariantOptions, selectedSize, selectedColor, selectedDepth, selectedFirmness, product, dispatch, selectedImage, sizeData, colorModalOpen, currentSelectionPrice, getCurrentVariant])
 
   const addToCart = useCallback(() => {
     console.log('addToCart function called')
     console.log('Product data:', product)
     console.log('Selected size:', selectedSize)
     console.log('Selected color:', selectedColor)
+    console.log('Selected depth:', selectedDepth)
+    console.log('Selected firmness:', selectedFirmness)
+    console.log('Current selection price:', currentSelectionPrice)
+    console.log('Current variant:', getCurrentVariant())
     
     // Use unified selection price so cart/side bar match the page/modal
     const currentVariantPrice = Number(currentSelectionPrice || product.currentPrice || 0)
@@ -1119,12 +1159,22 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       }
 
       // Actually add the item to cart using cart context
-      console.log('Dispatching ADD_ITEM with payload:', payload)
+      console.log('All variants selected - Dispatching ADD_ITEM with payload:', payload)
+      console.log('All variants selected - Payload details:', {
+        id: payload.id,
+        name: payload.name,
+        size: payload.size,
+        color: payload.color,
+        depth: payload.depth,
+        firmness: payload.firmness,
+        currentPrice: payload.currentPrice,
+        variantSku: payload.variantSku
+      })
       dispatch({
         type: 'ADD_ITEM',
         payload
       })
-      console.log('ADD_ITEM dispatched successfully')
+      console.log('All variants selected - ADD_ITEM dispatched successfully')
 
       // Open the basket sidebar
       setBasketSidebarOpen(true)
@@ -4832,42 +4882,33 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
         isOpen={basketSidebarOpen}
         onClose={() => setBasketSidebarOpen(false)}
         product={(() => {
-          const lastCartItem = state.items[state.items.length - 1]
-          if (lastCartItem) {
-            return {
-              id: String(lastCartItem.id),
-              name: lastCartItem.name,
-              brand: lastCartItem.brand,
-              image: lastCartItem.image || (selectedImage || product.image),
-              currentPrice: Number(lastCartItem.currentPrice) || 0,
-              originalPrice: Number(lastCartItem.originalPrice) || 0,
-              size: lastCartItem.size,
-              color: lastCartItem.color,
-              depth: (lastCartItem as any).depth,
-              firmness: (lastCartItem as any).firmness,
-            }
-          }
-          const fallbackPrice = (() => {
-            const vars = ((product as any).variants || []) as Array<any>
-            const norm = (v: any) => String(v ?? '').toLowerCase().trim()
-            const match = vars.find((v: any) => {
-              const sizeMatch = !selectedSizeData?.name || norm(v.size) === norm(selectedSizeData?.name)
-              const colorMatch = !selectedColor || norm(v.color) === norm(selectedColor)
-              const depthMatch = !selectedDepth || norm(v.depth) === norm(selectedDepth)
-              const firmnessMatch = !selectedFirmness || norm(v.firmness) === norm(selectedFirmness)
-              return sizeMatch && colorMatch && depthMatch && firmnessMatch
-            })
-            return match?.currentPrice ?? product.currentPrice ?? 0
-          })()
+          // Always use current product state with current selections, not cart item
+          // This ensures the sidebar shows the correct variant and price
+          const currentVariant = getCurrentVariant()
+          const currentVariantPrice = Number(currentSelectionPrice || product.currentPrice || 0)
+          const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
+          
+          console.log('BasketSidebar - Using current product state:', {
+            selectedSize,
+            selectedColor,
+            selectedDepth,
+            selectedFirmness,
+            currentVariant,
+            currentVariantPrice,
+            selectedSizeData
+          })
+          
           return {
             id: String(product.id),
             name: product.name,
             brand: product.brand,
             image: selectedImage || product.image,
-            currentPrice: Number(fallbackPrice) || 0,
+            currentPrice: currentVariantPrice,
             originalPrice: Number(product.originalPrice) || 0,
-            size: selectedSizeData?.name,
-            color: selectedColor,
+            size: selectedSizeData?.name || 'Standard',
+            color: selectedColor || 'Standard',
+            depth: selectedDepth,
+            firmness: selectedFirmness,
           }
         })()}
       />

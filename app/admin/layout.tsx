@@ -20,7 +20,8 @@ import {
   HelpCircle,
   Moon,
   Menu,
-  X
+  X,
+  Star
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
@@ -70,6 +71,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { name: 'Dashboard', href: '/admin', icon: Home, allowedRoles: ['admin', 'manager'] },
     { name: 'Products', href: '/admin/products', icon: Package, allowedRoles: ['admin', 'manager'] },
     { name: 'Orders', href: '/admin/orders', icon: ShoppingCart, allowedRoles: ['admin'] }, // Only admin can see orders
+    { name: 'Reviews', href: '/admin/reviews', icon: Star, allowedRoles: ['admin'] }, // Only admin can see reviews
     { name: 'Manager Accounts', href: '/admin/manager-accounts', icon: UserPlus, allowedRoles: ['admin'] },
     { name: 'Homepage', href: '/admin/homepage', icon: BarChart3, allowedRoles: ['admin', 'manager'] },
     { name: 'Header Dropdown', href: '/admin/header-dropdown', icon: FileText, allowedRoles: ['admin', 'manager'] },
