@@ -81,7 +81,10 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         originalPrice: action.payload.originalPrice,
         size: action.payload.size,
         color: action.payload.color,
-        variantSku: action.payload.variantSku
+        depth: action.payload.depth,
+        firmness: action.payload.firmness,
+        variantSku: action.payload.variantSku,
+        fullPayload: action.payload
       })
       
       // Debug: Check validation conditions
@@ -107,51 +110,47 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         return state // Don't add the item
       }
       
-      // Only block items with truly empty required fields
-      // For size-only products, only size is required
-      // For color-only products, only color is required
-      // For multi-variant products, all selected variants are required
-      const hasEmptyRequiredFields = (
-        (action.payload.size === '' && action.payload.size !== undefined) ||
-        (action.payload.color === '' && action.payload.color !== undefined) ||
-        (action.payload.depth === '' && action.payload.depth !== undefined) ||
-        (action.payload.firmness === '' && action.payload.firmness !== undefined)
-      )
+      console.log('✅ Price validation passed - currentPrice:', action.payload.currentPrice)
       
-      if (hasEmptyRequiredFields) {
-        console.error('BLOCKING: Attempting to add item with empty required variant selections:', {
+      // Simplified validation - only block if size is explicitly empty string
+      // For size-only products, we only require size to be selected
+      if (action.payload.size === '') {
+        console.error('BLOCKING: Size is empty string:', {
           size: action.payload.size,
-          color: action.payload.color,
-          depth: action.payload.depth,
-          firmness: action.payload.firmness,
           payload: action.payload
         })
         return state // Don't add the item
       }
       
-      const existingItem = state.items.find(item => 
-        item.id === action.payload.id && 
-        item.size === action.payload.size && 
-        item.color === action.payload.color &&
-        item.depth === action.payload.depth &&
-        item.firmness === action.payload.firmness &&
-        item.variantSku === action.payload.variantSku
-      )
+      console.log('✅ Variant validation passed - size is valid')
+      
+      // Simplified existing item matching - focus on id and size for size-only products
+      const existingItem = state.items.find(item => {
+        const idMatch = item.id === action.payload.id
+        const sizeMatch = item.size === action.payload.size
+        const colorMatch = !action.payload.color || !item.color || item.color === action.payload.color
+        const depthMatch = !action.payload.depth || !item.depth || item.depth === action.payload.depth
+        const firmnessMatch = !action.payload.firmness || !item.firmness || item.firmness === action.payload.firmness
+        
+        return idMatch && sizeMatch && colorMatch && depthMatch && firmnessMatch
+      })
       
       // Note: We no longer need to handle existing items with different variants
       // because we prevent adding items to cart until all variants are selected
       
       if (existingItem) {
-        const updatedItems = state.items.map(item =>
-          item.id === action.payload.id && 
-          item.size === action.payload.size && 
-          item.color === action.payload.color &&
-          item.depth === action.payload.depth &&
-          item.firmness === action.payload.firmness &&
-          item.variantSku === action.payload.variantSku
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        )
+        const updatedItems = state.items.map(item => {
+          const idMatch = item.id === action.payload.id
+          const sizeMatch = item.size === action.payload.size
+          const colorMatch = !action.payload.color || !item.color || item.color === action.payload.color
+          const depthMatch = !action.payload.depth || !item.depth || item.depth === action.payload.depth
+          const firmnessMatch = !action.payload.firmness || !item.firmness || item.firmness === action.payload.firmness
+          
+          if (idMatch && sizeMatch && colorMatch && depthMatch && firmnessMatch) {
+            return { ...item, quantity: item.quantity + 1 }
+          }
+          return item
+        })
         const total = updatedItems.reduce((sum, item) => sum + (item.currentPrice * item.quantity), 0)
         const itemCount = updatedItems.reduce((sum, item) => sum + item.quantity, 0)
         
@@ -226,6 +225,12 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           currentPrice: newItem.currentPrice,
           variantSku: newItem.variantSku,
           payload: action.payload
+        })
+        
+        console.log('CartContext - Current state before adding:', {
+          currentItems: state.items.length,
+          currentTotal: state.total,
+          currentItemCount: state.itemCount
         })
         
         console.log('CartContext - Item will be added to cart:', {
@@ -316,19 +321,25 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         }
         
         console.log('Cart state after adding new item:', newState)
-      console.log('CartContext - Final cart state:', {
-        itemsCount: newState.items.length,
-        total: newState.total,
-        itemCount: newState.itemCount,
-        items: newState.items.map(item => ({
-          id: item.id,
-          name: item.name,
-          size: item.size,
-          color: item.color,
-          currentPrice: item.currentPrice,
-          quantity: item.quantity
-        }))
-      })
+        
+        console.log('CartContext - Final cart state:', {
+          itemsCount: newState.items.length,
+          total: newState.total,
+          itemCount: newState.itemCount,
+          items: newState.items.map(item => ({
+            id: item.id,
+            name: item.name,
+            size: item.size,
+            color: item.color,
+            currentPrice: item.currentPrice,
+            quantity: item.quantity
+          }))
+        })
+        
+        console.log('CartContext - State change:', {
+          before: { items: state.items.length, total: state.total, itemCount: state.itemCount },
+          after: { items: newState.items.length, total: newState.total, itemCount: newState.itemCount }
+        })
       
       // CRITICAL: Log that the item was successfully added
       console.log('✅ SUCCESS: Item added to cart successfully!', {

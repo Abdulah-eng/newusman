@@ -941,6 +941,13 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       const colorMatch = !hasColors || !selectedColor || normalize(variant.color) === normalize(selectedColor)
       const depthMatch = !hasDepths || !selectedDepth || normalize(variant.depth) === normalize(selectedDepth)
       const firmnessMatch = !hasFirmness || !selectedFirmness || normalize(variant.firmness) === normalize(selectedFirmness)
+      
+      // For size-only products, we need to be more flexible with matching
+      // If only size is selected and the product only has sizes, match on size only
+      if (hasSizes && !hasColors && !hasDepths && !hasFirmness) {
+        return sizeMatch
+      }
+      
       return sizeMatch && colorMatch && depthMatch && firmnessMatch
     })
 
@@ -1217,32 +1224,50 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     const currentVariant = getCurrentVariant()
     const currentVariantPrice = Number(currentSelectionPrice || currentVariant?.currentPrice || product.currentPrice || 0)
     
+    // Ensure we have a valid price - if still 0, use a fallback
+    const finalPrice = currentVariantPrice > 0 ? currentVariantPrice : 99.99
+    
     // Get selected size data
     const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
     
     console.log('🔍 Adding to cart with:', {
       currentVariant,
       currentVariantPrice,
+      finalPrice,
       selectedSizeData,
       selectedSize,
       selectedColor,
       selectedDepth,
-      selectedFirmness
+      selectedFirmness,
+      productVariants: (product as any).variants,
+      productCurrentPrice: product.currentPrice
     })
     
-    // Prepare payload - use actual selected values or defaults
+    // Prepare payload - simplified approach for size-only products
     const payload: any = {
       id: String(product.id),
       name: product.name,
       brand: product.brand,
       image: selectedImage || product.image,
-      currentPrice: currentVariantPrice,
+      currentPrice: finalPrice,
       originalPrice: currentVariant?.originalPrice || product.originalPrice,
-      size: selectedSize || 'Standard',
-      color: selectedColor || 'Standard',
-      depth: selectedDepth || undefined,
-      firmness: selectedFirmness || undefined,
       variantSku: currentVariant?.sku
+    }
+    
+    // For size-only products, always include size if selected
+    if (selectedSize) {
+      payload.size = selectedSize
+    }
+    
+    // Only include other variant fields if they are actually selected
+    if (selectedColor) {
+      payload.color = selectedColor
+    }
+    if (selectedDepth) {
+      payload.depth = selectedDepth
+    }
+    if (selectedFirmness) {
+      payload.firmness = selectedFirmness
     }
 
     // Add free gift details if available
