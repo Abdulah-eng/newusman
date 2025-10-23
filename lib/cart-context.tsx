@@ -282,94 +282,10 @@ function cartReducer(state: CartState, action: CartAction): CartState {
           itemCount
         })
         
-        // CRITICAL FIX: Only replace items if there's a significant price mismatch
-        // and we have existing items with very different prices
-        const hasExistingItems = state.items.length > 0
-        const hasSignificantPriceMismatch = hasExistingItems && 
-          state.items.some(item => Math.abs(item.currentPrice - action.payload.currentPrice) > 50)
+        // Note: Removed problematic price mismatch logic that was replacing entire cart
+        // This was causing other products to be removed when adding new items
         
-        if (hasSignificantPriceMismatch) {
-          console.warn('CRITICAL: Significant price mismatch detected, replacing cart with correct variant:', {
-            existingItems: state.items.map(item => ({
-              id: item.id,
-              name: item.name,
-              size: item.size,
-              color: item.color,
-              currentPrice: item.currentPrice,
-              quantity: item.quantity
-            })),
-            newItemPrice: action.payload.currentPrice,
-            calculatedTotal: total,
-            expectedTotal: action.payload.currentPrice
-          })
-          
-          // Replace all items with the correct variant
-          const correctedItems = [newItem]
-          const correctedTotal = action.payload.currentPrice
-          const correctedItemCount = 1
-          
-          // Check if this product has a free gift and should show notification
-          const hasFreeGift = !!action.payload.freeGiftProductId
-          const showNotification = hasFreeGift
-          
-          const newState = { 
-            items: correctedItems, 
-            total: correctedTotal, 
-            itemCount: correctedItemCount,
-            showFreeGiftNotification: showNotification,
-            freeGiftInfo: showNotification ? {
-              giftProduct: {
-                name: action.payload.freeGiftProductName || 'Free Gift',
-                image: action.payload.freeGiftProductImage || ''
-              },
-              mainProduct: {
-                name: action.payload.name,
-                image: action.payload.image
-              }
-            } : null
-          }
-          console.log('Cart state after price correction:', newState)
-          return newState
-        }
-        
-        // TEMPORARY FIX: If there's only one item and it's the same as the one being added,
-        // ensure the total matches the item price
-        if (updatedItems.length === 1 && updatedItems[0].id === action.payload.id) {
-          const expectedTotal = updatedItems[0].currentPrice * updatedItems[0].quantity
-          if (Math.abs(total - expectedTotal) > 0.01) {
-            console.warn('Cart total mismatch detected, correcting:', {
-              calculatedTotal: total,
-              expectedTotal: expectedTotal,
-              itemPrice: updatedItems[0].currentPrice,
-              quantity: updatedItems[0].quantity
-            })
-            // Use the expected total instead
-            const correctedTotal = expectedTotal
-            
-            // Check if this product has a free gift and should show notification
-            const hasFreeGift = !!action.payload.freeGiftProductId
-            const showNotification = hasFreeGift
-            
-            const newState = { 
-              items: updatedItems, 
-              total: correctedTotal, 
-              itemCount,
-              showFreeGiftNotification: showNotification,
-              freeGiftInfo: showNotification ? {
-                giftProduct: {
-                  name: action.payload.freeGiftProductName || 'Free Gift',
-                  image: action.payload.freeGiftProductImage || ''
-                },
-                mainProduct: {
-                  name: action.payload.name,
-                  image: action.payload.image
-                }
-              } : null
-            }
-            console.log('Cart state after correction:', newState)
-            return newState
-          }
-        }
+        // Note: Removed temporary fix that was potentially causing cart issues
         
         // Check if we added a free gift and should show notification
         const hasFreeGift = !!action.payload.freeGiftProductId

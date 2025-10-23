@@ -380,36 +380,6 @@ export function BasketSidebar({ isOpen, onClose, product }: BasketSidebarProps) 
                  
                </div>
             
-            {/* Debug Section - Remove in production */}
-            <div className="p-4 bg-yellow-50 border-t border-yellow-200">
-              <h4 className="text-sm font-semibold text-yellow-800 mb-2">Debug Info (Remove in production)</h4>
-              <div className="text-xs text-yellow-700 space-y-1">
-                <div>Cart Items: {state.items.length}</div>
-                <div>Total: £{state.total.toFixed(2)}</div>
-                <div>Item Count: {state.itemCount}</div>
-                <div>Product Price: £{product?.currentPrice?.toFixed(2) || 'N/A'}</div>
-                <div>Price Match: {product?.currentPrice === state.total ? '✅' : '❌'}</div>
-                {state.items.map((item, index) => (
-                  <div key={index} className="ml-2">
-                    {item.name} - {item.size} - {item.color} - £{item.currentPrice.toFixed(2)} x {item.quantity}
-                  </div>
-                ))}
-                <div className="flex gap-2 mt-2">
-                  <button 
-                    onClick={clearCart}
-                    className="px-2 py-1 bg-red-500 text-white text-xs rounded"
-                  >
-                    Clear Cart
-                  </button>
-                  <button 
-                    onClick={forceClearCart}
-                    className="px-2 py-1 bg-red-700 text-white text-xs rounded"
-                  >
-                    Force Clear + localStorage
-                  </button>
-                </div>
-              </div>
-            </div>
 
             {/* Bottom Spacing for Footer */}
             <div className="h-4"></div>

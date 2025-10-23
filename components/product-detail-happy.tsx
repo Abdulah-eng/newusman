@@ -856,38 +856,8 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
         itemCount: state.itemCount
       })
       
-      // CRITICAL: If there are existing items with significantly different prices, clear them first
-      if (state.items.length > 0) {
-        const hasSignificantlyDifferentPrice = state.items.some(item => 
-          Math.abs(item.currentPrice - currentVariantPrice) > 50
-        )
-        
-        if (hasSignificantlyDifferentPrice) {
-          console.warn('CRITICAL: Sequential flow - Existing items with significantly different prices detected, clearing cart first:', {
-            existingItems: state.items.map(item => ({
-              id: item.id,
-              name: item.name,
-              size: item.size,
-              color: item.color,
-              currentPrice: item.currentPrice,
-              quantity: item.quantity
-            })),
-            newItemPrice: currentVariantPrice
-          })
-          
-          // Clear cart first, then add the correct variant
-          dispatch({ type: 'CLEAR_CART' })
-          
-          // Add the correct variant after a brief delay
-          setTimeout(() => {
-            dispatch({
-              type: 'ADD_ITEM',
-              payload
-            })
-          }, 100)
-          return
-        }
-      }
+      // Note: Removed problematic logic that was clearing cart when prices differed
+      // This was causing other products to be removed when adding new items
       
       // If cart is empty or items have same price, add normally
       console.log('Sequential flow - Adding item to cart normally:', {
