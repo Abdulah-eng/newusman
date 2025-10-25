@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
 
 // Extend jsPDF type to include autoTable
 declare module 'jspdf' {
@@ -12,6 +14,41 @@ declare module 'jspdf' {
 
 export async function GET(req: NextRequest) {
   try {
+    // Check authentication
+    const cookieStore = await cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    
+    // Get current user from Supabase auth
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Special bypass for mabdulaharshad@gmail.com
+    if (user.email === 'mabdulaharshad@gmail.com') {
+      console.log('🚀 Bypassing manager check for mabdulaharshad@gmail.com in download API')
+      // Allow access without checking managers table
+    } else {
+      // Check if user is admin in managers table
+      const { data: manager, error: managerError } = await supabase
+        .from('managers')
+        .select('role')
+        .eq('email', user.email)
+        .eq('is_active', true)
+        .single()
+
+      if (managerError || !manager || manager.role !== 'admin') {
+        return NextResponse.json(
+          { error: 'Admin access required' },
+          { status: 403 }
+        )
+      }
+    }
+
     const { searchParams } = new URL(req.url)
     const format = searchParams.get('format') || 'csv' // 'csv' or 'pdf'
     const date = searchParams.get('date') || new Date().toISOString().split('T')[0] // Default to today
@@ -69,7 +106,16 @@ export async function GET(req: NextRequest) {
 
   } catch (error) {
     console.error('Error generating download:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      format: req.url.includes('format=') ? new URL(req.url).searchParams.get('format') : 'unknown',
+      date: req.url.includes('date=') ? new URL(req.url).searchParams.get('date') : 'unknown'
+    })
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 
@@ -192,11 +238,12 @@ function generateEmptyPDF(date: string) {
 }
 
 function generatePDF(orders: any[], date: string) {
-  const doc = new jsPDF()
-  
-  // Add title
-  doc.setFontSize(20)
-  doc.text(`Orders Report - ${date}`, 14, 22)
+  try {
+    const doc = new jsPDF()
+    
+    // Add title
+    doc.setFontSize(20)
+    doc.text(`Orders Report - ${date}`, 14, 22)
   
   // Add summary
   doc.setFontSize(12)
@@ -226,18 +273,82 @@ function generatePDF(orders: any[], date: string) {
   })
 
   // Add table
-  doc.autoTable({
-    startY: 50,
-    head: [['Order #', 'Email', 'Name', 'Amount', 'Status', 'Date', 'Tracking', 'Items']],
-    body: tableData,
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [41, 128, 185] },
-    alternateRowStyles: { fillColor: [245, 245, 245] },
-    margin: { top: 50 }
-  })
+  try {
+    (doc as any).autoTable({
+      startY: 50,
+      head: [['Order #', 'Email', 'Name', 'Amount', 'Status', 'Date', 'Tracking', 'Items']],
+      body: tableData,
+      styles: { 
+        fontSize: 8,
+        cellPadding: 2,
+        overflow: 'linebreak',
+        halign: 'left'
+      },
+      columnStyles: {
+        0: { cellWidth: 25 }, // Order #
+        1: { cellWidth: 40 }, // Email
+        2: { cellWidth: 30 }, // Name
+        3: { cellWidth: 20 }, // Amount
+        4: { cellWidth: 25 }, // Status
+        5: { cellWidth: 25 }, // Date
+        6: { cellWidth: 20 }, // Tracking
+        7: { cellWidth: 15 }  // Items
+      },
+      headStyles: { 
+        fillColor: [41, 128, 185],
+        textColor: [255, 255, 255],
+        fontSize: 8
+      },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { top: 50, left: 14, right: 14 }
+    })
+  } catch (autoTableError) {
+    console.warn('AutoTable not available, using manual table generation:', autoTableError)
+    // Fallback to manual table generation
+    let yPos = 50
+    doc.setFontSize(8)
+    
+    // Add headers with proper column widths (matching autoTable layout)
+    doc.setFillColor(41, 128, 185)
+    doc.rect(14, yPos, 180, 8, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.text('Order #', 16, yPos + 5)
+    doc.text('Email', 44, yPos + 5)
+    doc.text('Name', 87, yPos + 5)
+    doc.text('Amount', 120, yPos + 5)
+    doc.text('Status', 143, yPos + 5)
+    doc.text('Date', 171, yPos + 5)
+    yPos += 10
+    
+    // Add data rows with proper column positioning
+    doc.setTextColor(0, 0, 0)
+    tableData.forEach((row, index) => {
+      if (yPos > 280) {
+        doc.addPage()
+        yPos = 20
+      }
+      
+      const fillColor = index % 2 === 0 ? [245, 245, 245] : [255, 255, 255]
+      doc.setFillColor(fillColor[0], fillColor[1], fillColor[2])
+      doc.rect(14, yPos, 180, 8, 'F')
+      
+      // Truncate long text to fit columns with proper spacing
+      const orderNum = row[0].length > 10 ? row[0].substring(0, 10) + '...' : row[0]
+      const email = row[1].length > 18 ? row[1].substring(0, 18) + '...' : row[1]
+      const name = row[2].length > 12 ? row[2].substring(0, 12) + '...' : row[2]
+      
+      doc.text(orderNum, 16, yPos + 5)
+      doc.text(email, 44, yPos + 5)
+      doc.text(name, 87, yPos + 5)
+      doc.text(row[3], 120, yPos + 5)
+      doc.text(row[4], 143, yPos + 5)
+      doc.text(row[5], 171, yPos + 5)
+      yPos += 8
+    })
+  }
 
   // Add items details for each order
-  let yPosition = (doc as any).lastAutoTable.finalY + 20
+  let yPosition = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 20 : 100
   
   orders.forEach((order, index) => {
     if (yPosition > 280) {
@@ -279,4 +390,8 @@ function generatePDF(orders: any[], date: string) {
       'Content-Disposition': `attachment; filename="${filename}"`
     }
   })
+  } catch (error) {
+    console.error('Error generating PDF:', error)
+    throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
 }
