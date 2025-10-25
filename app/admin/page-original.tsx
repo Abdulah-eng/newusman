@@ -1822,7 +1822,7 @@ function ProductForm() {
   const [rating, setRating] = useState<number>(4.5)
   const [headline, setHeadline] = useState('Premium Sleep Experience')
   const [longDescription, setLongDescription] = useState('Write a compelling description about comfort, materials and value.')
-  const [warrantyDeliveryLine, setWarrantyDeliveryLine] = useState('1-Year Warranty • Free Delivery • 100-Night Trial')
+  const [warrantyDeliveryLine, setWarrantyDeliveryLine] = useState('1-Year Warranty • Free Delivery • 14-Night Trial')
   
   // Description paragraphs with images
   const [descriptionParagraphs, setDescriptionParagraphs] = useState([
@@ -1849,7 +1849,7 @@ function ProductForm() {
   const [careInstructions, setCareInstructions] = useState('')
   
   // Trial information
-  const [trialInformation, setTrialInformation] = useState('Try your mattress risk-free for 100 nights. If you are not completely satisfied, return it for a full refund. No questions asked.')
+  const [trialInformation, setTrialInformation] = useState('Try your mattress risk-free for 14 nights. If you are not completely satisfied, return it for a full refund. No questions asked.')
   const [trialInformationHeading, setTrialInformationHeading] = useState('Trial')
   
   // Dimensions and specifications
@@ -2347,7 +2347,7 @@ function ProductForm() {
     setRating(4.5)
     setHeadline('Premium Sleep Experience')
     setLongDescription('Write a compelling description about comfort, materials and value.')
-    setWarrantyDeliveryLine('1-Year Warranty • Free Delivery • 100-Night Trial')
+    setWarrantyDeliveryLine('1-Year Warranty • Free Delivery • 14-Night Trial')
     setFirmnessScale('Medium')
     setSupportLevel('Medium')
     setPressureReliefLevel('Medium')
@@ -2371,7 +2371,7 @@ function ProductForm() {
       { heading: 'Support', content: 'Dedicated customer support for warranty claims...' }
     ])
     setCareInstructions('')
-    setTrialInformation('Try your mattress risk-free for 100 nights. If you are not completely satisfied, return it for a full refund. No questions asked.')
+    setTrialInformation('Try your mattress risk-free for 14 nights. If you are not completely satisfied, return it for a full refund. No questions asked.')
     setDimensions({
       height: '25 cm',
       length: 'L 190cm',
@@ -3849,7 +3849,7 @@ function ProductForm() {
           <Textarea 
             value={trialInformation} 
             onChange={e => setTrialInformation(e.target.value)}
-            placeholder="e.g., Try your mattress risk-free for 100 nights. If you are not completely satisfied, return it for a full refund. No questions asked."
+            placeholder="e.g., Try your mattress risk-free for 14 nights. If you are not completely satisfied, return it for a full refund. No questions asked."
             rows={3}
           />
         </div>
@@ -4348,7 +4348,7 @@ function ProductForm() {
               id="warranty-delivery" 
               value={warrantyDeliveryLine} 
               onChange={e => setWarrantyDeliveryLine(e.target.value)} 
-              placeholder="e.g., 10-Year Warranty • Free Delivery • 100-Night Trial"
+              placeholder="e.g., 10-Year Warranty • Free Delivery • 14-Night Trial"
             />
             <p className="text-xs text-gray-500 mt-1">
               Enter the warranty, delivery, and trial information separated by bullet points (•)

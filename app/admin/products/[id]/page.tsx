@@ -50,9 +50,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [rating, setRating] = useState(0)
   const [headline, setHeadline] = useState('')
   const [longDescription, setLongDescription] = useState('')
-  const [warrantyDeliveryLine, setWarrantyDeliveryLine] = useState('1-Year Warranty • Free Delivery • 100-Night Trial')
+  const [warrantyDeliveryLine, setWarrantyDeliveryLine] = useState('1-Year Warranty • Free Delivery • 14-Night Trial')
   const [careInstructions, setCareInstructions] = useState('')
-  const [trialInformation, setTrialInformation] = useState('Try your mattress risk-free for 100 nights. If you are not completely satisfied, return it for a full refund. No questions asked.')
+  const [trialInformation, setTrialInformation] = useState('Try your mattress risk-free for 14 nights. If you are not completely satisfied, return it for a full refund. No questions asked.')
   const [trialInformationHeading, setTrialInformationHeading] = useState('Trial')
   const [descriptionParagraphs, setDescriptionParagraphs] = useState([
     { heading: 'Comfort & Support', content: 'Experience exceptional comfort with our premium materials...', image: '' },
@@ -1355,7 +1355,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                       id="warrantyDeliveryLine"
                       value={warrantyDeliveryLine}
                       onChange={(e) => setWarrantyDeliveryLine(e.target.value)}
-                      placeholder="e.g., 10-Year Warranty • Free Delivery • 100-Night Trial"
+                      placeholder="e.g., 10-Year Warranty • Free Delivery • 14-Night Trial"
               />
             </div>
           <div>

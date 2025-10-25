@@ -335,7 +335,7 @@ export default function AddProductPage() {
                     id="trial"
                     value={formData.trial}
                     onChange={(e) => handleInputChange('trial', e.target.value)}
-                    placeholder="e.g., 100 nights"
+                    placeholder="e.g., 14 nights"
                   />
                 </div>
                 <div>

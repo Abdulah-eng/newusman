@@ -495,7 +495,7 @@ export function DealOfTheDay() {
                     </>
                   )}
                 </div>
-                <p className="text-sm text-gray-500 font-modern">Free delivery & 100-night trial included</p>
+                <p className="text-sm text-gray-500 font-modern">Free delivery & 14-night trial included</p>
               </div>
 
               {/* Features */}

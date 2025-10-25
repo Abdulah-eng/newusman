@@ -1949,7 +1949,7 @@ export function HomepageManagement() {
                     <span className="text-2xl text-gray-400 line-through font-modern">£749</span>
                     <span className="text-lg text-green-600 font-semibold font-modern">Save £450</span>
                   </div>
-                  <p className="text-sm text-gray-500 font-modern">Free delivery & 100-night trial included</p>
+                  <p className="text-sm text-gray-500 font-modern">Free delivery & 14-night trial included</p>
                 </div>
 
                 {/* Features */}

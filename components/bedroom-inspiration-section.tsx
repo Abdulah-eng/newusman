@@ -6,11 +6,16 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useHomePageContent } from '@/hooks/use-homepage-content'
 import { getFeatureIcon } from '@/lib/icon-mapping'
+import { useProductsByCategory } from '@/hooks/use-products-by-category'
+import { ProductCard } from '@/components/product-card'
 
 export function BedroomInspirationSection() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const { content, loading, error } = useHomePageContent()
   const [inspirationProducts, setInspirationProducts] = useState<any[]>([])
+  
+  // Fetch bed products from the same source as FeaturedProducts
+  const { products: featuredBedProducts, loading: productsLoading } = useProductsByCategory('beds')
   
   // Fetch actual inspiration products when content changes
   useEffect(() => {
@@ -331,6 +336,36 @@ export function BedroomInspirationSection() {
             
             {/* Removed single bottom Buy Now button as requested */}
           </div>
+          
+          {/* Featured Bed Products */}
+          {featuredBedProducts.length > 0 && (
+            <div className="mt-16">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold text-black mb-4 font-display">
+                  Featured Beds
+                </h3>
+                <p className="text-lg text-gray-700 font-modern">
+                  Transform your bedroom with our premium bed collection
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {featuredBedProducts.slice(0, 4).map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+              
+              <div className="text-center mt-8">
+                <Link 
+                  href="/beds"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-400 to-red-500 text-white px-8 py-3 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                >
+                  View All Beds
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </section>
   )

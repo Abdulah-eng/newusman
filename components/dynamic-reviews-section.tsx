@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ReviewFormModal } from './review-form-modal'
+import { hardcodedReviews, HardcodedReview } from '@/lib/hardcoded-reviews'
 
 interface Review {
   id: string
@@ -35,6 +36,7 @@ export function DynamicReviewsSection({
   productReviewCount = 0 
 }: DynamicReviewsSectionProps) {
   const [reviews, setReviews] = useState<Review[]>([])
+  const [allReviews, setAllReviews] = useState<(Review | HardcodedReview)[]>([])
   const [loading, setLoading] = useState(true)
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
   const [averageRating, setAverageRating] = useState(productRating)
@@ -58,13 +60,18 @@ export function DynamicReviewsSection({
       if (response.ok) {
         const data = await response.json()
         console.log('Reviews data received:', data)
-        setReviews(data.reviews || [])
+        const databaseReviews = data.reviews || []
+        setReviews(databaseReviews)
         
-        // Calculate average rating from reviews
-        if (data.reviews && data.reviews.length > 0) {
-          const avg = data.reviews.reduce((sum: number, review: Review) => sum + review.rating, 0) / data.reviews.length
+        // Combine database reviews with hardcoded reviews
+        const combinedReviews = [...databaseReviews, ...hardcodedReviews]
+        setAllReviews(combinedReviews)
+        
+        // Calculate average rating from all reviews
+        if (combinedReviews.length > 0) {
+          const avg = combinedReviews.reduce((sum: number, review: Review | HardcodedReview) => sum + review.rating, 0) / combinedReviews.length
           setAverageRating(avg)
-          setTotalReviews(data.reviews.length)
+          setTotalReviews(combinedReviews.length)
         }
       } else {
         const errorText = await response.text()
@@ -72,6 +79,11 @@ export function DynamicReviewsSection({
       }
     } catch (error) {
       console.error('Error fetching reviews:', error)
+      // Even if database fails, show hardcoded reviews
+      setAllReviews(hardcodedReviews)
+      setTotalReviews(hardcodedReviews.length)
+      const avg = hardcodedReviews.reduce((sum, review) => sum + review.rating, 0) / hardcodedReviews.length
+      setAverageRating(avg)
     } finally {
       setLoading(false)
     }
@@ -144,6 +156,10 @@ export function DynamicReviewsSection({
   }
 
   const getInitials = (name: string) => {
+    // Handle null/undefined names
+    if (!name || typeof name !== 'string') {
+      return 'U' // Default initial
+    }
     return name
       .split(' ')
       .map(word => word.charAt(0))
@@ -163,6 +179,10 @@ export function DynamicReviewsSection({
       'from-purple-400 to-pink-400',
       'from-teal-400 to-green-400'
     ]
+    // Handle null/undefined names
+    if (!name || typeof name !== 'string') {
+      return colors[0] // Default color
+    }
     const index = name.charCodeAt(0) % colors.length
     return colors[index]
   }
@@ -220,19 +240,19 @@ export function DynamicReviewsSection({
         </div>
 
         {/* Review Grid */}
-        {reviews.length > 0 ? (
+        {allReviews.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {reviews.map((review) => (
+            {allReviews.map((review) => (
               <Card key={review.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-orange-100">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center gap-3 sm:gap-4 mb-4">
-                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br ${getAvatarColor(review.customer_name)} flex items-center justify-center`}>
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br ${getAvatarColor('customer_name' in review ? review.customer_name : review.customerName)} flex items-center justify-center`}>
                       <span className="text-white font-semibold text-base sm:text-lg">
-                        {getInitials(review.customer_name)}
+                        {getInitials('customer_name' in review ? review.customer_name : review.customerName)}
                       </span>
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{review.customer_name}</h4>
+                      <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{'customer_name' in review ? review.customer_name : review.customerName}</h4>
                       <div className="flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
                           <Star key={i} className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${i < review.rating ? "text-orange-500 fill-current" : "text-gray-300"}`} />
@@ -248,15 +268,19 @@ export function DynamicReviewsSection({
                   </div>
                   
                   <h5 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">{review.title}</h5>
-                  <p className="text-sm sm:text-base text-gray-700 mb-4 line-clamp-3">{review.review_text}</p>
+                  <p className="text-sm sm:text-base text-gray-700 mb-4 line-clamp-3">
+                    {'review_text' in review ? review.review_text : review.review}
+                  </p>
                   
                   <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500">
-                    <span>{formatDate(review.created_at)}</span>
+                    <span>
+                      {'created_at' in review ? formatDate(review.created_at) : review.date}
+                    </span>
                     <div className="flex items-center gap-2">
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleHelpfulClick(review.id, review.helpful_count)}
+                        onClick={() => handleHelpfulClick(review.id, 'helpful_count' in review ? review.helpful_count : review.helpful)}
                         disabled={helpfulLoading.has(review.id)}
                         className="text-gray-500 hover:text-orange-600 h-6 px-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -265,7 +289,7 @@ export function DynamicReviewsSection({
                         ) : (
                           <ThumbsUp className="w-3 h-3 mr-1" />
                         )}
-                        {review.helpful_count}
+                        {'helpful_count' in review ? review.helpful_count : review.helpful}
                       </Button>
                     </div>
                   </div>

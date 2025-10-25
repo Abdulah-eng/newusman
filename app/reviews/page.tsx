@@ -25,7 +25,7 @@ const hardcodedReviews: Review[] = [
     customerName: "Sarah M.",
     rating: 5,
     title: "Best mattress I've ever slept on!",
-    review: "After struggling with back pain for years, this mattress has been a game-changer. The support is incredible and I wake up feeling refreshed every morning. The 100-night trial gave me confidence to try it, but I knew within the first week that this was the one!",
+    review: "After struggling with back pain for years, this mattress has been a game-changer. The support is incredible and I wake up feeling refreshed every morning. The 14-night trial gave me confidence to try it, but I knew within the first week that this was the one!",
     date: "2 weeks ago",
     verified: true,
     helpful: 24,

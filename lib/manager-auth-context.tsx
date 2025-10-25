@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { User, Session } from '@supabase/supabase-js'
+import { getAuthErrorMessage, isRateLimitError } from './auth-utils'
 
 interface Manager {
   id: string
@@ -30,6 +31,7 @@ const ManagerAuthContext = createContext<ManagerAuthContextType | undefined>(und
 export function ManagerAuthProvider({ children }: { children: ReactNode }) {
   const [manager, setManager] = useState<Manager | null>(null)
   const [loading, setLoading] = useState(true)
+  const [sessionChecked, setSessionChecked] = useState(false)
   const supabase = useMemo(() => createClientComponentClient(), [])
 
   useEffect(() => {
@@ -42,7 +44,101 @@ export function ManagerAuthProvider({ children }: { children: ReactNode }) {
         console.log('⏰ Auth timeout - setting loading to false')
         setLoading(false)
       }
-    }, 3000) // Reduced to 3 second timeout
+    }, 5000) // Increased timeout for better reliability
+
+    // Check for existing session first (avoid unnecessary API calls)
+    const checkExistingSession = async () => {
+      if (sessionChecked) return
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          console.log('🔍 Found existing session for:', session.user.email)
+          await handleUserSession(session.user, isMounted, timeoutId)
+        } else {
+          console.log('ℹ️  No existing session found')
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('❌ Error checking session:', error)
+        setLoading(false)
+      }
+      setSessionChecked(true)
+    }
+
+    // Handle user session with optimized logic
+    const handleUserSession = async (user: any, isMounted: boolean, timeoutId: NodeJS.Timeout) => {
+      try {
+        // Special bypass for mabdulaharshad@gmail.com
+        if (user.email === 'mabdulaharshad@gmail.com') {
+          console.log('🚀 Bypassing manager check for mabdulaharshad@gmail.com')
+          const bypassManager = {
+            id: user.id,
+            email: user.email,
+            full_name: 'Mabdulaharshad',
+            role: 'admin' as const,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+          setManager(bypassManager)
+          setLoading(false)
+          clearTimeout(timeoutId)
+          return
+        }
+        
+        // For other users, check managers table with caching
+        const cacheKey = `manager_${user.email}`
+        const cachedManager = localStorage.getItem(cacheKey)
+        
+        if (cachedManager) {
+          try {
+            const managerData = JSON.parse(cachedManager)
+            // Check if cache is still valid (less than 5 minutes old)
+            if (Date.now() - managerData.cachedAt < 5 * 60 * 1000) {
+              console.log('📦 Using cached manager data for:', user.email)
+              setManager(managerData)
+              setLoading(false)
+              clearTimeout(timeoutId)
+              return
+            }
+          } catch (e) {
+            // Invalid cache, continue with fresh lookup
+          }
+        }
+        
+        // Fresh lookup with timeout protection
+        console.log('🔍 Fresh manager lookup for:', user.email)
+        const { data: managerData, error: managerError } = await supabase
+          .from('managers')
+          .select('*')
+          .eq('email', user.email)
+          .eq('is_active', true)
+          .single()
+
+        if (managerData && !managerError) {
+          console.log('✅ Manager authenticated:', managerData.email, 'Role:', managerData.role)
+          setManager(managerData)
+          
+          // Cache the result
+          const cacheData = { ...managerData, cachedAt: Date.now() }
+          localStorage.setItem(cacheKey, JSON.stringify(cacheData))
+          
+          setLoading(false)
+          clearTimeout(timeoutId)
+        } else {
+          console.log('❌ Manager not found in database for:', user.email)
+          setManager(null)
+          setLoading(false)
+          clearTimeout(timeoutId)
+        }
+      } catch (error) {
+        console.error('❌ Error in handleUserSession:', error)
+        setManager(null)
+        setLoading(false)
+        clearTimeout(timeoutId)
+      }
+    }
 
     // Listen for auth changes (this handles both initial session and changes)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -54,126 +150,18 @@ export function ManagerAuthProvider({ children }: { children: ReactNode }) {
         console.log('🔍 Loading state:', loading)
         
         if (session?.user) {
-          try {
-            console.log('🔍 Checking manager status for:', session.user.email)
-            
-            // Special bypass for mabdulaharshad@gmail.com
-            if (session.user.email === 'mabdulaharshad@gmail.com') {
-              console.log('🚀 Bypassing manager check for mabdulaharshad@gmail.com')
-              const bypassManager = {
-                id: session.user.id,
-                email: session.user.email,
-                full_name: 'Mabdulaharshad',
-                role: 'admin' as const,
-                is_active: true,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }
-              setManager(bypassManager)
-              setLoading(false)
-              clearTimeout(timeoutId)
-              return
-            }
-            
-            // Get manager details for other users with improved error handling
-            console.log('🔍 Querying managers table for:', session.user.email)
-            
-            // Try to get manager data with timeout
-            let managerData = null
-            let error = null
-            
-            try {
-              const queryPromise = supabase
-            .from('managers')
-            .select('*')
-            .eq('email', session.user.email)
-            .eq('is_active', true)
-            .single()
-
-              const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Database query timeout')), 1500)
-              )
-
-              const result = await Promise.race([queryPromise, timeoutPromise])
-              managerData = result.data
-              error = result.error
-              
-              console.log('📊 Manager query result:', { managerData, error })
-
-          if (managerData && !error) {
-                console.log('✅ Manager authenticated:', managerData.email, 'Role:', managerData.role)
-            setManager(managerData)
-        setLoading(false)
-                clearTimeout(timeoutId)
-                return
-              }
-            } catch (timeoutError) {
-              console.error('❌ Database query timed out:', timeoutError)
-              error = timeoutError
-            }
-            
-            // If first query failed, try without is_active filter
-            if (!managerData || error) {
-              try {
-                console.log('🔄 Trying query without is_active filter...')
-                const allQueryPromise = supabase
-            .from('managers')
-            .select('*')
-            .eq('email', session.user.email)
-            .single()
-
-                const allTimeoutPromise = new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error('Database query timeout')), 1500)
-                )
-
-                const allResult = await Promise.race([allQueryPromise, allTimeoutPromise])
-                console.log('📋 All manager data (including inactive):', allResult)
-                
-                if (allResult.data && !allResult.error) {
-                  const allManagerData = allResult.data
-                  console.log('⚠️  Manager found but checking status:', allManagerData.email, 'is_active:', allManagerData.is_active)
-                  
-                  if (allManagerData.is_active === false) {
-                    console.log('❌ Manager account is inactive')
-                    setManager(null)
-                    // Force sign out inactive user
-                    await forceSignOut(session.user.email)
-                    return
-          } else {
-                    // is_active might be null/undefined, treat as active
-                    console.log('✅ Manager authenticated (no is_active field):', allManagerData.email, 'Role:', allManagerData.role)
-                    setManager(allManagerData)
-                    setLoading(false)
-                    clearTimeout(timeoutId)
-                    return
-                  }
-                }
-              } catch (allTimeoutError) {
-                console.error('❌ All manager query timed out:', allTimeoutError)
-              }
-            }
-            
-            // If we get here, no manager was found
-            console.log('❌ Manager not found in database for:', session.user.email)
-            setManager(null)
-            // Force sign out non-manager user
-            await forceSignOut(session.user.email)
-            
-          } catch (error) {
-            console.error('❌ Error checking manager status:', error)
-            setManager(null)
-            // Force sign out on any error
-            await forceSignOut(session?.user?.email || 'unknown')
-          }
+          await handleUserSession(session.user, isMounted, timeoutId)
         } else {
           console.log('ℹ️  No user in session')
           setManager(null)
+          setLoading(false)
+          clearTimeout(timeoutId)
         }
-        
-        setLoading(false)
-        clearTimeout(timeoutId)
       }
     )
+
+    // Initialize session check
+    checkExistingSession()
 
     return () => {
       isMounted = false
@@ -215,23 +203,40 @@ export function ManagerAuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string, expectedRole?: 'admin' | 'manager') => {
     try {
+      console.log('🔐 Attempting login for:', email)
+      
+      // Check for rate limit in localStorage
+      const rateLimitKey = `rate_limit_${email}`
+      const lastAttempt = localStorage.getItem(rateLimitKey)
+      if (lastAttempt && Date.now() - parseInt(lastAttempt) < 30000) { // 30 second cooldown
+        return { 
+          success: false, 
+          error: 'Please wait 30 seconds before trying again to avoid rate limits.' 
+        }
+      }
+      
+      // Record attempt time
+      localStorage.setItem(rateLimitKey, Date.now().toString())
+      
       // Special bypass for mabdulaharshad@gmail.com
       if (email.toLowerCase() === 'mabdulaharshad@gmail.com') {
         console.log('🚀 Bypassing manager check for mabdulaharshad@gmail.com')
-        // Use Supabase auth for login
         const { error } = await supabase.auth.signInWithPassword({
           email: email.toLowerCase(),
           password
         })
 
         if (error) {
-          return { success: false, error: error.message }
+          return { 
+            success: false, 
+            error: getAuthErrorMessage(error)
+          }
         }
 
         return { success: true }
       }
 
-      // First check if this email exists in managers table
+      // For other users, check managers table first (avoid unnecessary auth calls)
       const { data: managerData, error: managerError } = await supabase
         .from('managers')
         .select('*')
@@ -251,14 +256,17 @@ export function ManagerAuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Use Supabase auth for login
+      // Only attempt auth if manager exists and is valid
       const { error } = await supabase.auth.signInWithPassword({
         email: email.toLowerCase(),
         password
       })
 
       if (error) {
-        return { success: false, error: error.message }
+        return { 
+          success: false, 
+          error: getAuthErrorMessage(error)
+        }
       }
 
       return { success: true }
@@ -274,6 +282,17 @@ export function ManagerAuthProvider({ children }: { children: ReactNode }) {
       
       // Clear manager state first to prevent stuck state
       setManager(null)
+      
+      // Clear all authentication caches
+      if (typeof window !== 'undefined') {
+        // Clear manager caches
+        const keys = Object.keys(localStorage)
+        keys.forEach(key => {
+          if (key.startsWith('manager_') || key.startsWith('rate_limit_')) {
+            localStorage.removeItem(key)
+          }
+        })
+      }
       
       // Try to sign out from Supabase auth
       try {
@@ -295,14 +314,6 @@ export function ManagerAuthProvider({ children }: { children: ReactNode }) {
         // Clear all sessionStorage
         sessionStorage.clear()
         
-        // Clear any cached auth tokens
-        const keys = Object.keys(localStorage)
-        keys.forEach(key => {
-          if (key.includes('supabase') || key.includes('auth')) {
-            localStorage.removeItem(key)
-          }
-        })
-        
         // Force redirect to login page
         console.log('🔄 Redirecting to login page...')
         window.location.href = '/admin/login'
@@ -310,7 +321,7 @@ export function ManagerAuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('❌ Logout error:', error)
       // Even if there's an error, clear the local state and redirect
-    setManager(null)
+      setManager(null)
       if (typeof window !== 'undefined') {
         localStorage.clear()
         sessionStorage.clear()

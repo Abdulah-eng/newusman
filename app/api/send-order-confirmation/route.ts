@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
             <p style="margin: 5px 0;">✅ Your order has been received and confirmed</p>
             <p style="margin: 5px 0;">📦 We'll process and dispatch your order within 3-5 business days</p>
             <p style="margin: 5px 0;">📧 You'll receive tracking information once dispatched</p>
-            <p style="margin: 5px 0;">🛏️ Enjoy your 100-night trial and 10-year warranty</p>
+            <p style="margin: 5px 0;">🛏️ Enjoy your 14-night trial and 10-year warranty</p>
           </div>
           
           <div style="margin-top: 30px; text-align: center;">

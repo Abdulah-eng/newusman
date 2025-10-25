@@ -3962,7 +3962,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
                                 <h4 className="font-semibold text-gray-900 mb-2">Can I return the mattress if I don't like it?</h4>
 
-                                <p className="text-gray-700 text-sm">Yes! We offer a 100-night trial period. If you're not completely satisfied, you can return the mattress for a full refund.</p>
+                                <p className="text-gray-700 text-sm">Yes! We offer a 14-night trial period. If you're not completely satisfied, you can return the mattress for a full refund.</p>
 
                               </div>
 

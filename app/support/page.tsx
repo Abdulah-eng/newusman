@@ -38,8 +38,8 @@ interface FAQ {
 const faqs: FAQ[] = [
   {
     id: 1,
-    question: "What is Bedora Living's 100-Night Comfort Guarantee?",
-    answer: "Our exclusive 100-night trial period allows you to test your mattress risk-free. To participate, you must purchase a mattress protector with your new mattress. If the mattress doesn't meet your comfort needs, we offer a hassle-free, one-time exchange for a better-suited mattress with no restocking fees - only a minimal delivery fee. Exchanges must be conducted through our official delivery service.",
+    question: "What is Bedora Living's 14-Night Comfort Guarantee?",
+    answer: "Our exclusive 14-night trial period allows you to test your mattress risk-free. To participate, you must purchase a mattress protector with your new mattress. If the mattress doesn't meet your comfort needs, we offer a hassle-free, one-time exchange for a better-suited mattress with no restocking fees - only a minimal delivery fee. Exchanges must be conducted through our official delivery service.",
     category: "Returns & Trials",
     tags: ["trial", "returns", "guarantee", "exchange"]
   },
@@ -90,7 +90,7 @@ const helpCategories = [
   {
     icon: RotateCcw,
     title: "Returns & Exchanges",
-    description: "100-night trial, return policies, and exchanges",
+    description: "14-night trial, return policies, and exchanges",
     color: "from-green-500 to-green-600"
   },
   {
@@ -172,14 +172,14 @@ export default function SupportPage() {
               <Phone className="w-6 h-6 text-orange-600" />
               <div>
                 <p className="font-semibold text-gray-900">Call Us</p>
-                <p className="text-sm text-gray-600">(405) 564-0561</p>
+                <p className="text-sm text-gray-600">03301336323</p>
               </div>
             </div>
             <div className="flex items-center justify-center gap-3 p-4 bg-orange-50 rounded-xl border border-orange-200">
               <Mail className="w-6 h-6 text-orange-600" />
               <div>
                 <p className="font-semibold text-gray-900">Email Support</p>
-                <p className="text-sm text-gray-600">support@bedoraliving.com</p>
+                <p className="text-sm text-gray-600">hello@bedoraliving.co.uk</p>
               </div>
             </div>
             <div className="flex items-center justify-center gap-3 p-4 bg-orange-50 rounded-xl border border-orange-200">
@@ -308,7 +308,7 @@ export default function SupportPage() {
                      <h3 className="text-xl font-semibold">Email Support</h3>
                    </div>
                    <p className="text-orange-100">
-                     support@bedoraliving.com<br />
+                     hello@bedoraliving.co.uk<br />
                      We'll respond within 24 hours
                    </p>
                  </CardContent>

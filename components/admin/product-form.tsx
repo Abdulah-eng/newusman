@@ -187,12 +187,12 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
       show_mattress_specs: true,
       show_technical_specs: true
     },
-    reasons_to_buy: product?.reasons_to_buy || ['100-Night Trial', 'Free Delivery', '1-Year Warranty'],
+    reasons_to_buy: product?.reasons_to_buy || ['14-Night Trial', 'Free Delivery', '1-Year Warranty'],
     promotional_offers: product?.promotional_offers || [],
     product_questions: product?.product_questions || [],
     warranty_info: product?.warranty_info || {},
     care_instructions: product?.care_instructions || '',
-    warranty_delivery_line: product?.warranty_delivery_line || '1-Year Warranty • Free Delivery • 100-Night Trial',
+    warranty_delivery_line: product?.warranty_delivery_line || '1-Year Warranty • Free Delivery • 14-Night Trial',
     meta_title: product?.meta_title || '',
     meta_description: product?.meta_description || '',
     meta_keywords: product?.meta_keywords || [],
@@ -952,7 +952,7 @@ export function ProductForm({ product, onClose, onSubmit }: ProductFormProps) {
                  <Input
                    value={formData.warranty_delivery_line}
                    onChange={(e) => handleInputChange('warranty_delivery_line', e.target.value)}
-                   placeholder="e.g., 10-Year Warranty • Free Delivery • 100-Night Trial"
+                   placeholder="e.g., 10-Year Warranty • Free Delivery • 14-Night Trial"
                    className="text-gray-600 border border-gray-300 focus:ring-2 focus:ring-orange-300 rounded px-3 py-2"
                  />
                  <p className="text-xs text-gray-500 mt-1">

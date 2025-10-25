@@ -27,10 +27,10 @@ export default function ContactPage() {
                   </p>
                   <Button 
                     className="w-full bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center gap-2"
-                    onClick={() => window.location.href = 'mailto:info@bedoraliving.com'}
+                    onClick={() => window.location.href = 'mailto:hello@bedoraliving.co.uk'}
                   >
                     <Mail className="w-4 h-4" />
-                    info@bedoraliving.com
+                    hello@bedoraliving.co.uk
                   </Button>
                 </CardContent>
               </Card>
@@ -43,13 +43,13 @@ export default function ContactPage() {
                    Get expert advice from our sleep specialists to ensure your best night's sleep.
                  </p>
                  <div className="space-y-3">
-                   <Button 
-                     className="w-full bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center gap-2"
-                     onClick={() => window.location.href = 'tel:+14055640561'}
-                   >
-                     <Phone className="w-4 h-4" />
-                     (405) 564-0561
-                   </Button>
+                  <Button 
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center gap-2"
+                    onClick={() => window.location.href = 'tel:+4403301336323'}
+                  >
+                    <Phone className="w-4 h-4" />
+                    03301336323
+                  </Button>
                    <Button 
                      variant="outline" 
                      className="w-full border-orange-300 text-orange-700 hover:bg-orange-50 flex items-center justify-center gap-2"
@@ -103,13 +103,13 @@ export default function ContactPage() {
                    with any questions about our products, services, or policies.
                  </p>
                  <div className="space-y-3">
-                   <Button 
-                     className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-                     onClick={() => window.location.href = 'mailto:support@bedoraliving.com'}
-                   >
-                     <Mail className="w-4 h-4 mr-2" />
-                     Email Support
-                   </Button>
+                  <Button 
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                    onClick={() => window.location.href = 'mailto:hello@bedoraliving.co.uk'}
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Email Support
+                  </Button>
                    <Button 
                      variant="outline" 
                      className="w-full border-orange-200 text-orange-700 hover:bg-orange-50"

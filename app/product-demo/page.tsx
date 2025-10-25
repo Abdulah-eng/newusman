@@ -20,7 +20,7 @@ export default function ProductDemoPage() {
     freeDelivery: "Mon, 11 Aug",
     setupService: true,
     setupCost: 49,
-    certifications: ["OEKO-TEX", "CertiPUR-US", "Made in UK", "100-Night Trial", "10-Year Warranty"],
+    certifications: ["OEKO-TEX", "CertiPUR-US", "Made in UK", "14-Night Trial", "10-Year Warranty"],
     sizes: ["Single", "Double", "King", "Super King"],
     selectedSize: "King",
     monthlyPrice: 35,
