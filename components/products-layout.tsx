@@ -119,8 +119,14 @@ export function ProductsLayout({ category }: ProductsLayoutProps) {
         </Button>
       </div>
 
-      {/* Popular Categories */}
-      <PopularCategories onCategorySelect={handlePopularCategorySelect} category={category} />
+      {/* Popular Categories - Hide for pillows */}
+      {category !== 'pillows' && (
+        <PopularCategories 
+          onCategorySelect={handlePopularCategorySelect} 
+          category={category} 
+          selectedFilters={filters}
+        />
+      )}
 
       {/* Horizontal Filter Bar */}
       <HorizontalFilterBar 

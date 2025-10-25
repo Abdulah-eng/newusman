@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabaseClient'
+import { createClient } from '@supabase/supabase-js'
 
-export async function POST(req: NextRequest) {
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+export async function POST(request: NextRequest) {
   try {
-    const formData = await req.formData()
+    const formData = await request.formData()
     const file = formData.get('file') as File
-    
+    const folder = formData.get('folder') as string || 'uploads'
+
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      return NextResponse.json({ error: 'File must be an image' }, { status: 400 })
+      return NextResponse.json({ error: 'Only image files are allowed' }, { status: 400 })
     }
 
     // Validate file size (5MB limit)
@@ -24,36 +30,36 @@ export async function POST(req: NextRequest) {
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 15)
     const fileExtension = file.name.split('.').pop()
-    const fileName = `variant-images/${timestamp}-${randomString}.${fileExtension}`
+    const fileName = `${timestamp}-${randomString}.${fileExtension}`
 
-    // Upload to Supabase Storage
-    const bucketName = process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'images'
+    // Convert file to buffer
+    const fileBuffer = await file.arrayBuffer()
+
+    // Upload to Supabase Storage (using 'images' bucket)
     const { data, error } = await supabase.storage
-      .from(bucketName)
-      .upload(fileName, file, {
-        cacheControl: '3600',
+      .from('images')
+      .upload(`${folder}/${fileName}`, fileBuffer, {
+        contentType: file.type,
         upsert: false
       })
 
     if (error) {
-      console.error('Upload error:', error)
+      console.error('Supabase upload error:', error)
       return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 })
     }
 
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from(bucketName)
-      .getPublicUrl(fileName)
+      .from('images')
+      .getPublicUrl(data.path)
 
     return NextResponse.json({ 
       url: urlData.publicUrl,
-      fileName: fileName
+      path: data.path 
     })
+
   } catch (error) {
     console.error('Upload error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-
-
-

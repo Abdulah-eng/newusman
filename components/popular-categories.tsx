@@ -17,6 +17,7 @@ interface PopularCategory {
 interface PopularCategoriesProps {
   onCategorySelect: (filterKey: string, filterValue: string) => void
   category?: string // Add optional category parameter
+  selectedFilters?: Record<string, any> // Add selected filters prop
 }
 
 // Custom icon for Heavy people category
@@ -338,7 +339,7 @@ const KidsSaleIcon = () => (
   </div>
 );
 
-export function PopularCategories({ onCategorySelect, category }: PopularCategoriesProps) {
+export function PopularCategories({ onCategorySelect, category, selectedFilters = {} }: PopularCategoriesProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [categories, setCategories] = useState<PopularCategory[]>([])
@@ -506,6 +507,12 @@ export function PopularCategories({ onCategorySelect, category }: PopularCategor
     scrollToIndex(newIndex)
   }
 
+  // Check if a category is selected
+  const isCategorySelected = (filterKey: string, filterValue: string) => {
+    const key = filterKey.toLowerCase()
+    return selectedFilters[key] && selectedFilters[key].includes(filterValue)
+  }
+
   if (loading) {
     return (
       <div className="mb-8">
@@ -557,12 +564,18 @@ export function PopularCategories({ onCategorySelect, category }: PopularCategor
           className="flex space-x-4 overflow-hidden pb-2"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {categories.map((cat) => (
-            <Card 
-              key={cat.name} 
-              className="flex-shrink-0 w-40 h-32 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 transition-colors border border-gray-200 bg-white"
-              onClick={() => onCategorySelect(cat.filterKey, cat.filterValue)}
-            >
+          {categories.map((cat) => {
+            const isSelected = isCategorySelected(cat.filterKey, cat.filterValue)
+            return (
+              <Card 
+                key={cat.name} 
+                className={`flex-shrink-0 w-40 h-32 flex flex-col items-center justify-center text-center cursor-pointer transition-colors border ${
+                  isSelected 
+                    ? 'bg-orange-50 border-orange-300 hover:bg-orange-100' 
+                    : 'border-gray-200 bg-white hover:bg-gray-50'
+                }`}
+                onClick={() => onCategorySelect(cat.filterKey, cat.filterValue)}
+              >
               <CardContent className="p-4 flex flex-col items-center justify-center h-full w-full">
                 <div className="flex flex-col items-center justify-center flex-1">
                   {cat.name === "Super Firm" ? (
@@ -642,12 +655,13 @@ export function PopularCategories({ onCategorySelect, category }: PopularCategor
                   )}
                 </div>
                 <div className="text-center mt-auto">
-                  <p className="font-medium text-gray-800 text-sm">{cat.name}</p>
+                  <p className={`font-medium text-sm ${isSelected ? 'text-orange-700' : 'text-gray-800'}`}>{cat.name}</p>
                   <p className="text-xs text-gray-500">{cat.itemsCount} Items</p>
                 </div>
               </CardContent>
             </Card>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>

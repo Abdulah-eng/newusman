@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Validate required fields
-    if (!product_id || !rating || !title || !review_text) {
+    if (!rating || !title || !review_text) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     const { data: review, error } = await supabase
       .from('reviews')
       .insert({
-        product_id,
+        product_id: product_id || 'general-review',
         product_name: product_name || 'Unknown Product',
         rating: parseInt(rating),
         title: title.trim(),

@@ -12,7 +12,7 @@ export default function DeliveryPage() {
       <section className="container mx-auto px-4 py-10 max-w-3xl space-y-6">
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Standard Delivery</h2>
-          <p className="text-gray-700 mt-2">Free on orders over £50. Typical delivery time: 3–7 working days.</p>
+          <p className="text-gray-700 mt-2">Free delivery. Typical delivery time: 3–7 working days.</p>
         </div>
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Two-Man Room Delivery</h2>

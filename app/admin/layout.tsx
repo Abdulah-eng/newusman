@@ -79,6 +79,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { name: 'Promotional Popup', href: '/admin/promotional-popup', icon: MessageSquare, allowedRoles: ['admin', 'manager'] },
     { name: 'Quiz Recommendations', href: '/admin/quiz-recommendations', icon: HelpCircle, allowedRoles: ['admin', 'manager'] },
     { name: 'Sleep Luxury', href: '/admin/sleep-luxury', icon: Moon, allowedRoles: ['admin', 'manager'] },
+    { name: 'News Management', href: '/admin/news', icon: FileText, allowedRoles: ['admin', 'manager'] },
     { name: 'Settings', href: '/admin/settings', icon: Settings, allowedRoles: ['admin', 'manager'] },
   ]
 

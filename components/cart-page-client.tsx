@@ -7,6 +7,83 @@ import { Trash2, ShoppingCart, Shield, Truck, Clock, Star } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 
+// Helper function to convert color names to actual color values
+const getColorValue = (colorName: string): string => {
+  const colorMap: { [key: string]: string } = {
+    'White': '#FFFFFF',
+    'Black': '#000000',
+    'Gray': '#808080',
+    'Grey': '#808080',
+    'Red': '#FF0000',
+    'Blue': '#0000FF',
+    'Green': '#008000',
+    'Yellow': '#FFFF00',
+    'Orange': '#FFA500',
+    'Purple': '#800080',
+    'Pink': '#FFC0CB',
+    'Brown': '#A52A2A',
+    'Beige': '#F5F5DC',
+    'Cream': '#FFFDD0',
+    'Navy': '#000080',
+    'Maroon': '#800000',
+    'Teal': '#008080',
+    'Gold': '#FFD700',
+    'Silver': '#C0C0C0',
+    'Charcoal': '#36454F',
+    'Ivory': '#FFFFF0',
+    'Tan': '#D2B48C',
+    'Burgundy': '#800020',
+    'Forest Green': '#228B22',
+    'Royal Blue': '#4169E1',
+    'Crimson': '#DC143C',
+    'Lime': '#00FF00',
+    'Cyan': '#00FFFF',
+    'Magenta': '#FF00FF',
+    'Olive': '#808000',
+    'Coral': '#FF7F50',
+    'Turquoise': '#40E0D0',
+    'Indigo': '#4B0082',
+    'Violet': '#8A2BE2',
+    'Salmon': '#FA8072',
+    'Khaki': '#F0E68C',
+    'Lavender': '#E6E6FA',
+    'Mint': '#98FB98',
+    'Peach': '#FFE5B4',
+    'Rose': '#FFE4E1',
+    'Sky Blue': '#87CEEB',
+    'Slate': '#708090',
+    'Steel Blue': '#4682B4',
+    'Tomato': '#FF6347',
+    'Wheat': '#F5DEB3',
+    'Aqua': '#00FFFF',
+    'Azure': '#F0FFFF',
+    'Bisque': '#FFE4C4',
+    'Chocolate': '#D2691E',
+    'Dark Blue': '#00008B',
+    'Dark Green': '#006400',
+    'Dark Red': '#8B0000',
+    'Light Blue': '#ADD8E6',
+    'Light Green': '#90EE90',
+    'Light Pink': '#FFB6C1',
+    'Light Yellow': '#FFFFE0',
+    'Medium Blue': '#0000CD',
+    'Medium Green': '#32CD32',
+    'Medium Red': '#CD5C5C',
+    'Navy Blue': '#000080',
+    'Orange Red': '#FF4500',
+    'Pale Blue': '#87CEEB',
+    'Pale Green': '#98FB98',
+    'Pale Red': '#FFB6C1',
+    'Pale Yellow': '#FFFFE0',
+    'Powder Blue': '#B0E0E6',
+    'Sea Green': '#2E8B57',
+    'Spring Green': '#00FF7F',
+    'Yellow Green': '#9ACD32'
+  }
+  
+  return colorMap[colorName] || '#808080' // Default to gray if color not found
+}
+
 export default function CartPageClient() {
   const { state, dispatch } = useCart()
 
@@ -97,9 +174,50 @@ export default function CartPageClient() {
                         <h3 className="text-lg font-medium text-gray-900 truncate">
                           {item.name}
                         </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {item.category} • {item.size}
-                        </p>
+                        <div className="text-sm text-gray-500 mt-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span>{item.category}</span>
+                            {item.size && <span>• {item.size}</span>}
+                          </div>
+                          
+                          {/* Display all variant properties */}
+                          {(item as any).color && (item as any).color !== 'Default' && (
+                            <div className="flex items-center gap-2">
+                              <span>Color:</span>
+                              <div className="flex items-center gap-1">
+                                <div 
+                                  className="w-4 h-4 rounded-full border border-gray-300"
+                                  style={{ 
+                                    backgroundColor: getColorValue((item as any).color),
+                                    boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)'
+                                  }}
+                                />
+                                <span className="text-xs">{(item as any).color}</span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {(item as any).depth && (
+                            <div className="flex items-center gap-2">
+                              <span>Depth:</span>
+                              <span className="text-xs">{(item as any).depth}</span>
+                            </div>
+                          )}
+                          
+                          {(item as any).firmness && (
+                            <div className="flex items-center gap-2">
+                              <span>Firmness:</span>
+                              <span className="text-xs">{(item as any).firmness}</span>
+                            </div>
+                          )}
+                          
+                          {(item as any).variantSku && (
+                            <div className="flex items-center gap-2">
+                              <span>SKU:</span>
+                              <span className="text-xs font-mono">{(item as any).variantSku}</span>
+                            </div>
+                          )}
+                        </div>
                         <div className="flex items-center mt-2">
                           <span className="text-lg font-semibold text-gray-900">
                             £{Number((item as any).currentPrice ?? 0).toFixed(2)}
@@ -194,7 +312,7 @@ export default function CartPageClient() {
                   </div>
                   <div className="flex items-center">
                     <Truck className="h-4 w-4 mr-2 text-green-600" />
-                    <span>Free delivery on orders over £50</span>
+                    <span>Free delivery</span>
                   </div>
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 mr-2 text-green-600" />

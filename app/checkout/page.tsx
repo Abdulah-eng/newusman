@@ -71,9 +71,6 @@ export default function CheckoutPage() {
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'success' | 'canceled' | 'error'>('idle')
   const [lastOrderNumber, setLastOrderNumber] = useState<string>('')
   const [lastPurchasedProductName, setLastPurchasedProductName] = useState<string>('')
-  const [reviewForm, setReviewForm] = useState({ name: '', rating: 5, title: '', review: '' })
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
-  const [reviewSubmitted, setReviewSubmitted] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   
   // Address auto-search state
@@ -148,32 +145,6 @@ export default function CheckoutPage() {
     }
   }
 
-  const submitReview = async () => {
-    try {
-      setIsSubmittingReview(true)
-      const res = await fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productId: null,
-          customerName: reviewForm.name || `${customerInfo.firstName} ${customerInfo.lastName}`.trim() || 'Customer',
-          rating: reviewForm.rating,
-          title: reviewForm.title,
-          review: reviewForm.review,
-          orderNumber: lastOrderNumber
-        })
-      })
-      if (!res.ok) {
-        const e = await res.json()
-        throw new Error(e.error || 'Failed to submit review')
-      }
-      setReviewSubmitted(true)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsSubmittingReview(false)
-    }
-  }
 
   // Handle input changes
   const handleInputChange = (field: keyof CustomerInfo, value: string) => {
@@ -369,64 +340,6 @@ export default function CheckoutPage() {
             </Button>
           </div>
 
-          <div className="max-w-2xl mx-auto bg-white border border-orange-200 rounded-xl p-6 mt-4">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Share Your Experience</h2>
-            <p className="text-gray-600 mb-4">We'd love your feedback{lastPurchasedProductName ? ` on ${lastPurchasedProductName}` : ''}. Your review helps other customers.</p>
-            {reviewSubmitted ? (
-              <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-md p-3">
-                <CheckCircle className="h-5 w-5" />
-                <span>Thanks! Your review has been submitted.</span>
-              </div>
-            ) : (
-              <div className="space-y-3 text-left">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Your name</label>
-                  <input
-                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2"
-                    value={reviewForm.name}
-                    onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })}
-                    placeholder="e.g., Sarah M."
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Rating</label>
-                  <select
-                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2"
-                    value={reviewForm.rating}
-                    onChange={(e) => setReviewForm({ ...reviewForm, rating: Number(e.target.value) })}
-                  >
-                    {[5,4,3,2,1].map(r => (
-                      <option key={r} value={r}>{r} Stars</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Title (optional)</label>
-                  <input
-                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2"
-                    value={reviewForm.title}
-                    onChange={(e) => setReviewForm({ ...reviewForm, title: e.target.value })}
-                    placeholder="e.g., Amazing sleep quality"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Your review</label>
-                  <textarea
-                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2"
-                    rows={4}
-                    value={reviewForm.review}
-                    onChange={(e) => setReviewForm({ ...reviewForm, review: e.target.value })}
-                    placeholder="Tell us about your experience..."
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <Button onClick={submitReview} disabled={isSubmittingReview} className="bg-orange-600 hover:bg-orange-700 text-white">
-                    {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     )
@@ -714,7 +627,7 @@ export default function CheckoutPage() {
                     />
                     <div className="flex-1">
                       <div className="font-medium text-gray-900">Standard Delivery (3-5 business days)</div>
-                      <div className="text-sm text-gray-600">Free delivery on orders over £50</div>
+                      <div className="text-sm text-gray-600">Free delivery</div>
                     </div>
                     <div className="text-lg font-bold text-gray-900">Free</div>
                   </label>
