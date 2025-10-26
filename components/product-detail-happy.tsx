@@ -4229,7 +4229,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
 
             {/* Product Title */}
 
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">{product.name}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3 break-words">{product.name}</h1>
 
 
 

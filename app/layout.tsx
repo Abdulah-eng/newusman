@@ -97,6 +97,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon-192x192.png" sizes="192x192" type="image/png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
         <meta name="theme-color" content="#f97316" />
         <meta name="application-name" content="Bedora Living" />
         <meta name="apple-mobile-web-app-title" content="Bedora Living" />

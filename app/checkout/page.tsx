@@ -261,10 +261,22 @@ export default function CheckoutPage() {
   // Handle quantity changes
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
     if (newQuantity > 0) {
-      dispatch({ 
-        type: 'UPDATE_QUANTITY', 
-        payload: { id: itemId, quantity: newQuantity } 
-      })
+      // Find the item to get its variant properties
+      const item = state.items.find(item => item.id === itemId)
+      if (item) {
+        dispatch({ 
+          type: 'UPDATE_QUANTITY', 
+          payload: { 
+            id: itemId, 
+            quantity: newQuantity,
+            size: item.size, 
+            color: item.color,
+            depth: item.depth,
+            firmness: item.firmness,
+            variantSku: item.variantSku
+          } 
+        })
+      }
     }
   }
 
@@ -404,7 +416,7 @@ export default function CheckoutPage() {
       {/* Trust Indicators */}
       <div className="bg-white border-b border-gray-200 py-3">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-center space-x-8 text-sm text-gray-600">
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 lg:space-x-8 text-xs sm:text-sm text-gray-600">
             <div className="flex items-center">
               <Shield className="h-4 w-4 text-orange-500 mr-2" />
               <span>Secure Checkout</span>
@@ -422,10 +434,10 @@ export default function CheckoutPage() {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
           {/* Left Section - Customer Information & Cart */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Error Message */}
             {errorMessage && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center">
@@ -662,8 +674,8 @@ export default function CheckoutPage() {
               <CardContent className="space-y-4">
                 {state.items.map((item, index) => (
                   <div key={`${item.id}-${item.size || 'standard'}-${item.color || 'default'}-${index}`} 
-                       className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-                    <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+                       className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-4 border border-gray-200 rounded-lg">
+                    <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden mx-auto sm:mx-0">
                       <Image
                         src={item.image || "/placeholder.jpg"}
                         alt={item.name}
@@ -677,41 +689,44 @@ export default function CheckoutPage() {
                       />
                     </div>
                     
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                    <div className="flex-1 text-center sm:text-left">
+                      <h3 className="font-semibold text-gray-900 break-words">{item.name}</h3>
                       {item.size && <p className="text-sm text-gray-600">{item.size}</p>}
                       {item.variantSku && <p className="text-xs text-gray-500 font-mono">SKU: {item.variantSku}</p>}
-                      <p className="text-lg font-bold text-orange-600">£{item.currentPrice || item.originalPrice}</p>
+                      <p className="text-base sm:text-lg font-bold text-orange-600">£{item.currentPrice || item.originalPrice}</p>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-10 h-10 sm:w-8 sm:h-8 p-0 border-gray-300 hover:border-orange-500 touch-manipulation"
+                          onClick={() => handleQuantityChange(item.id, (item.quantity || 1) - 1)}
+                          disabled={(item.quantity || 1) <= 1}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <span className="w-12 text-center font-medium">{item.quantity || 1}</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-10 h-10 sm:w-8 sm:h-8 p-0 border-gray-300 hover:border-orange-500 touch-manipulation"
+                          onClick={() => handleQuantityChange(item.id, (item.quantity || 1) + 1)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        className="w-8 h-8 p-0 border-gray-300 hover:border-orange-500"
-                        onClick={() => handleQuantityChange(item.id, (item.quantity || 1) - 1)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 touch-manipulation"
+                        onClick={() => handleRemoveItem(item.id)}
                       >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="w-12 text-center font-medium">{item.quantity || 1}</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-8 h-8 p-0 border-gray-300 hover:border-orange-500"
-                        onClick={() => handleQuantityChange(item.id, (item.quantity || 1) + 1)}
-                      >
-                        <Plus className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleRemoveItem(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
                 ))}
               </CardContent>
@@ -773,13 +788,30 @@ export default function CheckoutPage() {
 
                 {/* Payment Methods */}
                 <div className="border-t border-gray-200 pt-4">
-                  <p className="text-sm text-gray-600 mb-2">We accept:</p>
-                  <div className="flex items-center justify-center space-x-3 text-xs text-gray-500">
-                    <span>Visa</span>
-                    <span>•</span>
-                    <span>Mastercard</span>
-                    <span>•</span>
-                    <span>American Express</span>
+                  <p className="text-sm text-gray-600 mb-3">We accept:</p>
+                  <div className="space-y-3">
+                    {/* Credit Cards */}
+                    <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-gray-500">
+                      <span className="px-2 py-1 bg-gray-100 rounded">Visa</span>
+                      <span className="px-2 py-1 bg-gray-100 rounded">Mastercard</span>
+                      <span className="px-2 py-1 bg-gray-100 rounded">American Express</span>
+                      <span className="px-2 py-1 bg-gray-100 rounded">Discover</span>
+                    </div>
+                    
+                    {/* Digital Wallets */}
+                    <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-gray-500">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">PayPal</span>
+                      <span className="px-2 py-1 bg-pink-100 text-pink-700 rounded">Klarna</span>
+                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded">Apple Pay</span>
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">Google Pay</span>
+                    </div>
+                    
+                    {/* Buy Now Pay Later */}
+                    <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-gray-500">
+                      <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded">Afterpay</span>
+                      <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded">Clearpay</span>
+                      <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded">Zip</span>
+                    </div>
                   </div>
                 </div>
               </CardContent>

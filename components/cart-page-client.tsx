@@ -98,10 +98,22 @@ export default function CartPageClient() {
     if (quantity <= 0) {
       removeItem(id)
     } else {
-      dispatch({
-        type: "UPDATE_QUANTITY",
-        payload: { id, quantity },
-      })
+      // Find the item to get its variant properties
+      const item = state.items.find(item => item.id === id)
+      if (item) {
+        dispatch({
+          type: "UPDATE_QUANTITY",
+          payload: { 
+            id, 
+            quantity, 
+            size: item.size, 
+            color: item.color,
+            depth: item.depth,
+            firmness: item.firmness,
+            variantSku: item.variantSku
+          },
+        })
+      }
     }
   }
 
@@ -157,36 +169,36 @@ export default function CartPageClient() {
                   </Button>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {state.items.map((item) => (
-                    <div key={item.id} className="flex items-center space-x-4 border-b border-gray-100 pb-6 last:border-b-0">
-                      <div className="flex-shrink-0">
+                    <div key={item.id} className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 border-b border-gray-100 pb-4 sm:pb-6 last:border-b-0">
+                      <div className="flex-shrink-0 mx-auto sm:mx-0">
                         <Image
                           src={item.image}
                           alt={item.name}
                           width={120}
                           height={120}
-                          className="rounded-lg object-cover"
+                          className="rounded-lg object-cover w-24 h-24 sm:w-30 sm:h-30"
                         />
                       </div>
                       
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-medium text-gray-900 truncate">
+                      <div className="flex-1 min-w-0 text-center sm:text-left">
+                        <h3 className="text-base sm:text-lg font-medium text-gray-900 break-words">
                           {item.name}
                         </h3>
-                        <div className="text-sm text-gray-500 mt-1 space-y-1">
-                          <div className="flex items-center gap-2">
+                        <div className="text-xs sm:text-sm text-gray-500 mt-1 space-y-1">
+                          <div className="flex items-center justify-center sm:justify-start gap-2">
                             <span>{item.category}</span>
                             {item.size && <span>• {item.size}</span>}
                           </div>
                           
                           {/* Display all variant properties */}
                           {(item as any).color && (item as any).color !== 'Default' && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center sm:justify-start gap-2">
                               <span>Color:</span>
                               <div className="flex items-center gap-1">
                                 <div 
-                                  className="w-4 h-4 rounded-full border border-gray-300"
+                                  className="w-3 h-3 sm:w-4 sm:h-4 rounded-full border border-gray-300"
                                   style={{ 
                                     backgroundColor: getColorValue((item as any).color),
                                     boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)'
@@ -198,76 +210,80 @@ export default function CartPageClient() {
                           )}
                           
                           {(item as any).depth && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center sm:justify-start gap-2">
                               <span>Depth:</span>
                               <span className="text-xs">{(item as any).depth}</span>
                             </div>
                           )}
                           
                           {(item as any).firmness && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center sm:justify-start gap-2">
                               <span>Firmness:</span>
                               <span className="text-xs">{(item as any).firmness}</span>
                             </div>
                           )}
                           
                           {(item as any).variantSku && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center sm:justify-start gap-2">
                               <span>SKU:</span>
                               <span className="text-xs font-mono">{(item as any).variantSku}</span>
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center mt-2">
-                          <span className="text-lg font-semibold text-gray-900">
+                        <div className="flex items-center justify-center sm:justify-start mt-2">
+                          <span className="text-base sm:text-lg font-semibold text-gray-900">
                             £{Number((item as any).currentPrice ?? 0).toFixed(2)}
                           </span>
                           {Number((item as any).originalPrice ?? 0) > Number((item as any).currentPrice ?? 0) && (
-                            <span className="text-sm text-gray-500 line-through ml-2">
+                            <span className="text-xs sm:text-sm text-gray-500 line-through ml-2">
                               £{Number((item as any).originalPrice ?? 0).toFixed(2)}
                             </span>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          variant="outline"
-                          size="sm"
-                          className="w-8 h-8 p-0"
-                        >
-                          -
-                        </Button>
-                        <Input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 0)}
-                          className="w-16 text-center"
-                          min="1"
-                        />
-                        <Button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          variant="outline"
-                          size="sm"
-                          className="w-8 h-8 p-0"
-                        >
-                          +
-                        </Button>
-                      </div>
+                      {/* Quantity Controls - Mobile Optimized */}
+                      <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-2">
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            variant="outline"
+                            size="sm"
+                            className="w-10 h-10 sm:w-8 sm:h-8 p-0 touch-manipulation"
+                            disabled={item.quantity <= 1}
+                          >
+                            -
+                          </Button>
+                          <Input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 0)}
+                            className="w-16 sm:w-16 text-center touch-manipulation"
+                            min="1"
+                          />
+                          <Button
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            variant="outline"
+                            size="sm"
+                            className="w-10 h-10 sm:w-8 sm:h-8 p-0 touch-manipulation"
+                          >
+                            +
+                          </Button>
+                        </div>
 
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg font-semibold text-gray-900">
-                          £{(Number((item as any).currentPrice ?? 0) * Number(item.quantity || 1)).toFixed(2)}
-                        </span>
-                        <Button
-                          onClick={() => removeItem(item.id)}
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-base sm:text-lg font-semibold text-gray-900">
+                            £{(Number((item as any).currentPrice ?? 0) * Number(item.quantity || 1)).toFixed(2)}
+                          </span>
+                          <Button
+                            onClick={() => removeItem(item.id)}
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 touch-manipulation"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}

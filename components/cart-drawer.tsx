@@ -11,7 +11,22 @@ export function CartDrawer() {
   const { state, dispatch } = useCart()
 
   const updateQuantity = (id: string, quantity: number) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } })
+    // Find the item to get its variant properties
+    const item = state.items.find(item => item.id === id)
+    if (item) {
+      dispatch({ 
+        type: 'UPDATE_QUANTITY', 
+        payload: { 
+          id, 
+          quantity, 
+          size: item.size, 
+          color: item.color,
+          depth: item.depth,
+          firmness: item.firmness,
+          variantSku: item.variantSku
+        } 
+      })
+    }
   }
 
   const removeItem = (id: string) => {
@@ -64,27 +79,28 @@ export function CartDrawer() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1, item.size, item.color)}
-                        className="h-6 w-6 p-0"
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        className="h-8 w-8 p-0 touch-manipulation"
+                        disabled={item.quantity <= 1}
                       >
-                        <Minus className="h-3 w-3" />
+                        <Minus className="h-4 w-4" />
                       </Button>
-                      <span className="text-sm w-8 text-center">{item.quantity}</span>
+                      <span className="text-sm w-8 text-center font-medium">{item.quantity}</span>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1, item.size, item.color)}
-                        className="h-6 w-6 p-0"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        className="h-8 w-8 p-0 touch-manipulation"
                       >
-                        <Plus className="h-3 w-3" />
+                        <Plus className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeItem({ id: item.id, size: item.size, color: item.color })}
-                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700 ml-2"
+                        onClick={() => removeItem(item.id)}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 ml-2 touch-manipulation"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

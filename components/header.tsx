@@ -175,7 +175,7 @@ export default function Header() {
       </div>
 
       {/* Main Header - Dark Grey Background */}
-      <div className="text-white" style={{ backgroundColor: '#33373E' }}>
+      <div className="text-white md:overflow-visible overflow-x-hidden" style={{ backgroundColor: '#33373E' }}>
         <div className="px-4 sm:px-6 lg:px-8 xl:px-12">
           <div className="flex items-center justify-between py-2 lg:py-3">
             {/* Left: Logo and Brand */}
@@ -187,7 +187,7 @@ export default function Header() {
                   className="w-full h-full object-contain"
                 />
               </div>
-              <span className={`${sora.className} text-lg sm:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-extrabold tracking-tight whitespace-nowrap`}>Bedora Living</span>
+              <span className={`${sora.className} text-sm sm:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-extrabold tracking-tight`}>Bedora Living</span>
             </Link>
 
             {/* Center: Search Bar - With category dropdown */}
