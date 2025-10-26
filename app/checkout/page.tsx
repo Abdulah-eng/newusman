@@ -77,6 +77,10 @@ export default function CheckoutPage() {
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [isSearchingAddress, setIsSearchingAddress] = useState(false)
+  
+  // Mobile validation popup state
+  const [showValidationPopup, setShowValidationPopup] = useState(false)
+  const [validationPopupMessage, setValidationPopupMessage] = useState('')
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -289,6 +293,33 @@ export default function CheckoutPage() {
   const handleCheckout = async () => {
     // Validate form
     if (!validateForm()) {
+      // Check if we're on mobile screen
+      const isMobile = window.innerWidth < 768
+      if (isMobile) {
+        // Show mobile popup
+        const missingFields = Object.keys(validationErrors)
+        if (missingFields.length > 0) {
+          const fieldNames = missingFields.map(field => {
+            switch(field) {
+              case 'firstName': return 'First Name'
+              case 'lastName': return 'Last Name'
+              case 'email': return 'Email Address'
+              case 'phone': return 'Phone Number'
+              case 'address': return 'Address'
+              case 'city': return 'City'
+              case 'postcode': return 'Postcode'
+              default: return field
+            }
+          })
+          setValidationPopupMessage(`Please fill in: ${fieldNames.join(', ')}`)
+          setShowValidationPopup(true)
+        } else {
+          setValidationPopupMessage('Please fill in all required fields correctly.')
+          setShowValidationPopup(true)
+        }
+      } else {
+        setErrorMessage('Please fill in all required fields correctly.')
+      }
       return
     }
 
@@ -789,29 +820,18 @@ export default function CheckoutPage() {
                 {/* Payment Methods */}
                 <div className="border-t border-gray-200 pt-4">
                   <p className="text-sm text-gray-600 mb-3">We accept:</p>
-                  <div className="space-y-3">
-                    {/* Credit Cards */}
-                    <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-gray-500">
-                      <span className="px-2 py-1 bg-gray-100 rounded">Visa</span>
-                      <span className="px-2 py-1 bg-gray-100 rounded">Mastercard</span>
-                      <span className="px-2 py-1 bg-gray-100 rounded">American Express</span>
-                      <span className="px-2 py-1 bg-gray-100 rounded">Discover</span>
-                    </div>
-                    
-                    {/* Digital Wallets */}
-                    <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-gray-500">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">PayPal</span>
-                      <span className="px-2 py-1 bg-pink-100 text-pink-700 rounded">Klarna</span>
-                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded">Apple Pay</span>
-                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">Google Pay</span>
-                    </div>
-                    
-                    {/* Buy Now Pay Later */}
-                    <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-gray-500">
-                      <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded">Afterpay</span>
-                      <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded">Clearpay</span>
-                      <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded">Zip</span>
-                    </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-gray-500">
+                    <span className="px-2 py-1 bg-gray-100 rounded">Visa</span>
+                    <span className="px-2 py-1 bg-gray-100 rounded">Mastercard</span>
+                    <span className="px-2 py-1 bg-gray-100 rounded">American Express</span>
+                    <span className="px-2 py-1 bg-gray-100 rounded">Discover</span>
+                    <span className="px-2 py-1 bg-gray-100 rounded">PayPal</span>
+                    <span className="px-2 py-1 bg-gray-100 rounded">Klarna</span>
+                    <span className="px-2 py-1 bg-gray-100 rounded">Apple Pay</span>
+                    <span className="px-2 py-1 bg-gray-100 rounded">Google Pay</span>
+                    <span className="px-2 py-1 bg-gray-100 rounded">Afterpay</span>
+                    <span className="px-2 py-1 bg-gray-100 rounded">Clearpay</span>
+                    <span className="px-2 py-1 bg-gray-100 rounded">Zip</span>
                   </div>
                 </div>
               </CardContent>
@@ -831,6 +851,27 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+      
+      {/* Mobile Validation Popup */}
+      {showValidationPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+            <div className="flex items-center mb-4">
+              <AlertCircle className="h-6 w-6 text-red-600 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-900">Missing Information</h3>
+            </div>
+            <p className="text-gray-700 mb-6">{validationPopupMessage}</p>
+            <div className="flex justify-end">
+              <Button
+                onClick={() => setShowValidationPopup(false)}
+                className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2"
+              >
+                OK
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
