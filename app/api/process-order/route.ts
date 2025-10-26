@@ -21,9 +21,19 @@ function generateThanksEmailHtml(orderNumber: string, customer: any, items: any[
         .header { background: #f97316; color: white; padding: 20px; text-align: center; }
         .content { padding: 20px; background: #f9f9f9; }
         .order-details { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; }
-        .item { border-bottom: 1px solid #eee; padding: 10px 0; }
-        .total { font-size: 18px; font-weight: bold; color: #f97316; }
+        .item { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .item:last-child { border-bottom: none; }
+        .item-name { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 8px; }
+        .item-properties { margin: 8px 0; }
+        .property { margin: 4px 0; color: #666; }
+        .property-label { font-weight: bold; color: #555; }
+        .total { font-size: 18px; font-weight: bold; color: #f97316; margin-top: 15px; padding-top: 15px; border-top: 2px solid #f97316; }
         .footer { text-align: center; padding: 20px; color: #666; }
+        .support-section { background: #e7f3ff; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #f97316; }
+        .support-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; }
+        .support-contact { margin: 8px 0; }
+        .support-contact a { color: #f97316; text-decoration: none; }
+        .support-contact a:hover { text-decoration: underline; }
       </style>
     </head>
     <body>
@@ -41,16 +51,44 @@ function generateThanksEmailHtml(orderNumber: string, customer: any, items: any[
             <h3>Order Summary</h3>
             ${items.map(item => `
               <div class="item">
-                <strong>${item.name}</strong>
-                ${item.size ? ` (${item.size})` : ''}
-                ${item.color ? ` - ${item.color}` : ''}
-                <br>Quantity: ${item.quantity} × £${(item.currentPrice || item.price || 0).toFixed(2)}
+                <div class="item-name">${item.name}</div>
+                <div class="item-properties">
+                  ${item.size ? `<div class="property"><span class="property-label">Size:</span> ${item.size}</div>` : ''}
+                  ${item.color ? `<div class="property"><span class="property-label">Color:</span> ${item.color}</div>` : ''}
+                  ${item.depth ? `<div class="property"><span class="property-label">Depth:</span> ${item.depth}</div>` : ''}
+                  ${item.firmness ? `<div class="property"><span class="property-label">Firmness:</span> ${item.firmness}</div>` : ''}
+                  ${item.length || item.width || item.height ? `
+                    <div class="property"><span class="property-label">Dimensions:</span> 
+                      ${item.length ? `${item.length}` : ''}
+                      ${item.width ? ` × ${item.width}` : ''}
+                      ${item.height ? ` × ${item.height}` : ''}
+                    </div>
+                  ` : ''}
+                  ${item.weight ? `<div class="property"><span class="property-label">Weight:</span> ${item.weight}</div>` : ''}
+                  ${item.material ? `<div class="property"><span class="property-label">Material:</span> ${item.material}</div>` : ''}
+                  ${item.brand ? `<div class="property"><span class="property-label">Brand:</span> ${item.brand}</div>` : ''}
+                  <div class="property"><span class="property-label">Quantity:</span> ${item.quantity} × £${(item.currentPrice || item.price || 0).toFixed(2)}</div>
+                </div>
               </div>
             `).join('')}
             <div class="total">Total: £${total.toFixed(2)}</div>
           </div>
           
-          <p>We'll keep you updated on your order status. If you have any questions, please don't hesitate to contact us.</p>
+          <div class="support-section">
+            <div class="support-title">Need Help?</div>
+            <p>If you have any questions about your order or need assistance, our customer support team is here to help:</p>
+            <div class="support-contact">
+              <strong>Email:</strong> <a href="mailto:hello@bedoraliving.co.uk">hello@bedoraliving.co.uk</a>
+            </div>
+            <div class="support-contact">
+              <strong>Phone:</strong> <a href="tel:03301336323">0330 133 6323</a>
+            </div>
+            <p style="margin-top: 15px; font-size: 14px; color: #666;">
+              Our support team is available Monday to Friday, 9am to 5pm GMT.
+            </p>
+          </div>
+          
+          <p>Thank you for choosing Bedora Living!</p>
         </div>
         <div class="footer">
           <p>Best regards,<br>The Bedora Living Team</p>
@@ -74,9 +112,19 @@ function generateConfirmationEmailHtml(orderNumber: string, customer: any, items
         .header { background: #f97316; color: white; padding: 20px; text-align: center; }
         .content { padding: 20px; background: #f9f9f9; }
         .order-details { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; }
-        .item { border-bottom: 1px solid #eee; padding: 10px 0; }
-        .total { font-size: 18px; font-weight: bold; color: #f97316; }
+        .item { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .item:last-child { border-bottom: none; }
+        .item-name { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 8px; }
+        .item-properties { margin: 8px 0; }
+        .property { margin: 4px 0; color: #666; }
+        .property-label { font-weight: bold; color: #555; }
+        .total { font-size: 18px; font-weight: bold; color: #f97316; margin-top: 15px; padding-top: 15px; border-top: 2px solid #f97316; }
         .footer { text-align: center; padding: 20px; color: #666; }
+        .support-section { background: #e7f3ff; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #f97316; }
+        .support-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; }
+        .support-contact { margin: 8px 0; }
+        .support-contact a { color: #f97316; text-decoration: none; }
+        .support-contact a:hover { text-decoration: underline; }
       </style>
     </head>
     <body>
@@ -94,13 +142,41 @@ function generateConfirmationEmailHtml(orderNumber: string, customer: any, items
             <h3>Order Summary</h3>
             ${items.map(item => `
               <div class="item">
-                <strong>${item.name}</strong>
-                ${item.size ? ` (${item.size})` : ''}
-                ${item.color ? ` - ${item.color}` : ''}
-                <br>Quantity: ${item.quantity} × £${(item.currentPrice || item.price || 0).toFixed(2)}
+                <div class="item-name">${item.name}</div>
+                <div class="item-properties">
+                  ${item.size ? `<div class="property"><span class="property-label">Size:</span> ${item.size}</div>` : ''}
+                  ${item.color ? `<div class="property"><span class="property-label">Color:</span> ${item.color}</div>` : ''}
+                  ${item.depth ? `<div class="property"><span class="property-label">Depth:</span> ${item.depth}</div>` : ''}
+                  ${item.firmness ? `<div class="property"><span class="property-label">Firmness:</span> ${item.firmness}</div>` : ''}
+                  ${item.length || item.width || item.height ? `
+                    <div class="property"><span class="property-label">Dimensions:</span> 
+                      ${item.length ? `${item.length}` : ''}
+                      ${item.width ? ` × ${item.width}` : ''}
+                      ${item.height ? ` × ${item.height}` : ''}
+                    </div>
+                  ` : ''}
+                  ${item.weight ? `<div class="property"><span class="property-label">Weight:</span> ${item.weight}</div>` : ''}
+                  ${item.material ? `<div class="property"><span class="property-label">Material:</span> ${item.material}</div>` : ''}
+                  ${item.brand ? `<div class="property"><span class="property-label">Brand:</span> ${item.brand}</div>` : ''}
+                  <div class="property"><span class="property-label">Quantity:</span> ${item.quantity} × £${(item.currentPrice || item.price || 0).toFixed(2)}</div>
+                </div>
               </div>
             `).join('')}
             <div class="total">Total: £${total.toFixed(2)}</div>
+          </div>
+          
+          <div class="support-section">
+            <div class="support-title">Need Help?</div>
+            <p>If you have any questions about your order or need assistance, our customer support team is here to help:</p>
+            <div class="support-contact">
+              <strong>Email:</strong> <a href="mailto:hello@bedoraliving.co.uk">hello@bedoraliving.co.uk</a>
+            </div>
+            <div class="support-contact">
+              <strong>Phone:</strong> <a href="tel:03301336323">0330 133 6323</a>
+            </div>
+            <p style="margin-top: 15px; font-size: 14px; color: #666;">
+              Our support team is available Monday to Friday, 9am to 5pm GMT.
+            </p>
           </div>
           
           <p>Thank you for choosing Bedora Living!</p>
@@ -129,9 +205,19 @@ function generateDispatchEmailHtml(orderNumber: string, customer: any, items: an
         .tracking { background: #e7f3ff; padding: 15px; margin: 20px 0; border-radius: 8px; text-align: center; }
         .tracking-number { font-size: 24px; font-weight: bold; color: #f97316; }
         .order-details { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; }
-        .item { border-bottom: 1px solid #eee; padding: 10px 0; }
-        .total { font-size: 18px; font-weight: bold; color: #f97316; }
+        .item { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .item:last-child { border-bottom: none; }
+        .item-name { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 8px; }
+        .item-properties { margin: 8px 0; }
+        .property { margin: 4px 0; color: #666; }
+        .property-label { font-weight: bold; color: #555; }
+        .total { font-size: 18px; font-weight: bold; color: #f97316; margin-top: 15px; padding-top: 15px; border-top: 2px solid #f97316; }
         .footer { text-align: center; padding: 20px; color: #666; }
+        .support-section { background: #e7f3ff; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #f97316; }
+        .support-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; }
+        .support-contact { margin: 8px 0; }
+        .support-contact a { color: #f97316; text-decoration: none; }
+        .support-contact a:hover { text-decoration: underline; }
       </style>
     </head>
     <body>
@@ -154,13 +240,41 @@ function generateDispatchEmailHtml(orderNumber: string, customer: any, items: an
             <h3>Order Summary</h3>
             ${items.map(item => `
               <div class="item">
-                <strong>${item.name}</strong>
-                ${item.size ? ` (${item.size})` : ''}
-                ${item.color ? ` - ${item.color}` : ''}
-                <br>Quantity: ${item.quantity} × £${(item.currentPrice || item.price || 0).toFixed(2)}
+                <div class="item-name">${item.name}</div>
+                <div class="item-properties">
+                  ${item.size ? `<div class="property"><span class="property-label">Size:</span> ${item.size}</div>` : ''}
+                  ${item.color ? `<div class="property"><span class="property-label">Color:</span> ${item.color}</div>` : ''}
+                  ${item.depth ? `<div class="property"><span class="property-label">Depth:</span> ${item.depth}</div>` : ''}
+                  ${item.firmness ? `<div class="property"><span class="property-label">Firmness:</span> ${item.firmness}</div>` : ''}
+                  ${item.length || item.width || item.height ? `
+                    <div class="property"><span class="property-label">Dimensions:</span> 
+                      ${item.length ? `${item.length}` : ''}
+                      ${item.width ? ` × ${item.width}` : ''}
+                      ${item.height ? ` × ${item.height}` : ''}
+                    </div>
+                  ` : ''}
+                  ${item.weight ? `<div class="property"><span class="property-label">Weight:</span> ${item.weight}</div>` : ''}
+                  ${item.material ? `<div class="property"><span class="property-label">Material:</span> ${item.material}</div>` : ''}
+                  ${item.brand ? `<div class="property"><span class="property-label">Brand:</span> ${item.brand}</div>` : ''}
+                  <div class="property"><span class="property-label">Quantity:</span> ${item.quantity} × £${(item.currentPrice || item.price || 0).toFixed(2)}</div>
+                </div>
               </div>
             `).join('')}
             <div class="total">Total: £${total.toFixed(2)}</div>
+          </div>
+          
+          <div class="support-section">
+            <div class="support-title">Need Help?</div>
+            <p>If you have any questions about your order or need assistance, our customer support team is here to help:</p>
+            <div class="support-contact">
+              <strong>Email:</strong> <a href="mailto:hello@bedoraliving.co.uk">hello@bedoraliving.co.uk</a>
+            </div>
+            <div class="support-contact">
+              <strong>Phone:</strong> <a href="tel:03301336323">0330 133 6323</a>
+            </div>
+            <p style="margin-top: 15px; font-size: 14px; color: #666;">
+              Our support team is available Monday to Friday, 9am to 5pm GMT.
+            </p>
           </div>
           
           <p>Thank you for choosing Bedora Living!</p>
@@ -429,6 +543,14 @@ export async function POST(req: NextRequest) {
         product_name: item.name,
         product_size: item.size || null,
         product_color: item.color || null,
+        product_depth: item.depth || null,
+        product_firmness: item.firmness || null,
+        product_length: item.length || null,
+        product_width: item.width || null,
+        product_height: item.height || null,
+        product_weight: item.weight || null,
+        product_material: item.material || null,
+        product_brand: item.brand || null,
         quantity: item.quantity || 1,
         unit_price: Number(item.currentPrice || item.price || 0),
         total_price: Number((item.currentPrice || item.price || 0) * (item.quantity || 1))
@@ -439,6 +561,10 @@ export async function POST(req: NextRequest) {
         productId: item.id,
         productName: item.name,
         size: item.size,
+        color: item.color,
+        depth: item.depth,
+        firmness: item.firmness,
+        dimensions: { length: item.length, width: item.width, height: item.height },
         variantSku: item.variantSku,
         finalSku: orderItem.sku,
         item: item

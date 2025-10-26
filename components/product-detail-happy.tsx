@@ -1196,23 +1196,61 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     
     console.log('🔍 Variant requirements:', { hasSizes, hasColors, hasDepths, hasFirmness })
     
-    // Check if required variants are missing
-    const missingVariants = []
-    if (hasSizes && !selectedSize) missingVariants.push('size')
-    if (hasColors && !selectedColor) missingVariants.push('color')
-    if (hasDepths && !selectedDepth) missingVariants.push('depth')
-    if (hasFirmness && !selectedFirmness) missingVariants.push('firmness')
+    // Check if this is a single variant product (only one variant available)
+    const variants = (product as any).variants || []
+    const isSingleVariant = variants.length === 1
     
-    console.log('🔍 Missing variants:', missingVariants)
+    console.log('🔍 Single variant check:', { 
+      variantsCount: variants.length, 
+      isSingleVariant,
+      variants: variants.map(v => ({ size: v.size, color: v.color, depth: v.depth, firmness: v.firmness }))
+    })
     
-    // If variants are missing, start sequential flow
-    if (missingVariants.length > 0) {
-      console.log('🚀 Missing variants, starting sequential flow for:', missingVariants)
-      startSequentialVariantSelection()
-      return
+    // If it's a single variant product, auto-select the only available variant and add to cart
+    if (isSingleVariant && variants.length > 0) {
+      const singleVariant = variants[0]
+      console.log('🚀 Single variant detected, auto-selecting:', singleVariant)
+      
+      // Auto-select the single variant properties
+      const autoSelectedSize = singleVariant.size || ''
+      const autoSelectedColor = singleVariant.color || ''
+      const autoSelectedDepth = singleVariant.depth || ''
+      const autoSelectedFirmness = singleVariant.firmness || ''
+      
+      console.log('🚀 Auto-selected properties:', {
+        size: autoSelectedSize,
+        color: autoSelectedColor,
+        depth: autoSelectedDepth,
+        firmness: autoSelectedFirmness
+      })
+      
+      // Update the selected state with the single variant
+      setSelectedSize(autoSelectedSize)
+      setSelectedColor(autoSelectedColor)
+      setSelectedDepth(autoSelectedDepth)
+      setSelectedFirmness(autoSelectedFirmness)
+      
+      // Proceed directly to add to cart without showing variant selection popup
+      console.log('✅ Single variant auto-selected, proceeding to add to cart')
+    } else {
+      // Check if required variants are missing for multi-variant products
+      const missingVariants = []
+      if (hasSizes && !selectedSize) missingVariants.push('size')
+      if (hasColors && !selectedColor) missingVariants.push('color')
+      if (hasDepths && !selectedDepth) missingVariants.push('depth')
+      if (hasFirmness && !selectedFirmness) missingVariants.push('firmness')
+      
+      console.log('🔍 Missing variants:', missingVariants)
+      
+      // If variants are missing, start sequential flow
+      if (missingVariants.length > 0) {
+        console.log('🚀 Missing variants, starting sequential flow for:', missingVariants)
+        startSequentialVariantSelection()
+        return
+      }
+      
+      console.log('✅ All required variants selected, proceeding to add to cart')
     }
-    
-    console.log('✅ All required variants selected, proceeding to add to cart')
     
     // Check if this product has a free gift - simplified detection
     const hasFreeGift = (product as any).free_gift_product_id && (
@@ -1221,14 +1259,37 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
     )
 
     // Get the current variant and price
-    const currentVariant = getCurrentVariant()
-    const currentVariantPrice = Number(currentSelectionPrice || currentVariant?.currentPrice || product.currentPrice || 0)
+    let currentVariant, currentVariantPrice, finalPrice, selectedSizeData
     
-    // Ensure we have a valid price - if still 0, use a fallback
-    const finalPrice = currentVariantPrice > 0 ? currentVariantPrice : 99.99
+    if (isSingleVariant && variants.length > 0) {
+      // For single variant products, use the single variant directly
+      currentVariant = variants[0]
+      currentVariantPrice = Number(currentVariant?.currentPrice || product.currentPrice || 0)
+      finalPrice = currentVariantPrice > 0 ? currentVariantPrice : 99.99
+      selectedSizeData = currentVariant.size || ''
+      
+      console.log('🚀 Single variant pricing:', {
+        variant: currentVariant,
+        price: currentVariantPrice,
+        finalPrice: finalPrice,
+        size: selectedSizeData
+      })
+    } else {
+      // For multi-variant products, use existing logic
+      currentVariant = getCurrentVariant()
+      currentVariantPrice = Number(currentSelectionPrice || currentVariant?.currentPrice || product.currentPrice || 0)
+      finalPrice = currentVariantPrice > 0 ? currentVariantPrice : 99.99
+      selectedSizeData = selectedSize
+      
+      console.log('🚀 Multi-variant pricing:', {
+        variant: currentVariant,
+        price: currentVariantPrice,
+        finalPrice: finalPrice,
+        size: selectedSizeData
+      })
+    }
     
-    // Get selected size data
-    const selectedSizeData = selectedSize ? sizeData.find(size => size.name === selectedSize) : null
+    const sizeDataItem = selectedSizeData ? sizeData.find(size => size.name === selectedSizeData) : null
     
     console.log('🔍 Adding to cart with:', {
       currentVariant,
@@ -1243,7 +1304,7 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       productCurrentPrice: product.currentPrice
     })
     
-    // Prepare payload - simplified approach for size-only products
+    // Prepare payload - handle both single variant and multi-variant products
     const payload: any = {
       id: String(product.id),
       name: product.name,
@@ -1254,20 +1315,36 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       variantSku: currentVariant?.sku
     }
     
-    // For size-only products, always include size if selected
-    if (selectedSize) {
-      payload.size = selectedSize
-    }
-    
-    // Only include other variant fields if they are actually selected
-    if (selectedColor) {
-      payload.color = selectedColor
-    }
-    if (selectedDepth) {
-      payload.depth = selectedDepth
-    }
-    if (selectedFirmness) {
-      payload.firmness = selectedFirmness
+    // For single variant products, use the variant properties directly
+    if (isSingleVariant && variants.length > 0) {
+      const singleVariant = variants[0]
+      payload.size = singleVariant.size || ''
+      payload.color = singleVariant.color || ''
+      payload.depth = singleVariant.depth || ''
+      payload.firmness = singleVariant.firmness || ''
+      payload.weight = singleVariant.weight
+      payload.material = singleVariant.material
+      payload.length = singleVariant.length
+      payload.width = singleVariant.width
+      payload.height = singleVariant.height
+      
+      console.log('🚀 Single variant payload:', payload)
+    } else {
+      // For multi-variant products, use selected values
+      if (selectedSize) {
+        payload.size = selectedSize
+      }
+      if (selectedColor) {
+        payload.color = selectedColor
+      }
+      if (selectedDepth) {
+        payload.depth = selectedDepth
+      }
+      if (selectedFirmness) {
+        payload.firmness = selectedFirmness
+      }
+      
+      console.log('🚀 Multi-variant payload:', payload)
     }
 
     // Add free gift details if available
@@ -1286,11 +1363,11 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       type: 'ADD_ITEM',
       payload
     })
-    console.log('✅ ADD_ITEM dispatched successfully')
     
-    // Set flag to open sidebar after cart addition
-    console.log('Setting shouldOpenSidebar to true')
+    // Set flag to open sidebar after cart addition (for both single and multi-variant products)
+    console.log('🚀 Setting shouldOpenSidebar to true')
     setShouldOpenSidebar(true)
+    console.log('✅ ADD_ITEM dispatched successfully')
     
   }, [product, dispatch, selectedImage, selectedSize, selectedColor, selectedDepth, selectedFirmness, sizeData, currentSelectionPrice, getCurrentVariant, getAvailableVariantOptions, startSequentialVariantSelection])
 

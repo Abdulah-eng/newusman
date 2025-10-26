@@ -16,9 +16,19 @@ function generateConfirmationEmailHtml(orderNumber: string, customer: any, items
         .header { background: #f97316; color: white; padding: 20px; text-align: center; }
         .content { padding: 20px; background: #f9f9f9; }
         .order-details { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; }
-        .item { border-bottom: 1px solid #eee; padding: 10px 0; }
-        .total { font-size: 18px; font-weight: bold; color: #f97316; }
+        .item { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .item:last-child { border-bottom: none; }
+        .item-name { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 8px; }
+        .item-properties { margin: 8px 0; }
+        .property { margin: 4px 0; color: #666; }
+        .property-label { font-weight: bold; color: #555; }
+        .total { font-size: 18px; font-weight: bold; color: #f97316; margin-top: 15px; padding-top: 15px; border-top: 2px solid #f97316; }
         .footer { text-align: center; padding: 20px; color: #666; }
+        .support-section { background: #e7f3ff; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #f97316; }
+        .support-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; }
+        .support-contact { margin: 8px 0; }
+        .support-contact a { color: #f97316; text-decoration: none; }
+        .support-contact a:hover { text-decoration: underline; }
       </style>
     </head>
     <body>
@@ -36,13 +46,41 @@ function generateConfirmationEmailHtml(orderNumber: string, customer: any, items
             <h3>Order Summary</h3>
             ${items.map(item => `
               <div class="item">
-                <strong>${item.product_name}</strong>
-                ${item.product_size ? ` (${item.product_size})` : ''}
-                ${item.product_color ? ` - ${item.product_color}` : ''}
-                <br>Quantity: ${item.quantity} × £${item.unit_price.toFixed(2)}
+                <div class="item-name">${item.product_name}</div>
+                <div class="item-properties">
+                  ${item.product_size ? `<div class="property"><span class="property-label">Size:</span> ${item.product_size}</div>` : ''}
+                  ${item.product_color ? `<div class="property"><span class="property-label">Color:</span> ${item.product_color}</div>` : ''}
+                  ${item.product_depth ? `<div class="property"><span class="property-label">Depth:</span> ${item.product_depth}</div>` : ''}
+                  ${item.product_firmness ? `<div class="property"><span class="property-label">Firmness:</span> ${item.product_firmness}</div>` : ''}
+                  ${item.product_length || item.product_width || item.product_height ? `
+                    <div class="property"><span class="property-label">Dimensions:</span> 
+                      ${item.product_length ? `${item.product_length}` : ''}
+                      ${item.product_width ? ` × ${item.product_width}` : ''}
+                      ${item.product_height ? ` × ${item.product_height}` : ''}
+                    </div>
+                  ` : ''}
+                  ${item.product_weight ? `<div class="property"><span class="property-label">Weight:</span> ${item.product_weight}</div>` : ''}
+                  ${item.product_material ? `<div class="property"><span class="property-label">Material:</span> ${item.product_material}</div>` : ''}
+                  ${item.product_brand ? `<div class="property"><span class="property-label">Brand:</span> ${item.product_brand}</div>` : ''}
+                  <div class="property"><span class="property-label">Quantity:</span> ${item.quantity} × £${item.unit_price.toFixed(2)}</div>
+                </div>
               </div>
             `).join('')}
             <div class="total">Total: £${total.toFixed(2)}</div>
+          </div>
+          
+          <div class="support-section">
+            <div class="support-title">Need Help?</div>
+            <p>If you have any questions about your order or need assistance, our customer support team is here to help:</p>
+            <div class="support-contact">
+              <strong>Email:</strong> <a href="mailto:hello@bedoraliving.co.uk">hello@bedoraliving.co.uk</a>
+            </div>
+            <div class="support-contact">
+              <strong>Phone:</strong> <a href="tel:03301336323">0330 133 6323</a>
+            </div>
+            <p style="margin-top: 15px; font-size: 14px; color: #666;">
+              Our support team is available Monday to Friday, 9am to 5pm GMT.
+            </p>
           </div>
           
           <p>Thank you for choosing Bedora Living!</p>
