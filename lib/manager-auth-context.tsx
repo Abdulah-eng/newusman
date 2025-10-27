@@ -205,13 +205,24 @@ export function ManagerAuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('🔐 Attempting login for:', email)
       
-      // Check for rate limit in localStorage
+      // Check for rate limit in localStorage - extended to 10 minutes to prevent Supabase rate limits
       const rateLimitKey = `rate_limit_${email}`
       const lastAttempt = localStorage.getItem(rateLimitKey)
-      if (lastAttempt && Date.now() - parseInt(lastAttempt) < 30000) { // 30 second cooldown
+      if (lastAttempt && Date.now() - parseInt(lastAttempt) < 600000) { // 600 second (10 minute) cooldown
+        const secondsLeft = Math.ceil((600000 - (Date.now() - parseInt(lastAttempt))) / 1000)
+        const minutesLeft = Math.floor(secondsLeft / 60)
+        const secsRemaining = secondsLeft % 60
+        
+        let timeMessage = ''
+        if (minutesLeft > 0) {
+          timeMessage = `${minutesLeft} minute${minutesLeft > 1 ? 's' : ''} and ${secsRemaining} second${secsRemaining !== 1 ? 's' : ''}`
+        } else {
+          timeMessage = `${secondsLeft} second${secondsLeft !== 1 ? 's' : ''}`
+        }
+        
         return { 
           success: false, 
-          error: 'Please wait 30 seconds before trying again to avoid rate limits.' 
+          error: `Too many login attempts. Please wait ${timeMessage} before trying again.` 
         }
       }
       
@@ -236,40 +247,52 @@ export function ManagerAuthProvider({ children }: { children: ReactNode }) {
         return { success: true }
       }
 
-      // For other users, check managers table first (avoid unnecessary auth calls)
-      const { data: managerData, error: managerError } = await supabase
-        .from('managers')
-        .select('*')
-        .eq('email', email.toLowerCase())
-        .eq('is_active', true)
-        .single()
-
-      if (managerError || !managerData) {
-        return { success: false, error: 'Invalid credentials' }
-      }
-
-      // Check if the user's role matches the expected role
-      if (expectedRole && managerData.role !== expectedRole) {
-        return { 
-          success: false, 
-          error: `This account is registered as ${managerData.role}, but you're trying to login as ${expectedRole}. Please choose the correct login type.` 
-        }
-      }
-
-      // Only attempt auth if manager exists and is valid
-      const { error } = await supabase.auth.signInWithPassword({
+      // Attempt authentication directly
+      console.log('🔑 Attempting Supabase authentication...')
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: email.toLowerCase(),
         password
       })
 
       if (error) {
+        console.error('❌ Authentication error:', error)
+        
+        // Handle rate limit error specially
+        if (error.message?.includes('rate limit') || error.status === 429) {
+          // Set an extended cooldown on rate limit error from Supabase
+          const extendedCooldown = 300000 // 5 minutes
+          localStorage.setItem(rateLimitKey, Date.now().toString())
+          
+          return { 
+            success: false, 
+            error: 'Supabase rate limit reached. Please wait 5 minutes before trying again.' 
+          }
+        }
+        
+        // For other errors, clear the rate limit
+        localStorage.removeItem(rateLimitKey)
         return { 
           success: false, 
-          error: getAuthErrorMessage(error)
+          error: getAuthErrorMessage(error) 
         }
       }
 
-      return { success: true }
+      console.log('✅ Authentication successful, checking user session...')
+      
+      // Wait a bit for auth state to update
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session?.user) {
+        console.log('✅ Session found, setting up manager state...')
+        // The session will be picked up by the auth state change listener
+        return { success: true }
+      } else {
+        console.error('❌ No session found after authentication')
+        return { success: false, error: 'Authentication failed - no session created' }
+      }
     } catch (error) {
       console.error('Login error:', error)
       return { success: false, error: 'Network error' }

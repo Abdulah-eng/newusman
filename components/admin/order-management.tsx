@@ -69,6 +69,21 @@ export function OrderManagement() {
       const res = await fetch('/api/admin/orders', { cache: 'no-store' })
       if (!res.ok) throw new Error('Failed to load orders')
       const json = await res.json()
+      console.log('📦 Fetched orders data:', json)
+      console.log('📦 Orders count:', json.orders?.length)
+      
+      // Log each order's items
+      json.orders?.forEach((order: any, index: number) => {
+        console.log(`📦 Order ${index + 1} (${order.order_number}):`, {
+          orderId: order.id,
+          orderNumber: order.order_number,
+          itemsCount: order.order_items?.length || 0,
+          orderItems: order.order_items,
+          hasItemsArray: Array.isArray(order.order_items),
+          itemsIsEmpty: !order.order_items || order.order_items.length === 0
+        })
+      })
+      
       setOrders(json.orders || [])
     } catch (error) {
       console.error('Error fetching orders:', error)
