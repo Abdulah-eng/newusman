@@ -399,6 +399,24 @@ export async function POST(req: NextRequest) {
     const { sessionId, customerInfo, items, deliveryOption } = await req.json()
     
     console.log('Processing order:', { sessionId, customerEmail: customerInfo?.email })
+    console.log('📦 Received items from checkout:', items?.length || 0)
+    console.log('📦 Items data:', JSON.stringify(items, null, 2))
+    
+    // Log each item's structure
+    items?.forEach((item: any, index: number) => {
+      console.log(`📦 Item ${index + 1}:`, {
+        id: item.id,
+        name: item.name,
+        variantSku: item.variantSku,
+        size: item.size,
+        color: item.color,
+        depth: item.depth,
+        firmness: item.firmness,
+        quantity: item.quantity,
+        currentPrice: item.currentPrice,
+        price: item.price
+      })
+    })
     
     if (!sessionId) {
       return NextResponse.json({ 
@@ -573,13 +591,45 @@ export async function POST(req: NextRequest) {
       return orderItem
     })
 
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItems)
+    console.log('About to insert order items:', orderItems.length, 'items')
+    console.log('Order items data:', JSON.stringify(orderItems, null, 2))
+    
+    try {
+      console.log('🔍 Inserting order items into database...')
+      const { data: insertedItems, error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems)
+        .select()
 
-    if (itemsError) {
-      console.error('Error creating order items:', itemsError)
-      // Don't fail the entire request if items fail
+      if (itemsError) {
+        console.error('❌ Error creating order items:', itemsError)
+        console.error('❌ Error details:', JSON.stringify(itemsError, null, 2))
+        console.error('❌ Failed to insert items:', JSON.stringify(orderItems, null, 2))
+        
+        // Try inserting with only basic fields as fallback
+        const basicOrderItems = orderItems.map(item => ({
+          order_id: item.order_id,
+          sku: item.sku,
+          quantity: item.quantity,
+          unit_price: item.unit_price
+        }))
+        
+        console.log('🔄 Trying fallback insert with basic fields only...')
+        const { error: fallbackError } = await supabase
+          .from('order_items')
+          .insert(basicOrderItems)
+        
+        if (fallbackError) {
+          console.error('❌ Fallback insert also failed:', fallbackError)
+        } else {
+          console.log('✅ Fallback insert succeeded with basic fields only')
+        }
+      } else {
+        console.log('✅ Successfully inserted order items:', insertedItems?.length || 0)
+        console.log('✅ Inserted items:', JSON.stringify(insertedItems, null, 2))
+      }
+    } catch (insertError) {
+      console.error('❌ Exception during order items insert:', insertError)
     }
 
     // Send thanks email to customer

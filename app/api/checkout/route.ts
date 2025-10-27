@@ -76,7 +76,20 @@ export async function POST(req: NextRequest) {
           currency: 'gbp',
           product_data: { 
             name: `${item.name}${item.size ? ` (${item.size})` : ''}`,
-            description: item.brand || 'Premium Quality'
+            description: item.brand || 'Premium Quality',
+            metadata: {
+              sku: item.variantSku || item.sku || item.id,
+              size: item.size || '',
+              color: item.color || '',
+              depth: item.depth || '',
+              firmness: item.firmness || '',
+              length: item.length || '',
+              width: item.width || '',
+              height: item.height || '',
+              weight: item.weight || '',
+              material: item.material || '',
+              brand: item.brand || ''
+            }
           },
           unit_amount: Math.round(price * 100), // Convert to pence
         },

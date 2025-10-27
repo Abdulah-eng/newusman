@@ -120,9 +120,70 @@ async function processOrderFromSession(session: Stripe.Checkout.Session) {
 
     console.log('Order created from webhook:', order.id)
 
-    // Note: Order items would need to be created separately
-    // This would require storing cart data in session metadata or
-    // fetching it from a separate source
+    // Retrieve line items from Stripe session
+    const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
+      expand: ['data.price.product']
+    })
+    
+    console.log('Retrieved line items from Stripe:', lineItems.data.length)
+    console.log('Line items details:', JSON.stringify(lineItems.data, null, 2))
+    
+    // Create order items from Stripe line items
+    if (lineItems.data.length > 0) {
+      const orderItems = lineItems.data.map((item, index) => {
+        // Extract product name from description
+        const productName = item.description || item.price?.product?.name || `Product ${index + 1}`
+        const unitPrice = item.price?.unit_amount ? item.price.unit_amount / 100 : 0
+        const quantity = item.quantity || 1
+        
+        // Try to extract variant info from product metadata
+        const product = item.price?.product as any
+        const sku = product?.metadata?.sku || item.price?.id || `SKU-${index + 1}`
+        
+        console.log(`Processing line item ${index + 1}:`, {
+          productName,
+          sku,
+          unitPrice,
+          quantity,
+          productMetadata: product?.metadata
+        })
+        
+        return {
+          order_id: order.id,
+          sku: sku,
+          product_name: productName,
+          product_size: product?.metadata?.size || null,
+          product_color: product?.metadata?.color || null,
+          product_depth: product?.metadata?.depth || null,
+          product_firmness: product?.metadata?.firmness || null,
+          product_length: product?.metadata?.length || null,
+          product_width: product?.metadata?.width || null,
+          product_height: product?.metadata?.height || null,
+          product_weight: product?.metadata?.weight || null,
+          product_material: product?.metadata?.material || null,
+          product_brand: product?.metadata?.brand || null,
+          quantity: quantity,
+          unit_price: unitPrice,
+          total_price: unitPrice * quantity
+        }
+      })
+      
+      console.log('Creating order items:', orderItems.length)
+      console.log('Order items details:', JSON.stringify(orderItems, null, 2))
+      
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems)
+      
+      if (itemsError) {
+        console.error('Error creating order items from webhook:', itemsError)
+        console.error('Order items that failed:', JSON.stringify(orderItems, null, 2))
+      } else {
+        console.log('Successfully created', orderItems.length, 'order items')
+      }
+    } else {
+      console.log('No line items found in Stripe session')
+    }
     
   } catch (error) {
     console.error('Error processing order from session:', error)

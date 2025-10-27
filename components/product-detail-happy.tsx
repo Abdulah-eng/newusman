@@ -1234,22 +1234,22 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       console.log('✅ Single variant auto-selected, proceeding to add to cart')
     } else {
       // Check if required variants are missing for multi-variant products
-      const missingVariants = []
-      if (hasSizes && !selectedSize) missingVariants.push('size')
-      if (hasColors && !selectedColor) missingVariants.push('color')
-      if (hasDepths && !selectedDepth) missingVariants.push('depth')
-      if (hasFirmness && !selectedFirmness) missingVariants.push('firmness')
-      
-      console.log('🔍 Missing variants:', missingVariants)
-      
-      // If variants are missing, start sequential flow
-      if (missingVariants.length > 0) {
-        console.log('🚀 Missing variants, starting sequential flow for:', missingVariants)
-        startSequentialVariantSelection()
-        return
-      }
-      
-      console.log('✅ All required variants selected, proceeding to add to cart')
+    const missingVariants = []
+    if (hasSizes && !selectedSize) missingVariants.push('size')
+    if (hasColors && !selectedColor) missingVariants.push('color')
+    if (hasDepths && !selectedDepth) missingVariants.push('depth')
+    if (hasFirmness && !selectedFirmness) missingVariants.push('firmness')
+    
+    console.log('🔍 Missing variants:', missingVariants)
+    
+    // If variants are missing, start sequential flow
+    if (missingVariants.length > 0) {
+      console.log('🚀 Missing variants, starting sequential flow for:', missingVariants)
+      startSequentialVariantSelection()
+      return
+    }
+    
+    console.log('✅ All required variants selected, proceeding to add to cart')
     }
     
     // Check if this product has a free gift - simplified detection
@@ -1331,17 +1331,17 @@ export const ProductDetailHappy = memo(({ product }: ProductDetailHappyProps) =>
       console.log('🚀 Single variant payload:', payload)
     } else {
       // For multi-variant products, use selected values
-      if (selectedSize) {
-        payload.size = selectedSize
-      }
-      if (selectedColor) {
-        payload.color = selectedColor
-      }
-      if (selectedDepth) {
-        payload.depth = selectedDepth
-      }
-      if (selectedFirmness) {
-        payload.firmness = selectedFirmness
+    if (selectedSize) {
+      payload.size = selectedSize
+    }
+    if (selectedColor) {
+      payload.color = selectedColor
+    }
+    if (selectedDepth) {
+      payload.depth = selectedDepth
+    }
+    if (selectedFirmness) {
+      payload.firmness = selectedFirmness
       }
       
       console.log('🚀 Multi-variant payload:', payload)
