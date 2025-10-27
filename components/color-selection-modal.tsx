@@ -235,11 +235,11 @@ export function ColorSelectionModal({
       >
         {/* Modal */}
         <div 
-          className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col"
+          className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col mx-2 sm:mx-4"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 text-white p-6 rounded-t-2xl relative overflow-hidden flex-shrink-0">
+          <div className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 text-white p-4 sm:p-6 rounded-t-2xl relative overflow-hidden flex-shrink-0">
             {/* Subtle pattern overlay */}
             <div className="absolute inset-0 opacity-10">
               <div className="absolute inset-0" style={{
@@ -248,21 +248,21 @@ export function ColorSelectionModal({
             </div>
             
             <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
                     Choose Colour & Other Options
                   </h2>
                 </div>
                 <button
                   onClick={onClose}
-                  className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 border border-white/20"
+                  className="w-8 h-8 sm:w-10 sm:h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 border border-white/20"
                 >
-                  <X className="w-5 h-5 text-white" />
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </button>
               </div>
               {!showOnlyColors && hasOtherOptions && (
-                <p className="text-white/90 text-base">
+                <p className="text-white/90 text-sm sm:text-base">
                   {(() => {
                     const options = []
                     if (hasColorOptions) options.push('color')
@@ -276,8 +276,77 @@ export function ColorSelectionModal({
 
           {/* Fixed Price Display - Just Below Header */}
           {productPrice && (
-            <div className="px-6 py-4 bg-white border-b border-gray-200 relative">
-              <div className="flex items-center justify-between">
+            <div className="px-4 sm:px-6 py-4 bg-white border-b border-gray-200">
+              {/* Mobile Layout - Side by Side */}
+              <div className="block sm:hidden">
+                <div className="flex items-start justify-between gap-3">
+                  {/* Selected Options - Left Side */}
+                  <div className="flex-1 space-y-2 min-w-0">
+                    {selectedSize && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-600 font-medium whitespace-nowrap">Size:</span>
+                        <span className="text-sm font-semibold text-gray-900">{selectedSize}</span>
+                      </div>
+                    )}
+                    {localSelectedColor && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-600 font-medium whitespace-nowrap">Color:</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-sm font-semibold text-gray-900 truncate">{localSelectedColor}</span>
+                          {(() => {
+                            if (!variants || !localSelectedColor) return null
+                            
+                            const selectedVariant = variants.find(v => 
+                              v.color === localSelectedColor && 
+                              (!selectedSize || v.size === selectedSize)
+                            )
+                            
+                            if (!selectedVariant?.color) return null
+                            
+                            const hexColor = selectedVariant.color.startsWith('#') 
+                              ? selectedVariant.color 
+                              : '#f3f4f6'
+                          
+                            return (
+                              <div 
+                                className="w-6 h-6 rounded-md border border-gray-300 shadow-sm flex-shrink-0"
+                                style={{ backgroundColor: hexColor }}
+                              />
+                            )
+                          })()}
+                        </div>
+                      </div>
+                    )}
+                    {!showOnlyColors && localSelectedDepth && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-600 font-medium whitespace-nowrap">Depth:</span>
+                        <span className="text-sm font-semibold text-gray-900">{localSelectedDepth}</span>
+                      </div>
+                    )}
+                    {!showOnlyColors && localSelectedFirmness && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-600 font-medium whitespace-nowrap">Firmness:</span>
+                        <span className="text-sm font-semibold text-gray-900">{localSelectedFirmness}</span>
+                      </div>
+                    )}
+                    {showOnlyColors && selectedMattress && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-600 font-medium whitespace-nowrap">Mattress:</span>
+                        <span className="text-sm font-semibold text-gray-900">{selectedMattress}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Total Price - Right Side */}
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-xs text-orange-600 font-medium">Total Price</div>
+                    <div className="text-xl font-bold text-orange-700">£{totalPrice.toFixed(2)}</div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Desktop Layout - Side by Side */}
+              <div className="hidden sm:flex items-center justify-between relative">
                 {/* Selected Options Display - Left Side */}
                 <div className="flex flex-col gap-2">
                   {selectedSize && (
@@ -294,7 +363,6 @@ export function ColorSelectionModal({
                       {(() => {
                         if (!variants || !localSelectedColor) return null
                         
-                          // Find the variant color for the selected color
                         const selectedVariant = variants.find(v => 
                           v.color === localSelectedColor && 
                           (!selectedSize || v.size === selectedSize)
@@ -302,7 +370,6 @@ export function ColorSelectionModal({
                         
                           if (!selectedVariant?.color) return null
                           
-                          // Use the color as hex value if it's a hex code
                           const hexColor = selectedVariant.color.startsWith('#') 
                             ? selectedVariant.color 
                             : '#f3f4f6'
@@ -361,13 +428,13 @@ export function ColorSelectionModal({
                       })()}
                     </div>
                   )}
-                </div>
               </div>
               
               {/* Total Price - Fixed at Center */}
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
                 <div className="text-sm text-orange-600 font-medium">Total Price</div>
                 <div className="text-2xl font-bold text-orange-700">£{totalPrice.toFixed(2)}</div>
+                </div>
               </div>
             </div>
           )}
