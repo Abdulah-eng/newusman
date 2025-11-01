@@ -63,6 +63,19 @@ export default function Header() {
     setIsMounted(true)
   }, [])
 
+  // Prevent body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isMobileMenuOpen])
+
   const handleCategoryLeave = () => {
     // Add a small delay before closing to allow moving to dropdown
     const timeout = setTimeout(() => {
@@ -234,9 +247,9 @@ export default function Header() {
                 </Link>
                 
                 <div className="relative group">
-                  <div 
+                  <Link 
+                    href="/cart"
                     className="relative hover:text-orange-400 transition-colors cursor-pointer"
-                    onClick={() => window.location.href = '/cart'}
                   >
                     <ShoppingCart className="w-5 h-5 lg:w-6 lg:h-6" />
                     {isMounted && state.itemCount > 0 && (
@@ -244,11 +257,11 @@ export default function Header() {
                         <span className="text-white text-xs font-bold">{state.itemCount}</span>
                     </div>
                     )}
-                  </div>
+                  </Link>
                   
-                  {/* Cart Dropdown on Hover */}
+                  {/* Cart Dropdown on Hover - Only visible on desktop */}
                   {isMounted && state.itemCount > 0 && (
-                    <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-2xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-[9999]">
+                    <div className="hidden lg:block absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-2xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-[9999]">
                       {/* Dropdown Header */}
                       <div className="p-4 border-b border-gray-200">
                         <div className="flex items-center justify-between">
@@ -334,64 +347,117 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu - Collapsible */}
-      <div className={`lg:hidden transition-all duration-300 overflow-hidden ${isMobileMenuOpen ? 'max-h-screen' : 'max-h-0'}`} style={{ backgroundColor: '#33373E' }}>
+      {/* Mobile Sidebar Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Sidebar */}
+      <div 
+        className={`fixed top-0 left-0 h-full w-64 max-w-[75vw] bg-gray-100 z-50 transform transition-transform duration-300 ease-in-out lg:hidden overflow-y-auto ${
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         <div className="px-6 sm:px-8 py-4 space-y-4">
+          {/* Close Button */}
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-300">
+            <span className="text-gray-900 font-semibold text-lg">Menu</span>
+            <button 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2 hover:bg-gray-200 rounded-md transition-colors"
+            >
+              <X className="w-6 h-6 text-gray-700" />
+            </button>
+          </div>
+
           {/* Mobile Navigation Links */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <Link href="/mattresses" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
-              <ChevronDown className="w-4 h-4 text-gray-300" />
+          <div className="space-y-2">
+            <Link 
+              href="/mattresses" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2 text-gray-900 hover:text-orange-500 hover:bg-gray-200 transition-colors p-3 rounded"
+            >
+              <ChevronDown className="w-4 h-4 text-gray-600" />
               Mattresses
             </Link>
-            <Link href="/beds" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
-              <ChevronDown className="w-4 h-4 text-gray-300" />
+            <Link 
+              href="/beds" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2 text-gray-900 hover:text-orange-500 hover:bg-gray-200 transition-colors p-3 rounded"
+            >
+              <ChevronDown className="w-4 h-4 text-gray-600" />
               Beds
             </Link>
-            <Link href="/sofas" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
-              <ChevronDown className="w-4 h-4 text-gray-300" />
+            <Link 
+              href="/sofas" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2 text-gray-900 hover:text-orange-500 hover:bg-gray-200 transition-colors p-3 rounded"
+            >
+              <ChevronDown className="w-4 h-4 text-gray-600" />
               Sofas
             </Link>
-            <Link href="/kids" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
-              <ChevronDown className="w-4 h-4 text-gray-300" />
+            <Link 
+              href="/kids" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2 text-gray-900 hover:text-orange-500 hover:bg-gray-200 transition-colors p-3 rounded"
+            >
+              <ChevronDown className="w-4 h-4 text-gray-600" />
               Kids
             </Link>
-            <Link href="/pillows" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
-              <ChevronDown className="w-4 h-4 text-gray-300" />
+            <Link 
+              href="/pillows" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2 text-gray-900 hover:text-orange-500 hover:bg-gray-200 transition-colors p-3 rounded"
+            >
+              <ChevronDown className="w-4 h-4 text-gray-600" />
               Pillows
             </Link>
-            <Link href="/toppers" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
-              <ChevronDown className="w-4 h-4 text-gray-300" />
+            <Link 
+              href="/toppers" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2 text-gray-900 hover:text-orange-500 hover:bg-gray-200 transition-colors p-3 rounded"
+            >
+              <ChevronDown className="w-4 h-4 text-gray-600" />
               Toppers
             </Link>
-            <Link href="/bunkbeds" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
-              <ChevronDown className="w-4 h-4 text-gray-300" />
+            <Link 
+              href="/bunkbeds" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2 text-gray-900 hover:text-orange-500 hover:bg-gray-200 transition-colors p-3 rounded"
+            >
+              <ChevronDown className="w-4 h-4 text-gray-600" />
               Bunkbeds
             </Link>
-            <Link href="/guides" className="flex items-center gap-2 text-white hover:text-orange-400 transition-colors p-2 rounded">
+            <Link 
+              href="/guides" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2 text-gray-900 hover:text-orange-500 hover:bg-gray-200 transition-colors p-3 rounded"
+            >
               Guide
             </Link>
           </div>
 
           {/* Mobile Special Links */}
-          <div className="space-y-3">
-                          <Link href="/sale" className="flex items-center space-x-3 rounded-lg p-3 hover:bg-gray-700 transition-colors duration-200">
-                <div className="w-16 h-16 flex items-center justify-center">
-                  <img src="/clearance.png" alt="Clearance" className="w-16 h-16 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(100%)' }} />
-                </div>
-                <div className="leading-5">
-                  <div className="text-sm font-semibold text-white">SALES & CLEARANCE</div>
-                  <div className="text-xs text-gray-300">Hurry! Discounts Up to 60%</div>
-                </div>
-              </Link>
-                          <Link href="/mattress-finder" className="flex items-center space-x-3 rounded-lg p-3 hover:bg-gray-700 transition-colors duration-200">
-                <div className="w-20 h-20 flex items-center justify-center">
-                  <img src="/quiz.png" alt="Mattress Quiz" className="w-20 h-20 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(100%)' }} />
-                </div>
-                <div className="leading-5">
-                  <div className="text-sm font-semibold text-white whitespace-nowrap">MATTRESS QUIZ</div>
-                  <div className="text-xs text-gray-300">find your perfect match</div>
-                </div>
-              </Link>
+          <div className="space-y-2 pt-4 border-t border-gray-300">
+            <Link 
+              href="/sale" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2 text-gray-900 hover:text-orange-500 hover:bg-gray-200 transition-colors p-3 rounded"
+            >
+              <ChevronDown className="w-4 h-4 text-gray-600" />
+              Sales & Clearance
+            </Link>
+            <Link 
+              href="/mattress-finder" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2 text-gray-900 hover:text-orange-500 hover:bg-gray-200 transition-colors p-3 rounded"
+            >
+              <ChevronDown className="w-4 h-4 text-gray-600" />
+              Mattress Quiz
+            </Link>
           </div>
         </div>
       </div>
