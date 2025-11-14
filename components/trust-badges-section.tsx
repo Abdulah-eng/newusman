@@ -1,10 +1,28 @@
 "use client"
 
 import { RotateCcw, Truck, ShoppingCart, CreditCard, Clock } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 
 export function TrustBadgesSection() {
+  const pathname = usePathname()
+  
+  // Check if we're on a category page
+  const isOnCategoryPage = pathname && (
+    pathname.startsWith('/mattresses') ||
+    pathname.startsWith('/beds') ||
+    pathname.startsWith('/sofas') ||
+    pathname.startsWith('/kids') ||
+    pathname.startsWith('/pillows') ||
+    pathname.startsWith('/toppers') ||
+    pathname.startsWith('/bunkbeds') ||
+    pathname.startsWith('/guides')
+  )
+
   return (
-    <section className="hidden lg:block text-gray-800" style={{ backgroundColor: '#F5F5F5' }}>
+    <section 
+      className={`hidden lg:block text-gray-800 ${isOnCategoryPage ? 'sticky top-0 z-40' : ''}`} 
+      style={{ backgroundColor: '#F5F5F5' }}
+    >
       <div className="px-4 sm:px-6 lg:px-8 xl:px-12">
         <div className="flex items-center justify-center py-1">
           <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 xl:gap-8 w-full max-w-6xl">

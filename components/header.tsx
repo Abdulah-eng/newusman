@@ -449,7 +449,7 @@ export default function Header() {
             >
               <ChevronDown className="w-4 h-4 text-gray-600" />
               Sales & Clearance
-            </Link>
+              </Link>
             <Link 
               href="/mattress-finder" 
               onClick={() => setIsMobileMenuOpen(false)}
@@ -457,7 +457,7 @@ export default function Header() {
             >
               <ChevronDown className="w-4 h-4 text-gray-600" />
               Mattress Quiz
-            </Link>
+              </Link>
           </div>
         </div>
       </div>
